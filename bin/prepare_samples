@@ -8,9 +8,9 @@ Arguments:
 - type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
   "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm" (NorESM).
 - input: Input directory with input files (NetCDF).
-- synop: Input directory with IDD synoptic fies (NetCDF).
-- buoy: Input directory with IDD buoy files (NetCDF).
-- landmask: Land-sea mask file (NetCDF).
+- synop: Input directory with IDD synoptic fies or "none" (NetCDF).
+- buoy: Input directory with IDD buoy files or "none" (NetCDF).
+- landmask: Land-sea mask file or "none" (NetCDF).
 - landsea: Land or sea only. One of: "both", "land", "sea".
 - start: Start time (ISO).
 - end: End time (ISO).

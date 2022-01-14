@@ -64,14 +64,48 @@ prepare_samples -> tf -> plot_idd_stations [Figure 1a]
                       -> plot_training_history [Figure 3]
                       -> calc_dtau_pct -> plot_dtau_pct [Figure 6]
 
-gistemp_to_nc         .
-prepare_samples -> tf .
-                      |
-                      .-> calc_geo_co -> plot_geo_cto [Figure 4, 5]
-                      |               -> plot_geo_cto_rmse [Figure 8b, c, d]
-                      .-> calc_cto -> plot_cto [Figure 7]
-                                   -> calc_cto_ecs -> plot_cto_ecs [Figure 8a]
+prepare_samples -> tf -> calc_geo_co -> plot_geo_cto [Figure 4, 5]
+                                     -> plot_geo_cto_rmse [Figure 8b, c, d]
+                      -> calc_cto -> plot_cto [Figure 7]
+                                  -> calc_cto_ecs -> plot_cto_ecs [Figure 8a]
 ```
+
+## Input datasets
+
+### Historical Unidata Internet Data Distribution (IDD) Global Observational Data
+
+The IDD dataset contains ship and buoy records from the Global Telecommunication
+System. It can be downloaded from [Research Data
+Archive](https://rda.ucar.edu/datasets/ds336.0/). The relevant files are
+the SYNOP and BUOY NetCDF files.
+
+### Climate Model Intercomparison Project (CMIP)
+
+CMIP5 and CMIP6 model output can be downloaded from the
+[CMIP5](https://esgf-node.llnl.gov/projects/cmip5/) and
+[CMIP6](https://esgf-node.llnl.gov/projects/cmip6/) data archives.  The
+relevant experiments are `historical` (`hist-1950` in the case of EC-Earth3P)
+and `abrupt-4xCO2`. The required variables are `tas` in the monthly (`mon`)
+frequency, and `rlut`, `rlutcs`, `rsdt`, `rsut`, `rsutcs` in the daily (`day`)
+frequency.
+
+The command `download_cmip` can be used to create a list of CMIP files
+to download from a JSON catalog file, which can be created on the archive site
+above (`return results as JSON` on the search page). `limit=` in the URL to the
+JSON file should be changed to 10000, and `Show All Replicas` should be
+selected when searching. The resulting file list can be used with the program
+aria2c as `aria2c -i <file>` to download to files. Afterwards, use
+the commands `create_by_model` and `create_by_var` to create an index of
+symlinks in the directory where the downloaded files are stored. This index is
+required by the main commands.
+
+### GISS Surface Temperature Analysis (GISTEMP)
+
+The GISTEMP dataset is in `data/gistemp` available as the original file
+(CSV) and converted to NetCDF with `gistemp_to_nc` (required by the main
+commands). The original dataset has been downloaded from [NASA
+GISS](https://data.giss.nasa.gov/gistemp/), and the original terms of use of
+this dataset apply.
 
 ## Main commands
 
@@ -92,9 +126,9 @@ Arguments:
 - type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
   "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm" (NorESM).
 - input: Input directory with input files (NetCDF).
-- synop: Input directory with IDD synoptic fies (NetCDF).
-- buoy: Input directory with IDD buoy files (NetCDF).
-- landmask: Land-sea mask file (NetCDF).
+- synop: Input directory with IDD synoptic fies or "none" (NetCDF).
+- buoy: Input directory with IDD buoy files or "none" (NetCDF).
+- landmask: Land-sea mask file or "none" (NetCDF).
 - landsea: Land or sea only. One of: "both", "land", "sea".
 - start: Start time (ISO).
 - end: End time (ISO).
@@ -130,21 +164,6 @@ Arguments (apply):
 - y1: Start year.
 - y2: End year.
 - output: Output statistics directory (NetCDF).
-```
-
-
-### gistemp\_to\_nc
-
-
-```
-Convert GISTEMP yearly temperature data to NetCDF.
-
-Usage: gistemp_to_nc <input> <output>
-
-Arguments:
-
-- input: Input file "totalCI_ERA.csv" (CSV).
-- output: Output file (NetCDF).
 ```
 
 
@@ -408,6 +427,61 @@ Arguments:
 - input: Input file.
 - bindir: Directory with scripts.
 - output: Output file.
+
+Example:
+
+bin/build_readme README.md.in bin README.md
+```
+
+
+### download_cmip
+
+
+```
+Download CMIP data based on a JSON catalogue downloaded from the CMIP
+archive search page.
+
+Usage: download_cmip <filename> <var> <start> <end>
+
+Arguments:
+
+- filename: Input file (JSON).
+- var: Variable name.
+- start: Start time (ISO).
+- end: End time (ISO).
+```
+
+
+### create_by_model
+
+```
+Create a by-model index of CMIP data. This command should be run in the
+directory with CMIP data.
+
+Usage: create_by_model
+```
+
+### create_by_var
+
+```
+Create a by-var index of CMIP data. This command should be run in the
+directory with CMIP data.
+
+Usage: create_by_var
+```
+
+### gistemp\_to\_nc
+
+
+```
+Convert GISTEMP yearly temperature data to NetCDF.
+
+Usage: gistemp_to_nc <input> <output>
+
+Arguments:
+
+- input: Input file "totalCI_ERA.csv" (CSV).
+- output: Output file (NetCDF).
 ```
 
 

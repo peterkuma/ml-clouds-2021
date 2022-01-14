@@ -9,6 +9,10 @@ Arguments:
 - input: Input file.
 - bindir: Directory with scripts.
 - output: Output file.
+
+Example:
+
+bin/build_readme README.md.in bin README.md
 '''
 
 import sys

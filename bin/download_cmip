@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+"""Download CMIP data based on a JSON catalogue downloaded from the CMIP
+archive search page.
+
+Usage: download_cmip <filename> <var> <start> <end>
+
+Arguments:
+
+- filename: Input file (JSON).
+- var: Variable name.
+- start: Start time (ISO).
+- end: End time (ISO).
+"""
+
+import sys
+import os
+import numpy as np
+import pst
+import json
+import urllib.request
+import random
+import re
+import aquarius_time as aq
+import logging
+from urllib.parse import urlparse
+
+URL_TEMPLATE = 'https://esgf-node.llnl.gov/search_files/%s/%s/?limit=9999&rnd=%d'
+REGEXP = r'.*_(?P<y1>\d\d\d\d)(?P<m1>\d\d)(?P<d1>\d\d)?-(?P<y2>\d\d\d\d)(?P<m2>\d\d)(?P<d2>\d\d)?\.nc$'
+SUB = {
+#	'.*/CMIP6/CMIP/': 'http://aims3.llnl.gov/thredds/fileServer/css03_data/CMIP6/CMIP/',
+#	'http://vesg\.ipsl\.upmc\.fr/thredds/fileServer/cmip5/output1/': 'http://crd-esgf-drc.ec.gc.ca/thredds/fileServer/esg_dataroot/cmip5/output1/',
+	'': '',
+}
+
+def process_url(url, start, end):
+	m = re.match(REGEXP, url)
+	g = m.groupdict()
+	if g['d1'] is None: g['d1'] = '01'
+	if g['d2'] is None: g['d2'] = '01'
+	start2 = aq.from_date([1, int(g['y1']), int(g['m1']), int(g['d1'])])
+	end2 = aq.from_date([1, int(g['y2']), int(g['m2']), int(g['d2'])])
+	if start2 <= end and end2 >= start:
+		#sys.stderr.write('.')
+		return url
+		#for k, v in SUB.items():
+		#	if re.match(k, url) is not None:
+		#		return re.sub(k, v, url, flags=re.I)
+	return None
+
+def trans_member(x):
+	m1 = re.match(r'^r(\d\d?)i(\d\d?)p(\d\d?)f(\d\d?)$', x)
+	m2 = re.match(r'^r(\d\d?)i(\d\d?)p(\d\d?)$', x)
+	if m1 is not None:
+		m = m1
+		y = int(m[1])*1000000 + int(m[2])*10000 + int(m[3])*100 + int(m[4])
+	elif m2 is not None:
+		m = m2
+		y = int(m[1])*10000 + int(m[2])*100 + int(m[3])
+	else:
+		raise ValueError('Invalid member id "%s"' % x)
+	return y
+
+def process_doc(doc, var, start, end):
+	urls = []
+	url = URL_TEMPLATE % (
+		doc['id'],
+		doc['index_node'],
+		random.randint(100000, 999999)
+	)
+	sys.stderr.write('%s\n' % url)
+	with urllib.request.urlopen(url) as f:
+		d2 = json.load(f)
+		for doc2 in d2['response']['docs']:
+			if var not in doc2['variable']:
+				continue
+			for url2 in doc2['url']:
+				if url2.endswith('HTTPServer'):
+					url3 = re.sub('\|.*$', '', url2)
+					url4 = process_url(url3, start, end)
+					source_id = doc2['source_id'] \
+						if 'source_id' in doc2 else doc2['model']
+					member_id = doc2['member_id'] \
+						if 'member_id' in doc2 else doc2['ensemble']
+					if url4 is not None:
+						urls += [[source_id[0], trans_member(member_id[0]), url4]]
+	return urls
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+
+	if len(args) != 5:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+
+	filename = args[1]
+	var = args[2]
+	start = args[3]
+	end = args[4]
+
+	start = aq.from_iso(start) if start is not None else -np.inf
+	end = aq.from_iso(end) if end is not None else np.inf
+
+	urls = []
+	i = 0
+	with open(filename) as f:
+		d = json.load(f)
+		for doc in d['response']['docs']:
+			try:
+				urls += process_doc(doc, var, start, end)
+			except Exception as e:
+				logging.exception(e)
+
+	source_member = {}
+	for source_id, member_id, url in urls:
+		if source_id not in source_member:
+			source_member[source_id] = set()
+		source_member[source_id].add(member_id)
+	for k, v in source_member.items():
+		source_member[k] = min(v)
+
+	files = {}
+	for source_id, member_id, url in urls:
+		if member_id != source_member[source_id]:
+			continue
+		file_ = os.path.basename(urlparse(url).path)
+		files[file_] = files.get(file_, []) + [url]
+
+	for k in sorted(files.keys()):
+		print('\t'.join(files[k]))
