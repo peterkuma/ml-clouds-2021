@@ -29,7 +29,8 @@ if __name__ == '__main__':
 		with open(path) as f:
 			try:
 				t = ast.parse(f.read())
-				docs[name] = ast.get_docstring(t, clean=False)
+				docs[name] = \
+					'\n```\n' + ast.get_docstring(t, clean=False) + '```\n'
 			except:
 				pass
 
