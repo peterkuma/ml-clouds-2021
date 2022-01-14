@@ -2,7 +2,7 @@
 
 Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian McDonald<sup>2</sup>
 
-<sup>1</sup>Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden
+<sup>1</sup>Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden\
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand
 
 This repository contains code for the paper "Cloud type machine learning shows
@@ -80,6 +80,8 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 ### prepare\_samples
 
+
+```
 Prepare samples of clouds for CNN training.
 
 Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <seed>]
@@ -100,10 +102,13 @@ Arguments:
 Options:
 
 - seed: Random seed.
+```
 
 
 ### tf
 
+
+```
 Train or apply a TensorFlow CNN.
 
 Usage: tf train <input> <output> <output_history>
@@ -124,10 +129,13 @@ Arguments (apply):
 - y1: Start year.
 - y2: End year.
 - output: Output statistics directory (NetCDF).
+```
 
 
 ### gistemp\_to\_nc
 
+
+```
 Convert GISTEMP yearly temperature data to NetCDF.
 
 Usage: gistemp_to_nc <input> <output>
@@ -136,10 +144,13 @@ Arguments:
 
 - input: Input file "totalCI_ERA.csv" (CSV).
 - output: Output file (NetCDF).
+```
 
 
 ### calc\_geo\_cto
 
+
+```
 Calculate geographical distribution of cloud type occurrence distribution.
 
 Usage: calc_geo_cto <input> <tas> <output>
@@ -151,10 +162,13 @@ Arguments:
 - input: Input file or directory - the output of tf apply (NetCDF).
 - tas: Input directory with tas - the output of gistemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
+```
 
 
 ### calc\_cto
 
+
+```
 Calculate global mean cloud type occurrence.
 
 Usage: calc_cto <input> <tas> <output>
@@ -166,10 +180,13 @@ Arguments:
 - input: Input directory - the output of tf apply (NetCDF).
 - tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
+```
 
 
 ### calc\_cto\_ecs
 
+
+```
 Calculate cloud type occurrence vs. ECS regression.
 
 Usage: calc_cto_ecs <input> <ecs> <output>
@@ -181,10 +198,13 @@ Arguments:
 - input: Input file - the output of calc_cto (NetCDF).
 - ecs: ECS, TCR and CLD input (CSV).
 - output: Output files (NetCDF).
+```
 
 
 ### calc\_dtau\_pct
 
+
+```
 Calculate cloud optical depth - cloud top press histogram.
 
 Usage: calc_dtau_pct <samples> <ceres> <output>
@@ -196,10 +216,13 @@ Arguments:
 - samples: Directory with samples - the output of tf apply (NetCDF).
 - ceres: Directory with CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
+```
 
 
 ### plot\_idd\_stations [Figure 1a]
 
+
+```
 Plot IDD stations on a map.
 
 Usage: plot_idd_stations <input> <sample> <n> <output> <title>
@@ -213,10 +236,13 @@ Arguments:
 - n: Sample number.
 - output: Output plot (PDF).
 - title: Plot title.
+```
 
 
 ### plot\_sample [Figure 1b, c]
 
+
+```
 Plot sample.
 
 Usage: plot_samples <input> <n> <output>
@@ -226,10 +252,13 @@ Arguments:
 - input: Input sample (NetCDF).
 - n: Sample number.
 - output: Output plot (PDF).
+```
 
 
 ### plot\_training\_history [Figure 3]
 
+
+```
 Plot training history loss function.
 
 Usage: plot_history <input> <output>
@@ -240,10 +269,13 @@ Arguments:
 
 - input: Input history file - the output of tf (NetCDF).
 - output: Output plot (PDF).
+```
 
 
 ### plot\_geo\_cto [Figure 4, 5]
 
+
+```
 Plot geographical distribution of cloud type occurrence.
 
 Usage: plot_geo_cto <deg> <relative> <input> <ecs> <ecs_x> <output> <title>
@@ -259,10 +291,13 @@ Arguments:
 - ecs_x: ECS file extension (CSV).
 - output: Output plot (PDF).
 - title: Plot title.
+```
 
 
 ### plot\_dtau\_pct [Figure 6]
 
+
+```
 Plot cloud optical depth - cloud top pressure histogram.
 
 Usage: plot_dtau_pct <input> <output>
@@ -273,10 +308,13 @@ Arguments:
 
 - input: Input file - the output of calc_dtau_pct (NetCDF).
 - output: Output plot (PDF).
+```
 
 
 ### plot\_cto [Figure 7]
 
+
+```
 Plot global mean cloud type occurrence.
 
 Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <ecs_x> <output> <title> [legend: <legend>]
@@ -299,10 +337,13 @@ Arguments:
 Options:
 
 - legend: Show legend ("true" or "false"). Default: "true".
+```
 
 
 ### plot\_cto\_ecs [Figure 8a]
 
+
+```
 Plot cloud type occurrence vs. ECS regression.
 
 Usage: plot_cto_ecs <varname> <input> <summary> <output> <title>
@@ -317,10 +358,13 @@ Arguments:
 - summary: Input file - the output of calc_cto_ecs (NetCDF).
 - output: Output plot (PDF).
 - title: Plot title.
+```
 
 
 ### plot\_geo\_cto\_rmse [Figure 8b, c, d]
 
+
+```
 Plot scatter plot of RMSE of the geographical distribution of cloud type
 occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
@@ -344,12 +388,15 @@ Examples:
 bin/plot_geo_cto_rmse ecs data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
 bin/plot_geo_cto_rmse tcr data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
 bin/plot_geo_cto_rmse cld data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
+```
 
 
 ## Auxiliary commands
 
 ### build\_readme
 
+
+```
 
 Build the README document from a template.
 
@@ -360,6 +407,7 @@ Arguments:
 - input: Input file.
 - bindir: Directory with scripts.
 - output: Output file.
+```
 
 
 ## License
