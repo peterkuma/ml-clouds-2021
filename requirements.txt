@@ -1,0 +1,10 @@
+tensorflow
+scipy
+numpy
+matplotlib
+pymc3
+pst-format
+aquarius-time
+ds-format
+pyproj
+pandas

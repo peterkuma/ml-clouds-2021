@@ -27,7 +27,7 @@ and Python packages:
 - numpy
 - matplotlib
 - pymc3
-- pst
+- pst-format
 - aquarius-time
 - ds-format
 - pyproj
