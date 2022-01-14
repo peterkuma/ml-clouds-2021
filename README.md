@@ -1,9 +1,10 @@
 # Cloud type machine learning shows better present-day cloud representation in climate models is associated with higher climate sensitivity
 
-Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian McDonald<sup>2</sup>
+Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
 
 <sup>1</sup>Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden\
-<sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand
+<sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
+<sup>3</sup>Norwegian Meteorological Institute, Oslo, Norway
 
 This repository contains code for the paper "Cloud type machine learning shows
 better present-day cloud representation in climate models is associated with
