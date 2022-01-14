@@ -78,7 +78,13 @@ prepare_samples -> tf -> calc_geo_co -> plot_geo_cto [Figure 4, 5]
 The IDD dataset contains ship and buoy records from the Global Telecommunication
 System. It can be downloaded from [Research Data
 Archive](https://rda.ucar.edu/datasets/ds336.0/). The relevant files are
-the SYNOP and BUOY NetCDF files.
+the SYNOP and BUOY NetCDF files (2008-present), and the HISTSURFACEOBS tar
+files (2003-2008). The HISTSURFACEOBS files have to be unpacked after
+downloading.
+
+In the examples below it is assumed that the IDD files are stored under
+`data/idd/synop` and `data/idd/buoy` for the synop and buoy files,
+respectively.
 
 ### Climate Model Intercomparison Project (CMIP)
 
@@ -99,6 +105,10 @@ aria2c as `aria2c -i <file>` to download to files. Afterwards, use
 the commands `create_by_model` and `create_by_var` to create an index of
 symlinks in the directory where the downloaded files are stored. This index is
 required by the main commands.
+
+In the examples below it is assumed that the CMIP5 and CMIP6 files are stored
+in `data/cmip5/<experiment>/<frequency/` and
+`data/cmip6/<experiment>/<frequency/`, respectively.
 
 ### GISS Surface Temperature Analysis (GISTEMP)
 
@@ -464,6 +474,7 @@ Usage: create_by_model
 
 Example:
 
+cd data/cmip5/historical/day
 ./create_by_model
 ```
 
@@ -477,6 +488,7 @@ Usage: create_by_var
 
 Example:
 
+cd data/cmip5/historical/day
 ./create_by_var
 ```
 
