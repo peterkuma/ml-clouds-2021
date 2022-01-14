@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <deg> <relative> <input> <ecs> <ecs_x> <output> <title>
+Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output>
 
 Depends on: calc_geo_cto
 
@@ -11,9 +11,7 @@ Arguments:
 - relative: Plot relative to CERES. One of: true or false.
 - input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
-- ecs_x: ECS file extension (CSV).
 - output: Output plot (PDF).
-- title: Plot title.
 '''
 
 import sys
@@ -51,33 +49,33 @@ def read_ecs(filename):
 		'ecs': np.array(d['ECS']),
 		'tcr': np.array(d['TCR']),
 		'cld': np.array(d['CLD']),
+		'ext': np.array(d['Extended']),
 		'.': {
 			'model': {'.dims': ['model']},
 			'ecs': {'.dims': ['model']},
 			'tcr': {'.dims': ['model']},
 			'cld': {'.dims': ['model']},
+			'ext': {'.dims': ['model']},
 		}
 	}
 
 def get_ecs(d_ecs, model):
 	try:
 		i = np.where(d_ecs['model'] == model)[-1][-1]
-		return d_ecs['ecs'][i]
+		return d_ecs['ecs'][i], d_ecs['ext'][i]
 	except IndexError:
 		return np.nan
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 8:
+	if len(args) != 6:
 		sys.stderr.write(sys.modules[__name__].__doc__)
 		sys.exit(1)
 	deg = args[1]
 	relative = args[2]
 	input_ = args[3]
 	ecs = args[4]
-	ecs_x = args[5]
-	output = args[6]
-	title = args[7]
+	output = args[5]
 
 	var = {
 		0: 'stats_geo',
@@ -91,7 +89,6 @@ if __name__ == '__main__':
 
 	abs_levels = {
 		0: 100.*np.arange(0, 1.02, 0.02),
-		#1: 100.*np.arange(-0.03, 0.032, 0.002),
 		1: 100.*np.arange(-0.05, 0.055, 0.005),
 	}[deg]
 
@@ -110,13 +107,6 @@ if __name__ == '__main__':
 		1: '%K$^{-1}$',
 	}[deg]
 
-	suptitle = {
-		0: 'Cloud type occurrence',
-		1: 'Cloud type occurrence trend',
-	}[deg]
-	print(suptitle)
-
-	#cmap = mpl.colors.LinearSegmentedColormap.from_list('cmap', ['#0084C8', 'white', '#DC0000'], 512)
 	cmap = mpl.colors.LinearSegmentedColormap.from_list('cmap', list(reversed(['#D72322', '#EF3B24', '#F04D23', '#F16C23', '#F59434', '#FDC24D', '#FFF582', '#FFFFFF', '#AFDEE1', '#62CAE9', '#2AAFE4', '#198DCD', '#3A5DA9', '#403092', '#343091'])), 512)
 
 	print('<- %s' % input_)
@@ -124,11 +114,6 @@ if __name__ == '__main__':
 
 	print('<- %s' % ecs)
 	d_ecs = read_ecs(ecs)
-
-	print('<- %s' % ecs_x)
-	d_ecs_x = read_ecs(ecs_x)
-
-	d_ecs2 = ds.merge([d_ecs, d_ecs_x], 'model')
 
 	nrows = len(dd)
 	ncols = len(CLOUD_TYPES)
@@ -154,8 +139,7 @@ if __name__ == '__main__':
 	dd_wo_ceres = [d for d in dd if d is not d_ceres]
 
 	for d in dd_wo_ceres:
-		d['ecs'] = get_ecs(d_ecs2, d['name'])
-		d['ecs_x'] = get_ecs(d_ecs_x, d['name'])
+		d['ecs'], d['ext'] = get_ecs(d_ecs, d['name'])
 	order = np.argsort([d['ecs'] for d in dd_wo_ceres])
 	dd_wo_ceres = [dd_wo_ceres[i] for i in order]
 
@@ -256,8 +240,7 @@ if __name__ == '__main__':
 				)
 			if j == 0:
 				if 'ecs' in d and np.isfinite(d['ecs']):
-					star = '$^*$' if 'ecs_x' in d and np.isfinite(d['ecs_x']) \
-						else ''
+					star = '$^*$' if d['ext'] else ''
 					ax.text(-0.06, 0.5,
 						name + ('\nECS %.1f K%s' % (d['ecs'], star)),
 						transform=ax.transAxes, va='center', ha='center',
@@ -280,8 +263,6 @@ if __name__ == '__main__':
 	cb = fig.colorbar(cf, cax=cax, orientation='horizontal')
 	cb.set_label(label=label, fontsize=7)
 	cb.ax.tick_params(labelsize=6)
-
-	#plt.suptitle('%s: %s' % (suptitle, title), y=0.91, fontsize=8)
 
 	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight')

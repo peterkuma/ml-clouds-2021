@@ -7,6 +7,10 @@ Arguments:
 
 - input: Input file "totalCI_ERA.csv" (CSV).
 - output: Output file (NetCDF).
+
+Example:
+
+bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 '''
 
 import sys

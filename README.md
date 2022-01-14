@@ -1,4 +1,4 @@
-# Cloud type machine learning shows better present-day cloud representation in climate models is associated with higher climate sensitivity
+# Code for the paper "Cloud type machine learning shows better present-day cloud representation in climate models is associated with higher climate sensitivity"
 
 Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
 
@@ -19,6 +19,7 @@ The code can be run on a Linux distribution with the following software:
 
 - Python 3
 - Cython
+- aria2
 
 and Python packages:
 
@@ -37,7 +38,7 @@ On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
 
 ```sh
-apt install python3 cython3
+apt install python3 cython3 aria2
 ```
 
 We recommend installing the Python packages in a virtual environment (venv):
@@ -298,7 +299,7 @@ Arguments:
 ```
 Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <deg> <relative> <input> <ecs> <ecs_x> <output> <title>
+Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output>
 
 Depends on: calc_geo_cto
 
@@ -308,9 +309,7 @@ Arguments:
 - relative: Plot relative to CERES. One of: true or false.
 - input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
-- ecs_x: ECS file extension (CSV).
 - output: Output plot (PDF).
-- title: Plot title.
 ```
 
 
@@ -337,7 +336,7 @@ Arguments:
 ```
 Plot global mean cloud type occurrence.
 
-Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <ecs_x> <output> <title> [legend: <legend>]
+Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <output> <title> [legend: <legend>]
 
 Depends on: calc_cto
 
@@ -350,7 +349,6 @@ Arguments:
 - regression: Plot regression. One of: true or false.
 - input: Input file - the output of calc_cto (NetCDF).
 - ecs: ECS file (CSV).
-- ecs_x: ECS file extension (CSV).
 - output: Output plot (PDF).
 - title: Plot title.
 
@@ -434,7 +432,7 @@ bin/build_readme README.md.in bin README.md
 ```
 
 
-### download_cmip
+### download\_cmip
 
 
 ```
@@ -449,25 +447,37 @@ Arguments:
 - var: Variable name.
 - start: Start time (ISO).
 - end: End time (ISO).
+
+Example:
+
+bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
 ```
 
 
-### create_by_model
+### create\_by\_model
 
 ```
 Create a by-model index of CMIP data. This command should be run in the
 directory with CMIP data.
 
 Usage: create_by_model
+
+Example:
+
+./create_by_model
 ```
 
-### create_by_var
+### create\_by\_var
 
 ```
 Create a by-var index of CMIP data. This command should be run in the
 directory with CMIP data.
 
 Usage: create_by_var
+
+Example:
+
+./create_by_var
 ```
 
 ### gistemp\_to\_nc
@@ -482,6 +492,10 @@ Arguments:
 
 - input: Input file "totalCI_ERA.csv" (CSV).
 - output: Output file (NetCDF).
+
+Example:
+
+bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 ```
 
 

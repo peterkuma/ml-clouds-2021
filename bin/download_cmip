@@ -10,6 +10,10 @@ Arguments:
 - var: Variable name.
 - start: Start time (ISO).
 - end: End time (ISO).
+
+Example:
+
+bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
 """
 
 import sys
