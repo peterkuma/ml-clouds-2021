@@ -1,0 +1,169 @@
+# Cloud type machine learning shows better present-day cloud representation in climate models is associated with higher climate sensitivity
+
+Peter Kuma^1, Frida Bender^1, Alex Schuddeboom^2, Adrian McDonald^2
+
+^1 Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden
+^2 School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand
+
+This repository contains code for the paper "Cloud type machine learning shows
+better present-day cloud representation in climate models is associated with
+higher climate sensitivity".
+
+If you have any questions about the code you can contact the authors or submit
+an Issue on GitHub.
+
+## Requirements
+
+The code can be run on a Linux distribution with the following software:
+
+- Python 3
+- Cython
+
+and Python packages:
+
+- tensorflow
+- scipy
+- numpy
+- matplotlib
+- pymc3
+- pst
+- aquarius-time
+- ds-format
+- pyproj
+- pandas
+
+On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
+software can be installed with:
+
+```sh
+apt install python3 cython3
+```
+
+We recommend installing the Python packages in a virtual environment (venv):
+
+```sh
+python3 -m venv venv
+. venv/bin/activate
+```
+
+To install the Python packages:
+
+```sh
+pip3 install -r requirements.txt
+```
+
+## Overview
+
+Below is an overview of the available commands showing their dependencies
+and the paper figures they produce.
+
+```
+prepare_samples -> tf -> plot_idd_stations [Figure 1a]
+                      -> plot_sample [Figure 1b, c]
+                      -> plot_training_history [Figure 3]
+                      -> calc_dtau_pct -> plot_dtau_pct [Figure 6]
+
+gistemp_to_nc         .
+prepare_samples -> tf .
+                      |
+                      .-> calc_geo_co -> plot_geo_cto [Figure 4, 5]
+                      |               -> plot_geo_cto_rmse [Figure 8b, c, d]
+                      .-> calc_cto -> plot_cto [Figure 7]
+                                   -> calc_cto_ecs -> plot_cto_ecs [Figure 8a]
+```
+
+## Main commands
+
+Below is description of the available commands. They should be run in the Linux
+terminal. The commands are located in the `bin` directory as should be run from
+the main repository directory with `bin/<command> [<arguments>...]`.
+
+### prepare\_samples
+
+{prepare_samples}
+
+### tf
+
+{tf}
+
+### gistemp\_to\_nc
+
+{gistemp_to_nc}
+
+### calc\_geo\_cto
+
+{calc_geo_cto}
+
+### calc\_cto
+
+{calc_cto}
+
+### calc\_cto\_ecs
+
+{calc_cto_ecs}
+
+### calc\_dtau\_pct
+
+{calc_dtau_pct}
+
+### plot\_idd\_stations [Figure 1a]
+
+{plot_idd_stations}
+
+### plot\_sample [Figure 1b, c]
+
+{plot_sample}
+
+### plot\_training\_history [Figure 3]
+
+{plot_training_history}
+
+### plot\_geo\_cto [Figure 4, 5]
+
+{plot_geo_cto}
+
+### plot\_dtau\_pct [Figure 6]
+
+{plot_dtau_pct}
+
+### plot\_cto [Figure 7]
+
+{plot_cto}
+
+### plot\_cto\_ecs [Figure 8a]
+
+{plot_cto_ecs}
+
+### plot\_geo\_cto\_rmse [Figure 8b, c, d]
+
+{plot_geo_cto_rmse}
+
+## Auxiliary commands
+
+### build\_readme
+
+{build_readme}
+
+## License
+
+MIT License
+
+Copyright (C) 2020, 2021 Peter Kuma
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

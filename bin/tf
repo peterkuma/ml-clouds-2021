@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+'''Train or apply a TensorFlow CNN.
+
+Usage: tf train <input> <output> <output_history>
+       tf apply <model> <input> <y1> <y2> <output>
+
+Depends on: prepare_samples
+
+Arguments (train):
+
+- input: Input directory with samples - the output of prepare_samples (NetCDF).
+- output: Output model (HDF5).
+- output_history: History output (NetCDF).
+
+Arguments (apply):
+
+- model: TensorFlow model (HDF5).
+- input: Input directory with samples - the output of prepare_samples (NetCDF).
+- y1: Start year.
+- y2: End year.
+- output: Output statistics directory (NetCDF).
+'''
+
+import warnings
+warnings.filterwarnings('ignore')
+
+import sys
+import re
+import os
+import random
+import numpy as np
+import ds_format as ds
+import aquarius_time as aq
+import matplotlib.pyplot as plt
+import pst
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Conv2D, AveragePooling2D, MaxPooling2D, \
+	Flatten, Dense, Dropout
+
+def stats_to_label(stats, stats_n):
+	#return stats[:-1]/stats_n[:-1]
+	#return np.argmax(stats[[1,2,3,5,6,8,9,10,11,12]])
+	stats2 = np.zeros(4, np.float64)
+	stats2_n = np.zeros(4, np.float64)
+	stats2[0] = np.nansum(stats[1:4]) # Ci, Cs, Cc
+	stats2_n[0] = stats_n[1]
+	#stats2_n[0] = stats_n[9]
+	stats2[1] = np.nansum(stats[5:7]) # As, Ac
+	#stats2_n[1] = stats_n[9]
+	stats2_n[1] = stats_n[5]
+	stats2[2] = np.nansum([stats[8], stats[11], stats[12]]) # Cu, Cb
+	stats2_n[2] = stats_n[8]
+	#stats2_n[2] = stats_n[9]
+	stats2[3] = np.nansum(stats[9:11]) # Sc, St
+	stats2_n[3] = stats_n[9]
+	#stats2[4] = np.nansum(stats[13])
+	#stats2_n[4] = stats_n[13]
+	#return np.argmax(stats2)
+	return np.array([stats2[i]/stats2_n[i] if stats2_n[i] > 0 else 0
+		for i in range(len(stats2))])
+	#return np.argsort(stats)[-1]
+
+def read_samples(filename):
+	print('<- %s' % filename)
+	d = ds.read(filename)
+	n = d['data'].shape[0]
+	#shape = tuple(list(d['data'].shape[1:]) + [1])
+	#images += [d['data'][i,:,:].reshape(shape) for i in range(n)]
+	images = np.moveaxis(d['data'], 1, 3)
+	#images += [np.moveaxis(d['data'][i,0:1,:,:], 0, 2) for i in range(n)]
+	#labels += [stats_to_label(d['stats'][i,:]) for i in range(n)]
+	#labels += [d['stats'][i,:]/d['stats_n'][i] for i in range(n)]
+	#labels += [d['stats'][i,:]/d['stats_n'][i,:] for i in range(n)]
+	if 'stats' in d:
+		labels = [stats_to_label(d['stats'][i,:], d['stats_n'][i,:]) \
+			for i in range(n)]
+	else:
+		labels = None
+	#images = np.stack(images)
+	labels = np.stack(labels) if labels is not None else None
+	images[:,:,:,0] /= np.nanmax(images[:,:,:,0])
+	images[:,:,:,1] /= np.nanmax(images[:,:,:,1])
+	images[images < 0] = 0
+	images[images > 1] = 1
+	images[np.isnan(images)] = 0
+	#images[:,:,:,2] /= np.max(images[:,:,:,2])
+	return images, labels, d.get('time'), d.get('lat'), d.get('lon')
+
+def printa(label, *aa):
+	print(label, end=' ')
+	for a in aa:
+		print(' '.join(['% 3d' % x for x in a]), end=' ')
+	print()
+
+def apply_(model_file, input_, y1, y2, output):
+	model = keras.models.load_model(model_file)
+	files = os.listdir(input_)
+	#stats = []
+	#time = []
+	#lat = []
+	#lon = []
+	for file_ in sorted(files):
+		if not file_.endswith('.nc'):
+			continue
+		if y1 is not None and y2 is not None:
+			year = int(file_[:-3])
+			if not (year >= y1 and year <= y2):
+				continue
+		filename = os.path.join(input_, file_)
+		images, labels, time0, lat0, lon0 = read_samples(filename)
+		stats0 = model.predict(images)
+		output_filename = os.path.join(output, file_)
+		print('-> %s' % output_filename)
+		ds.write(output_filename, {
+			'time': time0,
+			'stats': stats0,
+			'lat': lat0,
+			'lon': lon0,
+			'.': {
+				'time': {
+					'.dims': ['sample'],
+					'long_name': 'time',
+					'units': 'days since -4713-11-24 12:00 UTC',
+					'calendar': 'proleptic_gregorian',
+				},
+				'stats': {
+					'.dims': ['sample', 'cloud_type'],
+					'long_name': 'label statistics',
+				},
+				'lat': {
+					'.dims': ['sample', 'x', 'y'],
+					'long_name': 'latitude',
+					'units': 'degrees_north',
+				},
+				'lon': {
+					'.dims': ['sample', 'x', 'y'],
+					'long_name': 'longitude',
+					'units': 'degrees_east',
+				},
+			}
+		})
+		#stats += [stats0]
+		#time += [time0]
+		#lat += [lat0]
+		#lon += [lon0]
+	#n = y.shape[0]
+	#for i in range(n):
+	#	print('CASE %d' % i)
+	#	print('Type:', ' Hi  Mi  Cu  St RMS')
+	#	printa('Pred:', np.round(y[i]*100).astype(int))
+	#	print()
+	#print('-> %s' % output)
+	#stats = np.concatenate(stats)
+	#time = np.concatenate(time)
+	#lat = np.concatenate(lat)
+	#lon = np.concatenate(lon)
+	#ds.write(output, {
+	#	'time': time,
+	#	'stats': stats,
+	#	'lat': lat,
+	#	'lon': lon,
+	#	'.': {
+	#		'time': {'.dims': ['sample']},
+	#		'stats': {'.dims': ['sample', 'cloud_type']},
+	#		'lat': {'.dims': ['sample', 'x', 'y']},
+	#		'lon': {'.dims': ['sample', 'x', 'y']},
+	#	}
+	#})
+
+def train(input_, output, output_history):
+	images = []
+	labels = []
+	for file_ in sorted(os.listdir(input_)):
+		if not file_.endswith('.nc'):
+			continue
+		filename = os.path.join(input_, file_)
+		images0, labels0, _, _, _ = read_samples(filename)
+		images += [images0]
+		labels += [labels0]
+	images = np.concatenate(images)
+	labels = np.concatenate(labels)
+
+	nclasses = labels.shape[1]
+	stats = np.mean(labels, axis=0)
+
+	f = 0.8
+	sel = np.array(random.choices(
+		[False, True],
+		weights=[1-f, f],
+		k=images.shape[0]
+	))
+	train_images = images[sel,:]
+	train_labels = labels[sel]
+	test_images = images[~sel,:]
+	test_labels = labels[~sel]
+
+	model = Sequential()
+	model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Flatten())
+	model.add(Dropout(0.1))
+	model.add(Dense(64, activation='relu'))
+	model.add(Dropout(0.1))
+	model.add(Dense(64, activation='relu'))
+	model.add(Dropout(0.1))
+	model.add(Dense(nclasses, activation='sigmoid'))
+
+	model.compile(optimizer='adam',
+				  loss=tf.keras.losses.MSE,
+				  metrics=['accuracy'])
+
+	callback = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=3)
+
+	history = model.fit(train_images, train_labels,
+		epochs=40,
+		batch_size=40,
+		validation_data=(test_images, test_labels),
+		callbacks=[callback],
+	)
+
+	print('-> %s' % output)
+	model.save(output)
+
+	sel = np.array(random.choices(range(test_images.shape[0]), k=200))
+	m = len(sel)
+	x = test_labels[sel]
+	y = model.predict(test_images[sel,::])
+	n = x.shape[0]
+
+	#for i in range(n):
+	#	print('TEST CASE %d' % i)
+	#	#print('Type:', ' Ci  Cc  Cs  Ac  As  Ns  Sc  St  Cu  Cb   0 RMS')
+	#	#print('Type:', ' 0H  Ci  Cs  Cc  0M  Ac  As  0L  Cu  Sc  St  Cu  Cb RMS')
+	#	print('Type:', ' Hi  Mi  Cu  St RMS')
+	#	printa('Orig:', np.round(x[i]*100).astype(int))
+	#	printa('Pred:', np.round(y[i]*100).astype(int))
+	#	printa('Rnd1:', np.round(stats*100).astype(int))
+	#	printa('Diff:', np.round((y[i] - x[i])*100).astype(int),
+	#		[np.round(np.sqrt(np.mean((y[i] - x[i])**2))*100)])
+	#	printa('R1Di:', np.round((stats - x[i])*100).astype(int),
+	#		[np.round(np.sqrt(np.mean((stats - x[i])**2))*100)])
+	#	print()
+
+	print('STATISTICS')
+	print('Type:   ', ' Hi  Mi  Cu  St')
+	#print('Type:', ' 0H  Ci  Cs  Cc  0M  Ac  As  0L  Cu  Sc  St  Cu  Cb')
+	printa('RMSpred:', np.round(np.sqrt(np.mean((y - x)**2, axis=0))*100))
+	printa('RMSrnd1:', [
+		np.round(np.sqrt(np.mean((stats[i] - x[:,i])**2))*100)
+		for i in range(nclasses)
+	])
+	printa('RMSpred:', [np.round(np.sqrt(np.mean((y - x)**2))*100)])
+	printa('RMSrnd1:', [np.round(np.sqrt(np.sum(
+		[np.sum((stats - x[i])**2) for i in range(n)]
+	)/(nclasses*n))*100).astype(int)])
+
+	ds.write(output_history, {
+		'loss': np.array(history.history['loss']),
+		'val_loss': np.array(history.history['val_loss']),
+		'rmse_pred': np.sqrt(np.mean((y - x)**2, axis=0))*100,
+		'rmse_rnd': np.array([np.sqrt(np.mean((stats[i] - x[:,i])**2))*100 for i in range(nclasses)]),
+		'rmse_pred_total': np.sqrt(np.mean((y - x)**2))*100,
+		'rmse_rnd_total': np.sqrt(np.sum([np.sum((stats - x[i])**2) for i in range(n)])/(nclasses*n))*100,
+		'.': {
+			'loss': {'.dims': ['round']},
+			'val_loss': {'.dims': ['round']},
+			'rmse_pred': {'.dims': ['cloud_type']},
+			'rmse_rnd': {'.dims': ['cloud_type']},
+			'rmse_pred_total': {'.dims': []},
+			'rmse_rnd_total': {'.dims': []},
+		},
+	})
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) < 2:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	action = args[1]
+
+	tf.config.threading.set_inter_op_parallelism_threads(32)
+
+	if action == 'train':
+		if len(args) != 5:
+			sys.stderr.write(sys.modules[__name__].__doc__)
+			sys.exit(1)
+		input_ = args[2]
+		output = args[3]
+		output_history = args[4]
+		train(input_, output, output_history)
+	elif action == 'apply':
+		if len(args) != 7:
+			sys.stderr.write(sys.modules[__name__].__doc__)
+			sys.exit(1)
+		model = args[2]
+		input_ = args[3]
+		y1 = args[4]
+		y2 = args[5]
+		output = args[6]
+		apply_(model, input_, y1, y2, output)
+	else:
+		raise ValueError('Unknown action "%s"' % action)

@@ -1,0 +1,187 @@
+#!/usr/bin/env python3
+'''Calculate geographical distribution of cloud type occurrence distribution.
+
+Usage: calc_geo_cto <input> <tas> <output>
+
+Depends on: tf gistemp_to_nc
+
+Arguments:
+
+- input: Input file or directory - the output of tf apply (NetCDF).
+- tas: Input directory with tas - the output of gistemp_to_nc (NetCDF).
+- output: Output file (NetCDF).
+'''
+
+import sys
+import os
+import ds_format as ds
+import numpy as np
+import aquarius_time as aq
+import scipy.stats
+import pst
+
+CLOUD_TYPES = ['high', 'middle', 'cumuliform', 'stratiform']
+LAT_BNDS = np.arange(-90., 95., 5.)
+LON_BNDS = np.arange(-180., 185., 5.)
+
+def calc_abs_value(d, k):
+	nsamples = d['stats'].shape[0]
+	nlat = len(LAT_BNDS) - 1
+	nlon = len(LON_BNDS) - 1
+	out = np.zeros((nlat, nlon), np.float64)
+	n = np.zeros((nlat, nlon), np.int64)
+	for l in range(nsamples):
+		lat = d['lat'][l,:,:].flatten()
+		lon = d['lon'][l,:,:].flatten()
+		i = np.searchsorted(LAT_BNDS, lat, side='right') - 1
+		j = np.searchsorted(LON_BNDS, lon, side='right') - 1
+		out[i,j] += d['stats'][l,k]
+		n[i,j] += 1
+	return out/n
+
+def read_tas(filename):
+	print('<- %s' % filename)
+	d = ds.read(filename, jd=True)
+	t1, t2 = d['time'][0], d['time'][-1]
+	y1, y2 = aq.to_date(t1)[1][0], aq.to_date(t2)[1][0]
+	n = y2 - y1 + 1
+	time = np.full(n, np.nan, np.float64)
+	tas = np.full(n, np.nan, np.float64)
+	year = np.full(n, np.nan, np.float64)
+	for i, y in enumerate(range(y1, y2 + 1)):
+		t01 = aq.from_date([0, y, 1, 1, 0, 0, 0, 0])
+		t02 = aq.from_date([0, y + 1, 1, 1, 0, 0, 0, 0])
+		mask = (d['time'] >= t01) & (d['time'] < t02)
+		year[i] = y
+		time[i] = t01
+		tas[i] = np.mean(d['tas'][mask])
+	return {
+		'time': time,
+		'year': year,
+		'tas': tas,
+	}
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = args[1]
+	tas = args[2]
+	output = args[3]
+
+	d_tas = read_tas(tas) if tas is not None else None
+
+	if os.path.isdir(input_):
+		files = sorted(os.listdir(input_))
+		files = [x for x in files if x.endswith('.nc')]
+	else:
+		files = [input_]
+
+	n = len(files)
+	m = len(CLOUD_TYPES)
+	lon = 0.5*(LON_BNDS[1:] + LON_BNDS[:-1])
+	lat = 0.5*(LAT_BNDS[1:] + LAT_BNDS[:-1])
+	nlat = len(lat)
+	nlon = len(lon)
+	time = np.full(n, np.nan, np.float64)
+	year = np.full(n, np.nan, np.float64)
+	stats_geo = np.full((n, m, nlat, nlon), np.nan, np.float64)
+	time = np.full(n, np.nan, np.float64)
+	stats_geo1 = np.full((m, nlat, nlon), np.nan, np.float64)
+
+	for j, file_ in enumerate(files):
+		filename = os.path.join(input_, file_)
+		print('<- %s' % filename)
+		d = ds.read(filename)
+		if tas is not None:
+			year[j] = int(file_[:-3])
+		#time[j] = d['time']
+		for i, cloud_type in enumerate(CLOUD_TYPES):
+			stats_geo[j,i,:,:] = calc_abs_value(d, i)
+		time[j] = np.mean(d['time'])
+
+	if tas is not None:
+		x = np.array([d_tas['tas'][d_tas['year'] == year[l]][0] for l in range(n)])
+		for i, cloud_type in enumerate(CLOUD_TYPES):
+			for j in range(nlat):
+				for k in range(nlon):
+					y = stats_geo[:,i,j,k]
+					res = scipy.stats.linregress(x, y)
+					stats_geo1[i,j,k] = res.slope
+
+	stats_geo_mean = np.full((n, m), np.nan, np.float64)
+	weights = np.cos(lat/180.*np.pi)
+	for j in range(n):
+		for i, cloud_type in enumerate(CLOUD_TYPES):
+			stats_geo_mean[j,i] = np.mean(np.average(
+				stats_geo[j,i,:,:], axis=0, weights=weights))
+
+	#import matplotlib.pyplot as plt
+	#for i, cloud_type in enumerate(CLOUD_TYPES):
+	#	order = np.argsort(x)
+	#	#plt.plot(x[order], stats_geo_mean[:,i][order])
+	#	plt.plot(year, x)
+	#plt.savefig('plot.pdf')
+
+
+	if tas is not None:
+		for i, cloud_type in enumerate(CLOUD_TYPES):
+			y = stats_geo_mean[:,i]
+			res = scipy.stats.linregress(x, y)
+
+	do = {
+		'cloud_occurrence': np.mean(stats_geo, axis=0),
+		'cloud_type': CLOUD_TYPES,
+		'time': np.mean(time),
+		'lat_bnds': LAT_BNDS,
+		'lon_bnds': LON_BNDS,
+		'lat': lat,
+		'lon': lon,
+		'.': {
+			'cloud_occurrence': {
+				'.dims': ['cloud_type', 'lat', 'lon'],
+				'long_name': 'cloud occurrence',
+				'units': '1',
+			},
+			'cloud_occurrence_1': {
+				'.dims': ['cloud_type', 'lat', 'lon'],
+				'long_name': 'cloud_occurrence',
+				'units': 'K-1',
+			},
+			'cloud_type': {
+				'.dims': ['cloud_type'],
+				'long_name': 'cloud type',
+			},
+			'time': {
+				'.dims': [],
+				'long_name': 'time',
+				'units': 'days since -4713-11-24 12:00 UTC',
+				'calendar': 'proleptic_gregorian',
+			},
+			'lat': {
+				'.dims': ['lat'],
+				'long_name': 'latitude',
+				'units': 'degrees_north',
+			},
+			'lon': {
+				'.dims': ['lon'],
+				'long_name': 'longitude',
+				'units': 'degrees_east',
+			},
+			'lat_bnds': {
+				'.dims': ['lat_bnds'],
+				'long_name': 'latitude bounds',
+				'units': 'degrees_north',
+			},
+			'lon_bnds': {
+				'.dims': ['lon_bnds'],
+				'long_name': 'longitude bounds',
+				'units': 'degrees_east',
+			},
+		}
+	}
+	if tas is not None:
+		do['cloud_occurrence_1'] = stats_geo1
+	print('-> %s' % output)
+	ds.write(output, do)

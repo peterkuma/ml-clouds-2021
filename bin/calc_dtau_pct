@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+'''Calculate cloud optical depth - cloud top press histogram.
+
+Usage: calc_dtau_pct <samples> <ceres> <output>
+
+Depends on: tf
+
+Arguments:
+
+- samples: Directory with samples - the output of tf apply (NetCDF).
+- ceres: Directory with CERES SYN1deg (NetCDF).
+- output: Output file (NetCDF).
+'''
+
+import sys
+import os
+import numpy as np
+import ds_format as ds
+import aquarius_time as aq
+from glob import glob
+
+CLOUD_TYPES = ['high', 'middle', 'cumuliform', 'stratiform']
+#DTAU = np.arange(0, 100, 0.1)
+DTAU = 10.**np.arange(np.log10(1), np.log10(100), 0.05)
+PCT = np.arange(0, 1000e2, 25e2)
+
+def read_ceres(dirname, time, lat, lon):
+	date = aq.to_date(time)
+	date_s = '%04d%02d%02d' % (date[1], date[2], date[3])
+	cwd = os.getcwd()
+	os.chdir(dirname)
+	file_ = glob('*'+date_s+'*')[0]
+	os.chdir(cwd)
+	filename = os.path.join(dirname, file_)
+	d = ds.read(filename, [
+		'latitude',
+		'longitude',
+		'Observed_Cloud_Layer_Properties_obs_cld_od',
+		'Observed_Cloud_Layer_Properties_obs_cld_top_press',
+	])
+	return {
+		'lat': d['latitude'][::-1],
+		'lon': d['longitude'],
+		'dtau': d['Observed_Cloud_Layer_Properties_obs_cld_od'][-1,::-1,:],
+		'pct': d['Observed_Cloud_Layer_Properties_obs_cld_top_press'][-1,::-1,:]*1e2,
+	}
+
+def process(d, dtau, pct, ceres):
+	k = len(CLOUD_TYPES)
+	l, _, _ = d['lat'].shape
+	n = len(DTAU)
+	m = len(PCT)
+	hist = np.zeros((k, n, m), np.float64)
+	for i in range(l):
+		lat = d['lat'][i,:,:].flatten()
+		lon = d['lon'][i,:,:].flatten()
+		stats = d['stats'][i,:]
+		time = d['time'][i]
+		dx = read_ceres(ceres, time, lat, lon)
+		ii = np.searchsorted(dx['lat'], lat)
+		jj = np.searchsorted(dx['lon'], lon)
+		ii[ii == len(dx['lat'])] = len(dx['lat']) - 1
+		jj[jj == len(dx['lon'])] = len(dx['lon']) - 1
+		dtau = dx['dtau'][ii,jj]
+		pct = dx['pct'][ii,jj]
+		i_dtau = np.searchsorted(DTAU, dtau)
+		i_pct = np.searchsorted(PCT, pct)
+		i_dtau[i_dtau >= len(DTAU)] = len(DTAU) - 1
+		i_pct[i_pct >= len(PCT)] = len(PCT) - 1
+		for j in range(k):
+			hist[j,i_dtau,i_pct] += stats[j]
+	return hist
+
+if __name__ == '__main__':
+	if len(sys.argv) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	samples = sys.argv[1]
+	ceres = sys.argv[2]
+	output = sys.argv[3]
+
+	k = len(CLOUD_TYPES)
+	n = len(DTAU)
+	m = len(PCT)
+	hist = np.zeros((k, n, m), np.float64)
+
+	files = sorted(os.listdir(samples))
+	for file_ in files:
+		if not file_.endswith('.nc'):
+			continue
+		filename = os.path.join(samples, file_)
+		print('<- %s' % filename)
+		d = ds.read(filename, ['lat', 'lon', 'time', 'stats'])
+		hist += process(d, DTAU, PCT, ceres)
+		break
+
+	for j in range(k):
+		hist[j,:,:] /= np.sum(hist[j,:,:])
+
+	print('-> %s' % output)
+	ds.write(output, {
+		'dtau': DTAU,
+		'pct': PCT,
+		'hist': hist,
+		'.': {
+			'dtau': {'.dims': ['dtau']},
+			'pct': {'.dims': ['pct']},
+			'hist': {'.dims': ['cloud_type', 'dtau', 'pct']},
+		},
+	})

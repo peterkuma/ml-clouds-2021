@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+'''Calculate global mean cloud type occurrence.
+
+Usage: calc_cto <input> <tas> <output>
+
+Depends on: tf gittemp_to_nc
+
+Arguments:
+
+- input: Input directory - the output of tf apply (NetCDF).
+- tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
+- output: Output file (NetCDF).
+'''
+
+import sys
+import os
+import ds_format as ds
+import numpy as np
+import aquarius_time as aq
+import pandas as pd
+import pymc3 as pm
+
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+NBURN = 100
+NSAMPLES = 1000
+#NBURN = 10
+#NSAMPLES = 100
+NCHAINS = 12
+NCORES = 12
+#NCHAINS = 1
+#NCORES = 1
+
+def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
+	x_m = np.mean(x)
+	x_sd = np.std(x)
+	y_m = np.mean(y)
+	y_sd = np.std(y)
+	xn = (x - x_m)/x_sd
+	yn = (y - y_m)/y_sd
+
+	with pm.Model() as model:
+		mu = 0
+		c1 = pm.Uniform('c1', lower=-10, upper=10)
+		mu += c1*xn
+		c0 = pm.Uniform('c0', lower=-100, upper=100)
+		mu += c0
+		sd = pm.Uniform('sd', lower=0, upper=10)
+		obs = pm.Normal('obs', mu, sd, observed=yn)
+		#obs = pm.Cauchy('obs', mu, sd, observed=yn)
+
+	with model:
+		step = pm.Metropolis()
+		trace = pm.sample(nsamples + nburn, step, chains=nchains, cores=ncores, progressbar=True)
+		c0 = trace['c0'][(nburn*nchains):]
+		c1 = trace['c1'][(nburn*nchains):]
+		p = np.sum(c1 <= 0)/len(c1)
+		return \
+			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
+			c1*y_sd/x_sd, \
+			min(p, 1. - p)
+
+def calc_trend(what, d, i, d_tas=None):
+	date = aq.to_date(d['time'])
+	if what == 'tas':
+		date_tas = aq.to_date(d_tas['time'])
+	t1, t2 = d['time'][0], d['time'][-1]
+	y1 = aq.to_date(t1)[1][0]
+	y2 = aq.to_date(t2)[1][0]
+	n = y2 - y1 + 1
+	x = np.full(n, np.nan, np.float64)
+	z = np.full(n, np.nan, np.float64)
+	for j, y in enumerate(range(y1, y2 + 1)):
+		mask = (date[1] == y)
+		z[j] = np.mean(d['stats'][:,i][mask])
+		if what == 'time':
+			x[j] = np.mean(d['time'][mask])
+		else:
+			mask_tas = (date_tas[1] == y)
+			x[j] = np.mean(d_tas['tas'][mask_tas])
+	mask = np.isnan(x) | np.isnan(z)
+	x = x[~mask]
+	z = z[~mask]
+	coef = np.polyfit(x, z, 1)
+	f = 365*100 if what == 'time' else 1
+	return coef[0]*f if d_tas is None else coef[0]
+
+def calc_trend_bayes(what, d, i, d_tas=None):
+	date = aq.to_date(d['time'])
+	if what == 'tas':
+		date_tas = aq.to_date(d_tas['time'])
+	t1, t2 = d['time'][0], d['time'][-1]
+	y1 = aq.to_date(t1)[1][0]
+	y2 = aq.to_date(t2)[1][0]
+	n = y2 - y1 + 1
+	x = np.full(n, np.nan, np.float64)
+	z = np.full(n, np.nan, np.float64)
+	for j, y in enumerate(range(y1, y2 + 1)):
+		mask = (date[1] == y)
+		z[j] = np.mean(d['stats'][:,i][mask])
+		if what == 'time':
+			x[j] = np.mean(d['time'][mask])
+		else:
+			mask_tas = (date_tas[1] == y)
+			x[j] = np.mean(d_tas['tas'][mask_tas])
+	mask = np.isnan(x) | np.isnan(z)
+	x = x[~mask]
+	z = z[~mask]
+	c0_sample, c1_sample, p = bayes(x, z)
+	f = 365*100 if what == 'time' else 1
+	return np.median(c1_sample)*f, c1_sample*f
+
+def read_tas(dirname, dd):
+	dd_tas = []
+	for d in dd:
+		filename = os.path.join(dirname, d['model'] + '.nc')
+		print('<- %s' % filename)
+		if os.path.exists(filename):
+			d_tas = ds.read(filename, ['time', 'tas'], jd=True)
+			dd_tas += [d_tas]
+		else:
+			dd_tas += [None]
+	n = len(dd)
+	return dd_tas
+
+if __name__ == '__main__':
+	if len(sys.argv) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = sys.argv[1]
+	tas_dir = sys.argv[2]
+	output = sys.argv[3]
+
+	if os.path.isfile(input_):
+		print('<- %s' % input_)
+		dd = [ds.read(input_)]
+		dd[0]['filename'] = input_
+	else:
+		files = sorted(os.listdir(input_))
+		dd = []
+		for file_ in files:
+			if file_.startswith('_'):
+				continue
+			filename = os.path.join(input_, file_)
+			print('<- %s' % filename)
+			if os.path.isdir(filename):
+				d0 = ds.readdir(filename, ['time', 'stats'], merge='sample')
+			else:
+				d0 = ds.read(filename, ['time', 'stats'])
+			d0['filename'] = filename
+			dd += [d0]
+
+	for d in dd:
+		d['model'] = os.path.splitext(os.path.basename(d['filename']))[0]
+
+	dd_tas = read_tas(tas_dir, dd)
+
+	models = [d['model'] for d in dd]
+
+	n = len(dd)
+	m = len(CLOUD_TYPES)
+	stats = np.stack([np.mean(d['stats'], axis=0) for d in dd])
+	stats_time = np.full((n, m), np.nan)
+	stats_time_samples = np.full((n, m, NSAMPLES*NCHAINS), np.nan)
+	stats_tas = np.full((n, m), np.nan)
+	stats_tas_samples = np.full((n, m, NSAMPLES*NCHAINS), np.nan)
+
+	for i, cloud_type in enumerate(CLOUD_TYPES):
+		for j, d in enumerate(dd):
+			#print(d['filename'])
+			#stats_time[j,i], stats_time_samples[j,i,:] = calc_trend_bayes('time', d, i)
+			if dd_tas[j] is not None:
+				stats_tas[j,i], stats_tas_samples[j,i,:] = calc_trend_bayes('tas', d, i, dd_tas[j])
+				#print(np.mean(stats_tas_samples[j,i,:])*100, np.std(stats_tas_samples[j,i,:])*100)
+	do = {
+		'stats': stats,
+		'stats_time': stats_time,
+		'stats_time_samples': stats_time_samples,
+		'stats_tas': stats_tas,
+		'stats_tas_samples': stats_tas_samples,
+		'models': np.array(models),
+		'.': {
+			'stats': {'.dims': ['model', 'cloud_type']},
+			'stats_time': {'.dims': ['model', 'cloud_type']},
+			'stats_time_samples': {'.dims': ['model', 'cloud_type', 'sample']},
+			'stats_tas': {'.dims': ['model', 'cloud_type']},
+			'stats_tas_samples': {'.dims': ['model', 'cloud_type', 'sample']},
+			'models': {'.dims': ['model']},
+		}
+	}
+	print('-> %s' % output)
+	ds.write(output, do)

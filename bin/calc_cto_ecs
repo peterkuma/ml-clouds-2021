@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+'''Calculate cloud type occurrence vs. ECS regression.
+
+Usage: calc_cto_ecs <input> <ecs> <output>
+
+Depends on: calc_cto
+
+Arguments:
+
+- input: Input file - the output of calc_cto (NetCDF).
+- ecs: ECS, TCR and CLD input (CSV).
+- output: Output files (NetCDF).
+'''
+
+import sys
+import os
+import ds_format as ds
+import numpy as np
+import aquarius_time as aq
+import pandas as pd
+import pymc3 as pm
+
+CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+#VARS = ['ecs', 'tcr', 'cld']
+VARS = ['ecs']
+NBURN = 100
+NSAMPLES = 1000
+#NBURN = 10
+#NSAMPLES = 100
+NCHAINS = 12
+NCORES = 12
+#NCHAINS = 1
+#NCORES = 1
+
+def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
+	x_m = np.mean(x)
+	x_sd = np.std(x)
+	y_m = np.mean(y)
+	y_sd = np.std(y)
+	xn = (x - x_m)/x_sd
+	yn = (y - y_m)/y_sd
+
+	with pm.Model() as model:
+		mu = 0
+		c1 = pm.Uniform('c1', lower=-10, upper=10)
+		mu += c1*xn
+		c0 = pm.Uniform('c0', lower=-100, upper=100)
+		mu += c0
+		sd = pm.Uniform('sd', lower=0, upper=10)
+		#obs = pm.Normal('obs', mu, sd, observed=yn)
+		obs = pm.Cauchy('obs', mu, sd, observed=yn)
+		err = pm.Cauchy('err', 0, sd)
+		#err = pm.Normal('err', 0, sd)
+
+	with model:
+		step = pm.Metropolis()
+		trace = pm.sample(nsamples + nburn, step, chains=nchains, cores=ncores, progressbar=True)
+		c0 = trace['c0'][(nburn*nchains):]
+		c1 = trace['c1'][(nburn*nchains):]
+		err = trace['err'][(nburn*nchains):]
+		sd = trace['sd'][(nburn*nchains):]
+		p = np.sum(c1 <= 0)/len(c1)
+		return \
+			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
+			c1*y_sd/x_sd, \
+			err*y_sd, \
+			sd*y_sd, \
+			min(p, 1. - p)
+
+def read_ecs(filename):
+	d = pd.read_csv(filename)
+	return {
+		'model': np.array(d['Model']),
+		'ecs': np.array(d['ECS']),
+		'tcr': np.array(d['TCR']),
+		'cld': np.array(d['CLD']),
+	}
+
+if __name__ == '__main__':
+	if len(sys.argv) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = sys.argv[1]
+	ecs = sys.argv[2]
+	output = sys.argv[3]
+
+	d = ds.read(input_)
+	d_ecs = read_ecs(ecs)
+
+	vars_ = {}
+	for k in VARS:
+		vars_[k] = [d_ecs[k][d_ecs['model'] == m] for m in d['models']]
+		vars_[k] = np.array([x[0] if len(x) == 1 else np.nan for x in vars_[k]])
+
+
+	m = len(CLOUD_TYPES)
+	c0 = {}
+	c1 = {}
+	p = {}
+	c0_sample = {}
+	c1_sample = {}
+	err_sample = {}
+	sd_sample = {}
+	for k in VARS:
+		c0[k] = np.full(m, np.nan)
+		c1[k] = np.full(m, np.nan)
+		p[k] = np.full(m, np.nan)
+		c0_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
+		c1_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
+		err_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
+		sd_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
+		var = vars_[k]
+		for i, cloud_type in enumerate(CLOUD_TYPES):
+			mask = np.isfinite(var) & np.isfinite(d['stats_tas'][:,i])
+			c0_sample[k][i,:], c1_sample[k][i,:], err_sample[k][i,:], \
+				sd_sample[k][i,:], p[k][i] = \
+				bayes(d['stats_tas'][mask,i]*100, var[mask])
+			c0[k][i] = np.mean(c0_sample[k][i,:])
+			c1[k][i] = np.mean(c1_sample[k][i,:])
+
+	do = {'.': {}}
+	for k in VARS:
+		do.update({
+			k: vars_[k],
+			('c0_'+k): c0[k],
+			('c1_'+k): c1[k],
+			('c0_'+k+'_samples'): c0_sample[k],
+			('c1_'+k+'_samples'): c1_sample[k],
+			('err_'+k+'_samples'): err_sample[k],
+			('sd_'+k+'_samples'): sd_sample[k],
+			('p_'+k): p[k],
+		})
+		do['.'].update({
+			k: {'.dims': ['model']},
+			('c0_'+k): {'.dims': ['cloud_type']},
+			('c1_'+k): {'.dims': ['cloud_type']},
+			('c0_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
+			('c1_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
+			('err_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
+			('sd_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
+			('p_'+k): {'.dims': ['cloud_type']},
+		})
+	print('-> %s' % output)
+	ds.write(output, do)

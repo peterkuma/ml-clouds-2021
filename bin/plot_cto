@@ -1,0 +1,324 @@
+#!/usr/bin/env python3
+'''Plot global mean cloud type occurrence.
+
+Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <ecs_x> <output> <title> [legend: <legend>]
+
+Depends on: calc_cto
+
+Arguments:
+
+- varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
+  feedback).
+- degree: One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
+- absrel: One of "absolute" (absolute value), "relative" (relative to CERES).
+- regression: Plot regression. One of: true or false.
+- input: Input file - the output of calc_cto (NetCDF).
+- ecs: ECS file (CSV).
+- ecs_x: ECS file extension (CSV).
+- output: Output plot (PDF).
+- title: Plot title.
+
+Options:
+
+- legend: Show legend ("true" or "false"). Default: "true".
+'''
+
+import sys
+import os
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import ds_format as ds
+import numpy as np
+import aquarius_time as aq
+import pandas as pd
+import pymc3 as pm
+import pst
+import pandas as pd
+
+mpl.rc('font', family='Open Sans')
+mpl.rc('axes', linewidth=0.3)
+mpl.rc('axes', grid=True)
+mpl.rc('lines', linewidth=1.2)
+mpl.rc('xtick.major', width=0.3)
+mpl.rc('ytick.major', width=0.3)
+mpl.rc('legend', framealpha=1)
+mpl.rc('legend', facecolor='#eeeeee')
+mpl.rc('legend', edgecolor='none')
+mpl.rc('legend', fancybox=False)
+mpl.rc('legend', fontsize=8)
+mpl.rc('grid', color='k')
+mpl.rc('grid', alpha=0.2)
+mpl.rc('grid', lw=0.1)
+
+COLORS = ['#0084C8', '#DC0000', '#009100', '#FFC022']
+
+LABELS = {
+	'ecs': 'ECS (K)',
+	'tcr': 'TCR (K)',
+	'cld': 'Cloud feedback (Wm$^{-2}$K$^{-1}$)',
+}
+
+CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+
+def read_ecs(filename):
+	d = pd.read_csv(filename)
+	return {
+		'model': np.array(d['Model']),
+		'ecs': np.array(d['ECS']),
+		'tcr': np.array(d['TCR']),
+		'cld': np.array(d['CLD']),
+		'.': {
+			'model': {'.dims': ['model']},
+			'ecs': {'.dims': ['model']},
+			'tcr': {'.dims': ['model']},
+			'cld': {'.dims': ['model']},
+		}
+	}
+
+def get_ecs(d_ecs, var, model):
+	try:
+		i = np.where(d_ecs['model'] == model)[0][0]
+		return d_ecs[var][i]
+	except IndexError:
+		return None
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 10:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	varname = args[1]
+	degree = args[2]
+	absrel = args[3]
+	regression = args[4]
+	input_ = args[5]
+	ecs = args[6]
+	ecs_x = args[7]
+	output = args[8]
+	title = args[9]
+
+	if varname not in ('ecs', 'tcr', 'cld'):
+		raise ValueError('Invalid varname "%s"' % varname)
+
+	rel_label = ' relative to CERES' if absrel == 'relative' else ''
+
+	if degree == 0:
+		key = 'stats'
+		suptitle = 'Cloud type occurrence'
+		if absrel == 'relative':
+			ylabel = 'Cloud type occurrence difference (%)'
+		else:
+			ylabel = 'Cloud type occurrence (%)'
+	elif degree == '1-time':
+		key = 'stats_time'
+		suptitle = 'Cloud type occurrence trend'
+		ylabel = 'Cloud type occurrence trend (%/100 yr)'
+	elif degree == '1-tas':
+		key = 'stats_tas'
+		suptitle = 'Cloud type occurrence trend with respect to global near-surface air temperature'
+		ylabel = 'Cloud type occurrence trend (% K$^{-1}$)'
+	else:
+		raise ValueError('Invalid degree "%s"' % degree)
+
+	suptitle += rel_label
+
+	print('<- %s' % input_)
+	d = ds.read(input_)
+
+	print('<- %s' % ecs)
+	d_ecs = read_ecs(ecs)
+
+	print('<- %s' % ecs_x)
+	d_ecs_x = read_ecs(ecs_x)
+
+	d_ecs2 = ds.merge([d_ecs, d_ecs_x], 'model')
+
+	ds.select(d_ecs2, {'model': np.isfinite(d_ecs2['ecs'])})
+
+	ecs_order = np.argsort(d_ecs2['ecs'])
+	ecs_order2 = ['CERES'] + list(d_ecs2['model'][ecs_order])
+
+	order = []
+	for model in ecs_order2:
+		try:
+			i = np.where(d['models'] == model)[0][0]
+			order += [i]
+		except IndexError:
+			pass
+	order = list(np.array(order))
+	for i, model in enumerate(d['models']):
+		if model not in ecs_order2:
+			order += [i]
+
+	for name in ds.get_vars(d):
+		d[name] = d[name][order]
+
+	try:
+		i_ceres = np.argwhere(d['models'] == 'CERES')[0][0]
+	except IndexError:
+		i_ceres = None
+
+	if absrel == 'relative' and i_ceres is None:
+		raise ValueError('Cannot plot relative values without CERES')
+
+	if absrel == 'relative':
+		mask = d['models'] != 'CERES'
+	else:
+		mask = np.ones(len(d['models']), bool)
+
+	mask &= np.isfinite(d[key][:,0])
+
+	nrow = 1
+	if regression:
+		ncol = 2
+	else:
+		ncol = 1
+
+	width = 2 + 6*np.sum(mask)/23
+
+	if regression:
+		plt.figure(figsize=[12, 5])
+	else:
+		plt.figure(figsize=[width, 5])
+
+	plt.subplot(nrow, ncol, 1)
+
+	if degree == 0:
+		if absrel == 'relative':
+			plt.ylim([-17, 13])
+		else:
+			plt.ylim([0, 60])
+	elif degree == '1-time':
+		plt.ylim([-3, 3])
+	elif degree == '1-tas':
+		plt.ylim([-0.73, 0.45])
+	ylim = plt.gca().get_ylim()
+
+	for i, cloud_type in enumerate(CLOUD_TYPES):
+		h = d[key][mask,i]
+		x = np.arange(len(h), dtype=np.float64)
+		x[:] += i*0.2 - 0.2*2 + 0.1
+		if absrel == 'relative':
+			h -= d[key][i_ceres,i]
+		plt.bar(x, h*100., width=0.2, label=cloud_type, color=COLORS[i])
+		if (key+'_samples') in d:
+			h_samples = d[key+'_samples'][mask,i,:]
+			if absrel == 'relative':
+				h_samples -= d[key+'_samples'][i_ceres,i,:]
+			hlow = h - np.percentile(h_samples, 16, axis=1)
+			hhigh = np.percentile(h_samples, 84, axis=1) - h
+			herr = np.stack([hlow,hhigh])
+			plt.errorbar(x, h*100., herr*100.,
+				ecolor='k',
+				elinewidth=0.5,
+				linestyle='none',
+				capsize=1
+			)
+			for i, x0 in enumerate(x):
+				herr1 = herr[0,i]
+				herr2 = herr[1,i]
+				if (h[i] + herr2)*100 > ylim[1]:
+					plt.text(x0, ylim[1], ('[%.1f]\n:' % ((h[i] + herr2)*100)),
+						ha='center',
+						va='top',
+						fontsize=8,
+						bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0'),
+					)
+				if (h[i] - herr1)*100 < ylim[0]:
+					plt.text(x0, ylim[0], (':\n[%.1f]' % ((h[i] - herr1)*100)),
+						ha='center',
+						va='bottom',
+						fontsize=8,
+						bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0'),
+					)
+		plt.ylabel(ylabel)
+		plt.xticks(range(len(h)), [m for m in d['models'][mask]],
+			rotation='vertical')
+
+	x = np.arange(len(h), dtype=np.float64)
+	plt.grid(True, zorder=-1)
+	if opts.get('legend', True):
+		plt.legend(loc='upper center')
+	ytext = ylim[0] + (ylim[1] - ylim[0])*0.1
+	plt.text(x[0] - 0.75, ytext, varname.upper()+':\n(K)',
+		fontsize=9,
+		ha='center',
+		va='top',
+		bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0.05'),
+	)
+	for i in range(len(x)):
+		ecs = get_ecs(d_ecs, varname, d['models'][mask][i])
+		ecs_x = get_ecs(d_ecs_x, varname, d['models'][mask][i])
+		color = '#000000' if (ecs is not None and np.isfinite(ecs)) \
+			else '#888888'
+		if ecs is not None and np.isfinite(ecs):
+			ecs = '%.1f' % ecs
+		elif ecs_x is not None and np.isfinite(ecs_x):
+			ecs = ' %.1f$^*$' % ecs_x
+		else:
+			ecs = ''
+		plt.text(
+			x[i],
+			ytext,
+			ecs,
+			fontsize=9,
+			ha='center',
+			va='top',
+			bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0.05'),
+			color=color
+		)
+
+	if regression:
+		plt.subplot(nrow, ncol, nrow*ncol)
+		res = 0
+		for i, cloud_type in enumerate(['Hi', 'Mi', 'Cu', 'St']):
+			plt.scatter(
+				(d['stats_tas'][:,i])*100,
+				var,
+				s=20,
+				color=COLORS[i]
+			)
+			x = np.linspace(-2, 2, 200)
+			y = np.full(len(x), np.nan)
+			ylow = np.full(len(x), np.nan)
+			yhigh = np.full(len(x), np.nan)
+			for j in range(len(x)):
+				u = d['c1_'+varname+'_samples'][i,:]*x[j] + \
+					d['c0_'+varname+'_samples'][i,:]
+				y[j] = np.mean(u)
+				ylow[j] = np.percentile(u, (100-68)/2)
+				yhigh[j] = np.percentile(u, 100-(100-68)/2)
+			plt.fill_between(x, ylow, yhigh, color=COLORS[i], alpha=0.1)
+			plt.plot(x, y, color=COLORS[i])
+		plt.xlim(-0.6, 0.4)
+		if varname == 'ecs':
+			plt.ylim(1.5, 6)
+		elif varname == 'tcr':
+			plt.ylim(1, 3)
+		elif varname == 'cld':
+			plt.ylim(-0.2, 0.9)
+
+		plt.xlabel('Cloud type occurrence change (% K$^{-1}$)')
+		plt.ylabel(LABELS[varname])
+
+		plt.subplots_adjust(wspace=0.15)
+
+	ylim = plt.gca().get_ylim()
+
+	#if degree == 0:
+	#	plt.title('Model cloud type occurrence bias relative to CERES: CMIP6/amip 1985–2014 vs. CERES 2003–2020')
+	#elif degree == 1:
+	#	plt.title('Model cloud type trend: CMIP6/amip 1985–2014 and CERES 2003–2020')
+
+	#plt.text(0.91, -0.2, '$^*$68% error bars and confidence bands.',
+	#	transform=plt.gcf().transFigure,
+	#	ha='right',
+	#)
+	plt.suptitle(
+		(title if title is not None else ''),
+		linespacing=1.4,
+		y=0.93,
+		fontsize=10,
+	)
+	print('-> %s' % output)
+	plt.savefig(output, bbox_inches='tight')

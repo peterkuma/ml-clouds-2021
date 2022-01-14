@@ -1,0 +1,287 @@
+#!/usr/bin/env python3
+'''Plot geographical distribution of cloud type occurrence.
+
+Usage: plot_geo_cto <deg> <relative> <input> <ecs> <ecs_x> <output> <title>
+
+Depends on: calc_geo_cto
+
+Arguments:
+
+- deg: Degree. One of: 0 (absolute value) or 1 (trend).
+- relative: Plot relative to CERES. One of: true or false.
+- input: Input directory - the output of calc_geo_cto (NetCDF).
+- ecs: ECS file (CSV).
+- ecs_x: ECS file extension (CSV).
+- output: Output plot (PDF).
+- title: Plot title.
+'''
+
+import sys
+import os
+import string
+import numpy as np
+import ds_format as ds
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import cartopy.crs as ccrs
+import pst
+import pandas as pd
+
+mpl.rc('font', family='Open Sans')
+mpl.rc('axes', linewidth=0.3)
+mpl.rc('axes', grid=True)
+mpl.rc('lines', linewidth=1.2)
+mpl.rc('xtick.major', width=0.3)
+mpl.rc('ytick.major', width=0.3)
+mpl.rc('legend', framealpha=1)
+mpl.rc('legend', facecolor='#eeeeee')
+mpl.rc('legend', edgecolor='none')
+mpl.rc('legend', fancybox=False)
+mpl.rc('legend', fontsize=8)
+mpl.rc('grid', color='k')
+mpl.rc('grid', alpha=0.2)
+mpl.rc('grid', lw=0.1)
+
+CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Strafiform']
+
+def read_ecs(filename):
+	d = pd.read_csv(filename)
+	return {
+		'model': np.array(d['Model']),
+		'ecs': np.array(d['ECS']),
+		'tcr': np.array(d['TCR']),
+		'cld': np.array(d['CLD']),
+		'.': {
+			'model': {'.dims': ['model']},
+			'ecs': {'.dims': ['model']},
+			'tcr': {'.dims': ['model']},
+			'cld': {'.dims': ['model']},
+		}
+	}
+
+def get_ecs(d_ecs, model):
+	try:
+		i = np.where(d_ecs['model'] == model)[-1][-1]
+		return d_ecs['ecs'][i]
+	except IndexError:
+		return np.nan
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 8:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	deg = args[1]
+	relative = args[2]
+	input_ = args[3]
+	ecs = args[4]
+	ecs_x = args[5]
+	output = args[6]
+	title = args[7]
+
+	var = {
+		0: 'stats_geo',
+		1: 'stats_geo1',
+	}[deg]
+
+	var_alt = {
+		0: 'cloud_occurrence',
+		1: 'cloud_occurrence_1',
+	}[deg]
+
+	abs_levels = {
+		0: 100.*np.arange(0, 1.02, 0.02),
+		#1: 100.*np.arange(-0.03, 0.032, 0.002),
+		1: 100.*np.arange(-0.05, 0.055, 0.005),
+	}[deg]
+
+	rel_levels = {
+		0: 100.*np.arange(-0.4, 0.402, 0.02),
+		1: 100.*np.arange(-0.025, 0.026, 0.001),
+	}[deg]
+
+	label = {
+		0: 'Cloud type occurrence error (%)',
+		1: 'Cloud type occurrence trend (% K$^{-1}$)',
+	}[deg]
+
+	units = {
+		0: '%',
+		1: '%K$^{-1}$',
+	}[deg]
+
+	suptitle = {
+		0: 'Cloud type occurrence',
+		1: 'Cloud type occurrence trend',
+	}[deg]
+	print(suptitle)
+
+	#cmap = mpl.colors.LinearSegmentedColormap.from_list('cmap', ['#0084C8', 'white', '#DC0000'], 512)
+	cmap = mpl.colors.LinearSegmentedColormap.from_list('cmap', list(reversed(['#D72322', '#EF3B24', '#F04D23', '#F16C23', '#F59434', '#FDC24D', '#FFF582', '#FFFFFF', '#AFDEE1', '#62CAE9', '#2AAFE4', '#198DCD', '#3A5DA9', '#403092', '#343091'])), 512)
+
+	print('<- %s' % input_)
+	dd = ds.readdir(input_)
+
+	print('<- %s' % ecs)
+	d_ecs = read_ecs(ecs)
+
+	print('<- %s' % ecs_x)
+	d_ecs_x = read_ecs(ecs_x)
+
+	d_ecs2 = ds.merge([d_ecs, d_ecs_x], 'model')
+
+	nrows = len(dd)
+	ncols = len(CLOUD_TYPES)
+
+	figsize = {
+		7: (8, 6),
+		8: (8, 7.85),
+		9: (8, 8.84),
+		10: (8, 9.8),
+		11: (8, 10.8),
+		12: (8, 12),
+	}[nrows]
+
+	fig = plt.figure(figsize=figsize)
+
+	d_ceres = None
+	for i, d in enumerate(dd):
+		name = os.path.basename(d['filename'])[:-3]
+		d['name'] = name
+		if name == 'CERES':
+			d_ceres = d
+
+	dd_wo_ceres = [d for d in dd if d is not d_ceres]
+
+	for d in dd_wo_ceres:
+		d['ecs'] = get_ecs(d_ecs2, d['name'])
+		d['ecs_x'] = get_ecs(d_ecs_x, d['name'])
+	order = np.argsort([d['ecs'] for d in dd_wo_ceres])
+	dd_wo_ceres = [dd_wo_ceres[i] for i in order]
+
+	dd_all = [d_ceres] + dd_wo_ceres if d_ceres is not None else dd_wo_ceres
+
+	if d_ceres is None:
+		relative = False
+
+	cf = None
+	cf_ref = None
+
+	for i, d in enumerate(dd_all):
+		name = os.path.basename(d['filename'])[:-3]
+		total_mse = 0.
+		for j, cloud_type in enumerate(CLOUD_TYPES):
+			ax = fig.add_subplot(nrows, ncols, i*ncols + j + 1,
+				projection=ccrs.PlateCarree())
+			plt.text(0.01, 0.98, '%s%d)' % (string.ascii_lowercase[i], j+1),
+				transform=ax.transAxes,
+				va='top',
+				ha='left',
+				fontsize=6,
+				weight='bold',
+			)
+			if name != 'CERES':
+				varx = var if var in d else var_alt
+				if d[varx].ndim == 4:
+					z = d[varx][0,j,:,:]
+				else:
+					z = d[varx][j,:,:]
+				if relative:
+					if d_ceres[var].ndim == 4:
+						z -= d_ceres[var][0,j,:,:]
+					else:
+						z -= d_ceres[var][j,:,:]
+				cf = ax.contourf(d['lon'], d['lat'], z*100.,
+					levels=(rel_levels if relative else abs_levels),
+					cmap='bwr',
+				)
+				latg, long_ = np.meshgrid(d['lat'], d['lon'])
+				weights = np.cos(latg.T/180.*np.pi)
+				e_mean = np.average(z*100., weights=weights)
+				if relative:
+					mse = np.average((z*100.)**2, weights=weights)
+					ax.text(0.5, 0.01, 'ME %.0f%%, RMSE %.0f%%' % (
+							e_mean, np.sqrt(mse),
+						),
+						transform=ax.transAxes,
+						fontsize=7,
+						ha='center',
+						va='bottom',
+					)
+					total_mse += mse
+					if j == len(CLOUD_TYPES) - 1:
+						ax.text(1.02, 0.5,
+							'Tot. RMSE %.0f%%' % np.sqrt(total_mse/len(CLOUD_TYPES)),
+							transform=ax.transAxes,
+							fontsize=7,
+							ha='left',
+							va='center',
+							rotation=90.,
+						)
+				else:
+					ax.text(0.5, 0.01, 'Mean %d%s' % (e_mean, units),
+						transform=ax.transAxes,
+						fontsize=5,
+						ha='center',
+						va='bottom',
+					)
+			else:
+				varx = var if var in d else var_alt
+				if d[varx].ndim == 4:
+					z = d[varx][0,j,:,:]
+				else:
+					z = d[varx][j,:,:]
+				cf_ref = ax.contourf(d['lon'], d['lat'], z*100.,
+					levels=abs_levels,
+					cmap=('Greys_r' if deg == 0 else 'bwr'),
+				)
+				latg, long_ = np.meshgrid(d['lat'], d['lon'])
+				weights = np.cos(latg.T/180.*np.pi)
+				e_mean = np.average(z*100., weights=weights)
+				ax.text(0.5, 0.01, 'Mean %d%s' % (e_mean, units),
+					transform=ax.transAxes,
+					fontsize=7,
+					ha='center',
+					va='bottom',
+				)
+
+			ax.coastlines(lw=0.4)
+			ax.outline_patch.set_linewidth(0.2)
+			if i == 0:
+				ax.text(0.5, 1.1, cloud_type,
+					transform=ax.transAxes,
+					va='center',
+					ha='center',
+					fontsize=8,
+				)
+			if j == 0:
+				if 'ecs' in d and np.isfinite(d['ecs']):
+					star = '$^*$' if 'ecs_x' in d and np.isfinite(d['ecs_x']) \
+						else ''
+					ax.text(-0.06, 0.5,
+						name + ('\nECS %.1f K%s' % (d['ecs'], star)),
+						transform=ax.transAxes, va='center', ha='center',
+						rotation=90, fontsize=5.5)
+				else:
+					ax.text(-0.03, 0.5, name, transform=ax.transAxes, \
+						va='center', ha='center', rotation=90, fontsize=5.5)
+
+	plt.subplots_adjust(hspace=0, wspace=0, right=0.89)
+
+	if relative:
+		cax = fig.add_axes([0.125, 0.085, 0.35, 0.01])
+		cb = fig.colorbar(cf_ref, cax=cax, ticks=np.arange(0, 110, 10),
+			orientation='horizontal')
+		cb.set_label(label='Cloud type occurrence (%)', fontsize=7)
+		cb.ax.tick_params(labelsize=6)
+
+	cax = fig.add_axes([0.54, 0.085, 0.35, 0.01] if relative else \
+		[0.91, 0.55, 0.01, 0.3])
+	cb = fig.colorbar(cf, cax=cax, orientation='horizontal')
+	cb.set_label(label=label, fontsize=7)
+	cb.ax.tick_params(labelsize=6)
+
+	#plt.suptitle('%s: %s' % (suptitle, title), y=0.91, fontsize=8)
+
+	print('-> %s' % output)
+	plt.savefig(output, bbox_inches='tight')

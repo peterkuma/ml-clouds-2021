@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+'''Convert GISTEMP yearly temperature data to NetCDF.
+
+Usage: gistemp_to_nc <input> <output>
+
+Arguments:
+
+- input: Input file "totalCI_ERA.csv" (CSV).
+- output: Output file (NetCDF).
+'''
+
+import sys
+import numpy as np
+import pandas as pd
+import ds_format as ds
+import aquarius_time as aq
+
+if __name__ == '__main__':
+	if len(sys.argv) != 3:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+
+	input_ = sys.argv[1]
+	output = sys.argv[2]
+
+	d = pd.read_csv(input_)
+
+	year = d['year']
+	n = len(year)
+	ones = np.ones(n, int)
+	zeros = np.zeros(n, int)
+	time = aq.from_date([ones, year, ones, ones, zeros, zeros, zeros])
+
+	ds.write(output, {
+		'time': time,
+		'tas': d['gistemp'],
+		'.': {
+			'time': {'.dims': ['time']},
+			'tas': {'.dims': ['time']},
+		}
+	})

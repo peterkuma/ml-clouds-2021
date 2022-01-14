@@ -1,0 +1,214 @@
+#!/usr/bin/env python3
+'''Plot scatter plot of RMSE of the geographical distribution of cloud type
+occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
+
+Usage: plot_geo_cto_rmse <var> <input> <ecs> <output> [legend: <legend>]
+
+Depends on: calc_geo_cto
+
+Arguments:
+
+- var: One of: "ecs" (ECS), "tcr" (TCR), "cld" (CLD).
+- input: Input directory - the output of calc_geo_cto (NetCDF).
+- ecs: ECS file (CSV).
+- output: Output plot (PDF).
+
+Options:
+
+- legend: Plot legend ("true" or "false"). Default: "true".
+
+Examples:
+
+bin/plot_geo_cto_rmse ecs data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse tcr data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse cld data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
+'''
+
+import sys
+import scipy
+import os
+import numpy as np
+import ds_format as ds
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pandas as pd
+import pymc3 as pm
+import pst
+import scipy as sp
+
+mpl.rc('font', family='Open Sans')
+mpl.rc('axes', linewidth=0.3)
+mpl.rc('axes', grid=True)
+mpl.rc('lines', linewidth=1.2)
+mpl.rc('xtick.major', width=0.3)
+mpl.rc('ytick.major', width=0.3)
+mpl.rc('legend', framealpha=1)
+mpl.rc('legend', facecolor='#eeeeee')
+mpl.rc('legend', edgecolor='none')
+mpl.rc('legend', fancybox=False)
+mpl.rc('legend', fontsize=8)
+mpl.rc('grid', color='k')
+mpl.rc('grid', alpha=0.2)
+mpl.rc('grid', lw=0.1)
+
+CLOUD_TYPES = ['Hi', 'Mi', 'Cu', 'St']
+
+NBURN = 1000
+NBURN = 100
+NSAMPLES = 1000
+# Increase NSAMPLES to calculate Bayes factor accurately:
+# NSAMPLES = 1000000
+NCHAINS = 12
+NCORES = 12
+
+def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
+	x_m = np.mean(x)
+	x_sd = np.std(x)
+	y_m = np.mean(y)
+	y_sd = np.std(y)
+	xn = (x - x_m)/x_sd
+	yn = (y - y_m)/y_sd
+
+	with pm.Model() as model:
+		model_sel = pm.DiscreteUniform('model_sel', lower=0, upper=1)
+		c0 = pm.Uniform('c0', lower=-100, upper=100)
+		c1 = pm.Uniform('c1', lower=-20, upper=20)
+		mu = c0 + model_sel*c1*xn
+		sd = pm.Uniform('sd', lower=0, upper=100)
+		obs = pm.Cauchy('obs', mu, sd, observed=yn)
+
+	with model:
+		step = pm.Metropolis()
+		trace = pm.sample(nsamples + nburn, step, chains=nchains, cores=ncores, progressbar=True)
+		c0 = trace['c0'][(nburn*nchains):]
+		c1 = trace['c1'][(nburn*nchains):]
+		sd = trace['sd'][(nburn*nchains):]
+		model_sel = trace['model_sel'][(nburn*nchains):]
+		mask = model_sel == 1
+		c0 = c0[mask]
+		c1 = c1[mask]
+		sd = sd[mask]
+		print('BF = %f' % (np.mean(model_sel)/(1-np.mean(model_sel))))
+		return \
+			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
+			c1*y_sd/x_sd, \
+			sd*y_sd
+
+def read_ecs(filename):
+	d = pd.read_csv(filename)
+	return {
+		'model': np.array(d['Model']),
+		'ecs': np.array(d['ECS']),
+		'tcr': np.array(d['TCR']),
+		'cld': np.array(d['CLD']),
+		'ext': np.array(d['Extended'] == 'Y'),
+		'.': {
+			'model': {'.dims': ['model']},
+			'ecs': {'.dims': ['model']},
+			'tcr': {'.dims': ['model']},
+			'cld': {'.dims': ['model']},
+			'ext': {'.dims': ['model']},
+		}
+	}
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 5:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	var = args[1]
+	input_ = args[2]
+	ecs = args[3]
+	output = args[5]
+
+	dd = ds.readdir(input_)
+
+	print('<- %s' % ecs)
+	d_ecs = read_ecs(ecs)
+
+	fig = plt.figure(figsize=(6, 5))
+
+	d_ceres = None
+	for i, d in enumerate(dd):
+		name = os.path.basename(d['filename'])[:-3]
+		if name == 'CERES':
+			d_ceres = d
+
+	dd_wo_ceres = [d for d in dd if d is not d_ceres]
+
+	rmse_all = []
+	y_all = []
+
+	cmap = plt.get_cmap('tab20')
+	for i, d in enumerate(dd_wo_ceres):
+		name = os.path.basename(d['filename'])[:-3]
+		mse = 0
+		for j, cloud_type in enumerate(CLOUD_TYPES):
+			if 'stats_geo' in d:
+				z = (d['stats_geo'][0,j,:,:] - d_ceres['stats_geo'][0,j,:,:])*100.
+			else:
+				z = (d['cloud_occurrence'][j,:,:] - d_ceres['stats_geo'][0,j,:,:])*100.
+			weights = np.cos(d['lat']/180.*np.pi)
+			#mse += np.mean(np.average(z**2, weights=weights, axis=0))
+			mse += np.mean(z**2)
+		mse /= len(CLOUD_TYPES)
+		rmse = np.sqrt(mse)
+		y = d_ecs[var][d_ecs['model'] == name][0]
+		ext = d_ecs['ext'][d_ecs['model'] == name][0]
+		if not ext:
+			y = y1
+			label = name
+		else:
+			y = y2
+			label = name + '$^*$'
+		plt.scatter(rmse, y, label=label, color=cmap(i))
+		rmse_all += [rmse]
+		y_all += [y]
+
+	rmse_all = np.array(rmse_all)
+	y_all = np.array(y_all)
+
+	mask = np.isfinite(rmse_all) & np.isfinite(y_all)
+	c0, c1, sd = bayes(rmse_all[mask], y_all[mask])
+	sd_m = np.mean(sd)
+	plt.xlim(1, 12)
+	ylim = {
+		'ecs': [1.5, 6],
+		'tcr': [1.2, 3],
+		'cld': [-0.3, 1.1],
+	}[var]
+	plt.ylim(ylim)
+	xlim = plt.xlim()
+	x = np.linspace(xlim[0], xlim[1], 1000)
+	c0_m = np.mean(c0)
+	c1_m = np.mean(c1)
+	n = len(x)
+	yl = np.full(n, np.nan, np.float64)
+	yh = np.full(n, np.nan, np.float64)
+	s = np.mean([sp.stats.cauchy.ppf(0.84, 0, sd1) for sd1 in sd])
+	for i in range(n):
+		yy = c0_m + c1_m*x[i]
+		yl[i] = yy - s
+		yh[i] = yy + s
+	plt.fill_between(x, yl, yh, color='#00000020', edgecolor='none')
+	plt.plot(x, c0_m + c1_m*x, linestyle='dashed', color='k', lw=0.5)
+	plt.gca().set_aspect(1.0/plt.gca().get_data_ratio(), adjustable='box')
+
+	# Uncomment to enable calculation of R^2.
+	#SStot = np.sum((y_all[mask] - np.mean(y_all[mask]))**2)
+	#SSres = np.sum((y_all[mask] - (c0_m + c1_m*rmse_all[mask]))**2)
+	#print('R^2 = %f' % (1 - SSres/SStot))
+
+	plt.xlabel('Cloud type occurrence RMSE (%)')
+	units = 'K' if var != 'cld' else 'Wm$^{-2}$K$^{-1}$'
+	label = {
+		'ecs': 'ECS',
+		'tcr': 'TCR',
+		'cld': 'Cloud feedback',
+	}[var]
+	plt.ylabel('%s (%s)' % (label, units))
+
+	if opts.get('legend', True):
+		plt.legend(fontsize=5.5, loc='lower left')
+
+	plt.savefig(output, bbox_inches='tight')

@@ -1,0 +1,751 @@
+#!/usr/bin/env python3
+'''Prepare samples of clouds for CNN training.
+
+Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <seed>]
+
+Arguments:
+
+- type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
+  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm" (NorESM).
+- input: Input directory with input files (NetCDF).
+- synop: Input directory with IDD synoptic fies (NetCDF).
+- buoy: Input directory with IDD buoy files (NetCDF).
+- landmask: Land-sea mask file (NetCDF).
+- landsea: Land or sea only. One of: "both", "land", "sea".
+- start: Start time (ISO).
+- end: End time (ISO).
+- output: Output directory.
+
+Options:
+
+- seed: Random seed.
+'''
+
+import sys
+import os
+import re
+import logging
+from glob import glob
+import pst
+import numpy as np
+import numpy.random
+import datetime as dt
+import ds_format as ds
+import aquarius_time as aq
+import matplotlib.pyplot as plt
+import pyproj
+import scipy.stats
+
+import pyximport; pyximport.install()
+from remap import remap5 as remap5
+
+import warnings
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+D = 2000000 # Half-size of the domain (m).
+
+MAX_STATIONS = 10000
+
+NSAMPLES = 20
+#NSAMPLES = 800
+
+META = {
+	'data': {
+		'.dims': ['channel', 'x', 'y'],
+		'long_name': 'data',
+		'units': '1',
+	},
+	'lat': {
+		'.dims': ['x', 'y'],
+		'long_name': 'latitude',
+		'units': 'degrees_north',
+	},
+	'lon': {
+		'.dims': ['x', 'y'],
+		'long_name': 'longitude',
+		'units': 'degrees_east',
+	},
+	'time': {
+		'.dims': [],
+		'long_name': 'time',
+		'units': 'days since -4713-11-24 12:00 UTC',
+		'calendar': 'proleptic_gregorian',
+	},
+	'x': {
+		'.dims': ['x'],
+		'long_name': 'x coordinate',
+		'units': 'm',
+	},
+	'y': {
+		'.dims': ['y'],
+		'long_name': 'y coordinate',
+		'units': 'm',
+	},
+	'lat0': {
+		'.dims': [],
+		'long_name': 'center latitude',
+		'units': 'degrees_north',
+	},
+	'lon0': {
+		'.dims': [],
+		'long_name': 'center longitude',
+		'units': 'degrees_east',
+	},
+	'alpha0': {
+		'.dims': [],
+		'long_name': 'rotation',
+		'units': 'degree',
+	},
+	'stats': {
+		'.dims': ['cloud_type'],
+		'long_name': 'label statistics',
+	},
+	'stats_n': {
+		'.dims': ['cloud_type'],
+		'long_name': 'label statistics number of records',
+	},
+	'wmoid': {
+		'.dims': ['wmoid_dim'],
+		'long_name': 'WMO ID',
+	},
+	'station_name': {
+		'.dims': ['station_name_dim'],
+		'long_name': 'station name',
+	},
+	'station_lon': {
+		'.dims': ['station_number'],
+		'long_name': 'station longitude',
+	},
+	'station_lat': {
+		'.dims': ['station_number'],
+		'long_name': 'station latitude',
+	},
+	'station_x': {
+		'.dims': ['station_number'],
+		'long_name': 'station x coordinate',
+	},
+	'station_y': {
+		'.dims': ['station_number'],
+		'long_name': 'station y coordinate',
+	},
+	'station_type': {
+		'.dims': ['station_number'],
+		'long_name': 'station type',
+	},
+	'station_number': {
+		'.dims': ['station_number'],
+		'long_name': 'station number',
+	},
+}
+
+def rotation_matrix(x):
+	c = np.cos(x)
+	s = np.sin(x)
+	return np.array([[c, -s], [s, c]])
+
+def rotate(x, y, alpha):
+	m = rotation_matrix(alpha/180.*np.pi)
+	u = np.stack([x, y])
+	uo = m @ u
+	return np.array(uo[0,:]), np.array(uo[1,:])
+
+def random_latlon():
+	x, y, z = scipy.stats.multivariate_normal(cov=np.identity(3)).rvs(1)
+	phi = 180./np.pi*np.arctan2(x, y)
+	theta = 180./np.pi*np.arccos(1.*z/np.sqrt(x**2. + y**2. + z**2.))
+	lon = phi
+	lat = 90. - theta
+	return lat, lon
+
+def random_alpha():
+	return numpy.random.random_sample()*360.
+
+#def remap(data, lat, lon, lat2, lon2):
+#	k = data.shape[0]
+#	n2, m2 = lon2.shape
+#	data2 = np.full((k, n2, m2), np.nan, np.float64)
+#	for ki in range(k):
+#		for i2 in range(n2):
+#			for j2 in range(m2):
+#				i = np.argmin(np.abs(lat - lat2[i2,j2]))
+#				j = np.argmin(np.abs(lon - lon2[i2,j2]))
+#				data2[ki,i2,j2] = data[ki,i,j]
+#	return data2
+
+def remap2(data, lat, lon, lat2, lon2):
+	k = data.shape[0]
+	n, m = len(lat), len(lon)
+	n2, m2 = lon2.shape
+	data2 = np.full((k, n2, m2), np.nan, np.float64)
+	ii = np.searchsorted(lat, lat2.flatten())
+	jj = np.searchsorted(lon, lon2.flatten())
+	ii = ii.reshape((n2, m2))
+	jj = jj.reshape((n2, m2))
+	ii[ii == n] = n - 1
+	jj[jj == m] = m - 1
+	data2[:,:,:] = data[:,ii,jj]
+	return data2
+
+def remap4(data, lat, lon, lat2, lon2):
+	k = data.shape[0]
+	n, m = len(lat), len(lon)
+	n2, m2 = lat2.shape
+	data2_0 = np.full((k, n2, m2), np.nan, np.float64)
+	ii = np.searchsorted(lat, lat2)
+	jj = np.searchsorted(lon, lon2)
+	ii[ii == n] = n - 1
+	jj[jj == m] = m - 1
+	data2_0[:,:,:] = data[:,ii,jj]
+	data2 = np.zeros((k, n2, m2), np.float64)
+	n = np.zeros((k, n2, m2), np.int64)
+	mask = np.isfinite(data)
+	lonxx1 = np.full((n2, m2), np.float64)
+	lonxx2 = np.full((n2, m2), np.float64)
+	latxx1 = np.full((n2, m2), np.float64)
+	latxx2 = np.full((n2, m2), np.float64)
+	for i in range(n2):
+		for j in range(m2):
+			lonx1 = 0.5*(lon2[max(i-1,0),j] + lon2[i,j])
+			lonx2 = 0.5*(lon2[min(i+1,n2-1),j] + lon2[i,j])
+			lonx3 = 0.5*(lon2[i,max(j-1,0)] + lon2[i,j])
+			lonx4 = 0.5*(lon2[i,min(j+1,m2-1)] + lon2[i,j])
+			latx1 = 0.5*(lat2[max(i-1,0),j] + lat2[i,j])
+			latx2 = 0.5*(lat2[min(i+1,n2-1),j] + lat2[i,j])
+			latx3 = 0.5*(lat2[i,max(j-1,0)] + lat2[i,j])
+			latx4 = 0.5*(lat2[i,min(j+1,m2-1)] + lat2[i,j])
+			lonxx1[i,j] = min(lonx1, lonx2, lonx3, lonx4)
+			lonxx2[i,j] = max(lonx1, lonx2, lonx3, lonx4)
+			latxx1[i,j] = min(latx1, latx2, latx3, latx4)
+			latxx2[i,j] = max(latx1, latx2, latx3, latx4)
+	i1 = np.searchsorted(lat, latxx1.flatten()).reshape((n2, m2))
+	i2 = np.searchsorted(lat, latxx2.flatten()).reshape((n2, m2))
+	j1 = np.searchsorted(lon, lonxx1.flatten()).reshape((n2, m2))
+	j2 = np.searchsorted(lon, lonxx2.flatten()).reshape((n2, m2))
+	for i in range(n2):
+		for j in range(m2):
+			data2[:,i,j] += np.nansum(data[:,i1[i,j]:i2[i,j],j1[i,j]:j2[i,j]], axis=(1,2))
+			n[:,i,j] += np.sum(mask[:,i1[i,j]:i2[i,j],j1[i,j]:j2[i,j]], axis=(1,2))
+	data2 /= n
+	mask = n == 0
+	data2[mask] = data2_0[mask]
+	return data2
+
+def take_sample(lat, lon, data):
+	lat0, lon0 = random_latlon()
+	alpha0 = random_alpha()
+	#alpha0 = 30
+	p1 = pyproj.Proj(proj='longlat', datum='WGS84')
+	p2 = pyproj.Proj(proj='aeqd', lat_0=lat0, lon_0=lon0, datum='WGS84')
+	x2 = np.linspace(-D, D, 40)
+	y2 = np.linspace(-D, D, 40)
+	xg2, yg2 = np.meshgrid(x2, y2)
+	shape = xg2.shape
+	#xg2, yg2 = rotate(xg2.flatten(), yg2.flatten(), alpha0)
+	#xg2 = xg2.reshape(shape)
+	#yg2 = yg2.reshape(shape)
+	lon2, lat2 = pyproj.transform(p2, p1, xg2.flatten(), yg2.flatten())
+	long_, latg = np.meshgrid(lon, lat)
+	x, y = pyproj.transform(p1, p2, long_.flatten(), latg.flatten())
+	x = x.reshape(data.shape[1:])
+	y = y.reshape(data.shape[1:])
+	#lon2 = lon2.reshape(shape).T
+	#lat2 = lat2.reshape(shape).T
+	lon2 = lon2.reshape(shape)
+	lat2 = lat2.reshape(shape)
+	#data2 = remap4(data, lat, lon, lat2, lon2)
+	data2 = remap2(data, lat, lon, lat2, lon2)
+	#print('remap5 start')
+	#data2 = remap5(
+	#	data.astype(np.double),
+	#	x.astype(np.double),
+	#	y.astype(np.double),
+	#	-D, D, 2*D/40, -D, D, 2*D/40
+	#)
+	#print('remap5 end')
+	#print(np.mean(np.abs(data3-data2)))
+	#assert np.array_equal(data2, data3)
+	return {
+		'data': data2,
+		'lon': lon2,
+		'lat': lat2,
+		'lon0': lon0,
+		'lat0': lat0,
+		'alpha0': alpha0,
+		'x': x2,
+		'y': y2,
+	}
+
+def read_idd(dirname, type_, t):
+	date = aq.to_date(t)
+	date_s = '%02d%02d%02d' % (date[1][0], date[2][0], date[3][0])
+	path = os.path.join(dirname, '*%s*' % date_s)
+	filenames = glob(path)
+	if len(filenames) == 0:
+		raise IOError('No IDD for date %s found in "%s"' % (date_s, dirname))
+	dd = []
+	for filename in sorted(filenames):
+		print('<- %s' % filename)
+		d = ds.read(filename, [
+			'cloudLow',
+			'cloudMiddle',
+			'cloudHigh',
+			'Lat',
+			'Lon',
+		])
+		for var in ds.get_vars(d):
+			d[var] = d[var].astype(np.float64).filled(np.nan)
+		dd += [d]
+	d = ds.merge(dd, 'recNum')
+	return {
+		'lon': d['Lon'],
+		'lat': d['Lat'],
+		#'cloud_type': d['cloudGenus'],
+		#'cloud_cover': d['cloudCover'],
+		'cloud_l': d['cloudLow'],
+		'cloud_m': d['cloudMiddle'],
+		'cloud_h': d['cloudHigh'],
+		#'wmoid': d['wmoId'],
+		#'station_name': d['stnName']
+		'type': np.array([type_]*len(d['Lon'])),
+	}
+
+def merge_idd(d1, d2):
+	d = {}
+	for var in ds.get_vars(d1) + ds.get_vars(d2):
+		if var in d1 and var in d2:
+			d[var] = np.concatenate([d1[var], d2[var]])
+		elif var in d1:
+			d[var] = d1[var]
+		else:
+			d[var] = d2[var]
+	return d
+
+def lookup_idd(d, lat0, lon0, alpha0, x, y):
+	p1 = pyproj.Proj(proj='longlat', datum='WGS84')
+	p2 = pyproj.Proj(proj='aeqd', lat_0=lat0, lon_0=lon0, datum='WGS84')
+	x2, y2 = pyproj.transform(p1, p2, d['lon'], d['lat'])
+	#x2, y2 = rotate(x2, y2, -alpha0)
+	xmin, xmax, ymin, ymax = np.min(x), np.max(x), np.min(y), np.max(y)
+	mask = (x2 >= xmin) & (x2 <= xmax) & (y2 >= ymin) & (y2 <= ymax)
+	mask &= \
+		np.isfinite(d['cloud_l']) | \
+		np.isfinite(d['cloud_m']) | \
+		np.isfinite(d['cloud_h'])
+	#mask &= d['cloud_cover'] >= 0
+	#cloud_cover = d['cloud_cover'][mask]
+	#cloud_type = d['cloud_type'][mask,:]
+	station_lon = d['lon'][mask]
+	station_lat = d['lat'][mask]
+	station_x = x2[mask]
+	station_y = y2[mask]
+	station_type = d['type'][mask]
+	#wmoid = d['wmoid'][mask]
+	#station_name = [b''.join(name).decode('ascii').rstrip('\0') for name in d['station_name'][mask,:]]
+	#station_name = np.array(station_name)
+
+	#stats = np.zeros(11, np.int64)
+	#for i in range(10):
+	#	stats[i] = np.nansum(cloud_type == i)
+	#stats[10] = np.sum(cloud_cover == 0) # Clear sky.
+
+	cloud_l = d['cloud_l'][mask]
+	cloud_m = d['cloud_m'][mask]
+	cloud_h = d['cloud_h'][mask]
+
+	stats = np.zeros(14, np.int64)
+	stats_n = np.zeros(14, np.int64)
+	stats[0] = np.nansum(cloud_h == 0)
+	stats[1] = np.nansum((cloud_h >= 1) & (cloud_h <= 6)) # Ci
+	stats[2] = np.nansum((cloud_h >= 7) & (cloud_h <= 8)) # Cs
+	stats[3] = np.nansum(cloud_h == 9) # Cc
+	stats_n[0:4] = np.sum(np.isfinite(cloud_h))
+	stats[4] = np.nansum(cloud_m == 0)
+	stats[5] = np.nansum((cloud_m >= 1) & (cloud_m <= 2)) # As
+	stats[6] = np.nansum((cloud_m >= 3) & (cloud_m <= 9)) # Ac
+	stats_n[4:7] = np.sum(np.isfinite(cloud_m))
+	stats[7] = np.nansum(cloud_l == 0)
+	stats[8] = np.nansum((cloud_l >= 1) & (cloud_l <= 3)) # Cu
+	stats[9] = np.nansum((cloud_l >= 4) & (cloud_l <= 5)) # Sc
+	stats[10] = np.nansum((cloud_l >= 6) & (cloud_l <= 7)) # St
+	stats[11] = np.nansum(cloud_l == 8) # Cu
+	stats[12] = np.nansum(cloud_l == 9) # Cb
+	stats[13] = np.nansum((cloud_l == 0) & (cloud_m == 0) & (cloud_h == 0))
+	stats_n[7:13] = np.sum(np.isfinite(cloud_l))
+	stats_n[13] = np.sum(
+		np.isfinite(cloud_l) | \
+		np.isfinite(cloud_m) | \
+		np.isfinite(cloud_h)
+	)
+
+	return stats, stats_n, station_lon, station_lat, station_x, station_y, station_type
+
+def calc_land_fract(d, landmask):
+	n, m = d['data'].shape[1:3]
+	lon = d['lon'].flatten()
+	lat = d['lat'].flatten()
+	ii = np.searchsorted(landmask['lon'], lon)
+	jj = np.searchsorted(landmask['lat'], lat)
+	for i in range(n):
+		for j in range(m):
+			lon = d['lon'][i,j]
+			lat = d['lat'][i,j]
+
+def read_ceres(dirname, start, end):
+	files = sorted(os.listdir(dirname))
+	for file_ in files:
+		if not file_.endswith('.nc'):
+			continue
+		filename = os.path.join(dirname, file_)
+		m = re.match('.*\.(\d{8})\.nc', filename)
+		t = aq.from_datetime(dt.datetime.strptime(m.groups()[0], '%Y%m%d'))
+		if not ((t >= start) & (t <= end)):
+			continue
+		print('<- %s' % filename)
+		d = ds.read(filename, [
+			'Adjusted_ClearSky_Flux_Profiles_adj_clr_sw_up',
+			'Adjusted_ClearSky_Flux_Profiles_adj_clr_lw_up',
+			'Adjusted_AllSky_Flux_Profiles_adj_all_sw_up',
+			'Adjusted_AllSky_Flux_Profiles_adj_all_lw_up',
+			'Observed_TOA_Fluxes_toa_sw_insol',
+			'latitude',
+			'lat',
+			'longitude',
+			'lon',
+		])
+		d2 = {}
+		d2['time'] = t
+		d2['rsut'] = d['Adjusted_AllSky_Flux_Profiles_adj_all_sw_up'][0,:,:]
+		d2['rlut'] = d['Adjusted_AllSky_Flux_Profiles_adj_all_lw_up'][0,:,:]
+		d2['rsutcs'] = d['Adjusted_ClearSky_Flux_Profiles_adj_clr_sw_up'][0,:,:]
+		d2['rlutcs'] = d['Adjusted_ClearSky_Flux_Profiles_adj_clr_lw_up'][0,:,:]
+		d2['rsdt'] = d['Observed_TOA_Fluxes_toa_sw_insol']
+		if 'latitude' in d and 'longitude' in d:
+			d2['lat'] = d['latitude']
+			d2['lon'] = d['longitude']
+			order = np.argsort(d2['lat'])
+			d2['lat'] = d2['lat'][order]
+			for var in ['rsut', 'rlut', 'rsutcs', 'rlutcs', 'rsdt']:
+				d2[var] = d2[var][order,:]
+		else:
+			d2['lat'] = d['lat']
+			d2['lon'] = np.where(d['lon'] < 180., d['lon'], d['lon'] - 360.)
+			order = np.argsort(d2['lon'])
+			d2['lon'] = d2['lon'][order]
+			for var in ['rsut', 'rlut', 'rsutcs', 'rlutcs', 'rsdt']:
+				d2[var] = d2[var][:,order]
+		yield d2
+
+def read_noresm(dirname, start, end):
+	time_by_var = {}
+	time = None
+	for var in ['FLNT', 'FLNTC', 'FLUT', 'FLUTC', 'FSNTOA', 'FSNTOAC', 'SOLIN']:
+		dirname2 = os.path.join(dirname, var)
+		if not os.path.exists(dirname2):
+			raise ValueError('Variable "%s" not found in "%s"' % (var, dirname))
+		print('<- %s' % dirname2)
+		d = ds.readdir(dirname2, 'time', merge='time', jd=True)
+		time_by_var[var] = d
+		time = time.intersection(d['time']) if time is not None \
+			else set(d['time'])
+	time = np.array(list(time), np.float64)
+	time = time[(time >= start) & (time <= end)]
+	for t in time:
+		do = {}
+		for var in ['FLNT', 'FLNTC', 'FLUT', 'FLUTC', 'FSNTOA', 'FSNTOAC', 'SOLIN']:
+			dirname2 = os.path.join(dirname, var)
+			d = time_by_var[var]
+			k = np.argwhere(d['time'] == t)[0][0]
+			filename = d['filename'][d['n'][k]]
+			i = d['i'][k]
+			print('<- %s' % filename)
+			d = ds.read(filename, [var, 'lat', 'lon'], sel={'time': i}, jd=True)
+			do[var] = d[var]
+			do['time'] = t
+			do['lat'] = d['lat']
+			do['lon'] = np.where(d['lon'] < 180., d['lon'], d['lon'] - 360.)
+			order = np.argsort(do['lon'])
+			do[var] = do[var][:,order]
+			do['lon'] = do['lon'][order]
+		do2 = {}
+		do2['time'] = do['time']
+		do2['lon'] = do['lon']
+		do2['lat'] = do['lat']
+		do2['rsut'] = do['SOLIN'] - do['FSNTOA']
+		do2['rsutcs'] = do['FSNTOAC'] - do['SOLIN']
+		do2['rlut'] = do['FLUT']
+		do2['rlutcs'] = do['FLUTC']
+		do2['rsdt'] = do['SOLIN']
+		yield do2
+
+def read_time(dirname):
+	return ds.readdir(dirname, 'time', merge='time', jd=True)
+
+def read_cmip(dirname, start, end):
+	time_by_var = {}
+	time = None
+	for var in ['rsut', 'rlut', 'rsutcs', 'rlutcs', 'rsdt']:
+		dirname2 = os.path.join(dirname, var)
+		if not os.path.exists(dirname2):
+			raise ValueError('Variable "%s" not found in "%s"' % (var, dirname))
+		print('<- %s' % dirname2)
+		d = ds.readdir(dirname2, 'time', merge='time', jd=True)
+		time_by_var[var] = d
+		time = time.intersection(d['time']) if time is not None \
+			else set(d['time'])
+	time = np.array(list(time), np.float64)
+	time = time[(time >= start) & (time <= end)]
+	for t in time:
+		do = {}
+		for var in ['rsut', 'rlut', 'rsutcs', 'rlutcs', 'rsdt']:
+			dirname2 = os.path.join(dirname, var)
+			d = time_by_var[var]
+			k = np.argwhere(d['time'] == t)[0][0]
+			filename = d['filename'][d['n'][k]]
+			i = d['i'][k]
+			print('<- %s' % filename)
+			d = ds.read(filename, [var, 'lat', 'lon'], sel={'time': i}, jd=True)
+			do[var] = d[var]
+			do['time'] = t
+			do['lat'] = d['lat']
+			do['lon'] = np.where(d['lon'] < 180., d['lon'], d['lon'] - 360.)
+			order = np.argsort(do['lon'])
+			do[var] = do[var][:,order]
+			do['lon'] = do['lon'][order]
+		yield do
+
+def read_cloud_cci(dirname, start, end):
+	files = sorted(os.listdir(dirname))
+	for file_ in files:
+		if not file_.endswith('.nc'):
+			continue
+		filename = os.path.join(dirname, file_)
+		m = re.match(r'.*/(\d{8})-[^/]*\.nc', filename)
+		try:
+			t = aq.from_datetime(dt.datetime.strptime(m.groups()[0], '%Y%m%d'))
+		except ValueError:
+			continue
+		if not ((t >= start) & (t <= end)):
+			continue
+		print('<- %s' % filename)
+		d = ds.read(filename, [
+			'toa_swup_asc',
+			'toa_swup_clr_asc',
+			'toa_swdn_asc',
+			'toa_lwup_asc',
+			'toa_lwup_clr_asc',
+			'lat',
+			'lon',
+		])
+		d2 = {}
+		d2['time'] = t
+		d2['rsut'] = d['toa_swup_asc'][0,:,:].filled(np.nan)
+		d2['rlut'] = d['toa_lwup_asc'][0,:,:].filled(np.nan)
+		d2['rsutcs'] = d['toa_swup_clr_asc'][0,:,:].filled(np.nan)
+		d2['rlutcs'] = d['toa_lwup_clr_asc'][0,:,:].filled(np.nan)
+		d2['rsdt'] = d['toa_swdn_asc'][0,:,:].filled(np.nan)
+		d2['lat'] = d['lat']
+		d2['lon'] = d['lon']
+
+		d2['lon'] = np.where(d2['lon'] < 180., d2['lon'], d2['lon'] - 360.)
+		order = np.argsort(d2['lon'])
+		d2['lon'] = d2['lon'][order]
+		for var in ['rsut', 'rlut', 'rsutcs', 'rlutcs', 'rsdt']:
+			d2[var] = d2[var][:,order]
+
+		yield d2
+
+def read_merra2(dirname, start, end):
+	files = sorted(os.listdir(dirname))
+	for file_ in files:
+		if not file_.endswith('.nc'):
+			continue
+		filename = os.path.join(dirname, file_)
+		m = re.match(r'.*\.(\d{8})\..*\.nc', file_)
+		try:
+			t = aq.from_datetime(dt.datetime.strptime(m.groups()[0], '%Y%m%d'))
+		except ValueError:
+			continue
+		if not ((t >= start) & (t <= end)):
+			continue
+		print('<- %s' % filename)
+		d = ds.read(filename, [
+			'LWTUP',
+			'LWTUPCLR',
+			'SWTDN',
+			'SWTNT',
+			'SWTNTCLR',
+			'lat',
+			'lon',
+			'time',
+		])
+		d2 = {}
+		d2['time'] = t
+		d2['rsut'] = (d['SWTDN'][0,:,:] - d['SWTNT'][0,:,:]).filled(np.nan)
+		d2['rlut'] = d['LWTUP'][0,:,:].filled(np.nan)
+		d2['rsutcs'] = (d['SWTDN'][0,:,:] - d['SWTNTCLR'][0,:,:]).filled(np.nan)
+		d2['rlutcs'] = d['LWTUPCLR'][0,:,:].filled(np.nan)
+		d2['rsdt'] = d['SWTDN'][0,:,:].filled(np.nan)
+		d2['lat'] = d['lat']
+		d2['lon'] = d['lon']
+		yield d2
+
+def read_era5(dirname, start, end):
+	dx = ds.readdir(dirname, ['time'], merge='time', jd=True)
+	mask = (dx['time'] >= start) & (dx['time'] <= end)
+	jj = np.argwhere(mask)[:,0]
+	for j in jj:
+		n = dx['n'][j]
+		i = dx['i'][j]
+		filename = dx['filename'][n]
+		print('<- %s' % filename)
+		d = ds.read(filename, [
+			'latitude',
+			'longitude',
+			'time',
+			'tisr',
+			'tsr',
+			'tsrc',
+			'ttr',
+			'ttrc',
+		], sel={'time': np.array([i])}, jd=True)
+		dt = 60*60
+		d2 = {}
+		t = np.floor(d['time'][0] + 0.5) - 0.5
+		d2['time'] = t
+		d2['rsut'] = (d['tisr'][0,:,:] - d['tsr'][0,:,:]).filled(np.nan)/dt
+		d2['rlut'] = -d['ttr'][0,:,:].filled(np.nan)/dt
+		d2['rsutcs'] = (d['tisr'][0,:,:] - d['tsrc'][0,:,:]).filled(np.nan)/dt
+		d2['rlutcs'] = -d['ttrc'][0,:,:].filled(np.nan)/dt
+		d2['rsdt'] = d['tisr'][0,:,:].filled(np.nan)/dt
+		d2['lat'] = d['latitude']
+		d2['lon'] = d['longitude']
+		d2['lat'] = d2['lat'][::-1]
+
+		d2['lon'] = np.where(d2['lon'] < 180., d2['lon'], d2['lon'] - 360.)
+		order = np.argsort(d2['lon'])
+		d2['lon'] = d2['lon'][order]
+		for var in ['rsut', 'rlut', 'rsutcs', 'rlutcs', 'rsdt']:
+			d2[var] = d2[var][::-1,order]
+
+		yield d2
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 10:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	type_ = args[1]
+	input_dir = args[2]
+	synop_dir = args[3]
+	buoy_dir = args[4]
+	landmask_file = args[5]
+	landsea = args[6]
+	start = aq.from_iso(args[7])
+	end = aq.from_iso(args[8])
+	output = args[9]
+	seed = opts.get('seed')
+
+	if seed is not None:
+		np.random.seed(seed)
+
+	landmask = ds.read(landmask_file) if landmask_file is not None else None
+
+	read = {
+		'ceres': read_ceres,
+		'cmip': read_cmip,
+		'cloud_cci': read_cloud_cci,
+		'era5': read_era5,
+		'merra2': read_merra2,
+		'noresm': read_noresm,
+	}[type_]
+
+	for d in read(input_dir, start, end):
+		idd_synop = None
+		idd_buoy = None
+		idd = None
+		try:
+			if synop_dir is not None:
+				idd_synop = read_idd(synop_dir, 'synop', d['time'])
+			if buoy_dir is not None:
+				idd_buoy = read_idd(buoy_dir, 'buoy', d['time'])
+		except IOError as e:
+			logging.warning(e)
+			continue
+		if idd_synop is not None and idd_buoy is not None:
+			idd = merge_idd(idd_synop, idd_buoy)
+		#d2['pct'] = np.nanmin(
+		#	d['Observed_Cloud_Layer_Properties_obs_cld_top_press'],
+		#	axis=0,
+		#)
+		#d2['dtau'] = np.nansum(
+		#	d['Observed_Cloud_Layer_Properties_obs_cld_od'],
+		#	axis=0,
+		#)
+		d2 = d
+		d2['cre_sw_rel'] = (d2['rsutcs'] - d2['rsut'])/d2['rsdt']
+		d2['cre_sw_rel'][d2['rsdt'] < 50] = np.nan
+		d2['cre_lw_rel'] = (d2['rlutcs'] - d2['rlut'])/d2['rlutcs']
+		dd = []
+		n = 0
+		nx = 0
+		while n < NSAMPLES and nx < 1.5*NSAMPLES:
+			nx += 1
+			data = np.stack([
+				-d2['cre_sw_rel'],
+				d2['cre_lw_rel'],
+				#-d2['rsut'],
+				#d2['rlut'],
+				#d2['dtau'],
+			])
+			#shape = d2['rsut'].shape
+			#data = d2['rsut'].reshape((1, shape[0], shape[1]))
+			dx = take_sample(d2['lat'], d2['lon'], data)
+			#if np.any(np.isnan(dx['data'])):
+			#	continue
+
+			dx['time'] = d2['time']
+
+			if np.sum(np.isnan(dx['data']))/dx['data'].size > 0.25:
+				continue
+
+			#land_fract = calc_land_fract(dx, landmask)
+			#dx['data'][0,::] = dx['data'][0,::].T
+			#dx['data'][1,::] = dx['data'][1,::].T
+			if idd is not None:
+				dx['stats'], \
+				dx['stats_n'], \
+				dx['station_lon'], \
+				dx['station_lat'], \
+				dx['station_x'], \
+				dx['station_y'], \
+				dx['station_type'] = lookup_idd(idd, \
+					dx['lat0'], dx['lon0'], dx['alpha0'],
+					dx['x'].flatten(), dx['y'].flatten())
+				#dx['stats_n'] = len(dx['station_lon'])
+				dx['station_number'] = np.arange(len(dx['station_lon']))
+				if np.sum(dx['stats']) == 0:
+					continue
+			#for k in ['station_lon', 'station_lat', 'station_number']:
+			#	if k in dx:
+			#		del dx[k]
+			#del dx['x'], dx['y'], dx['lat0'], dx['lon0']
+			if 'station_number' in dx:
+				del dx['station_number']
+			for k in ['station_lon', 'station_lat', 'station_x', 'station_y', 'station_type']:
+				if k in dx:
+					dx[k] = np.hstack([
+						dx[k],
+						np.full(MAX_STATIONS-len(dx[k]), np.nan)
+					])
+
+			dx['.'] = META
+			dd += [dx]
+			n += 1
+
+		if len(dd) > 0:
+			dout = ds.merge(dd, 'sample', True)
+			name = '%s.nc' % aq.to_iso(d['time'])
+			output_filename = os.path.join(output, name)
+			print('-> %s' % output_filename)
+			del dout['alpha0']
+			ds.write(output_filename, dout)
