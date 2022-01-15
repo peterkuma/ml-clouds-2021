@@ -108,7 +108,9 @@ required by the main commands.
 
 In the examples below it is assumed that the CMIP5 and CMIP6 files are stored
 in `data/cmip5/<experiment>/<frequency/` and
-`data/cmip6/<experiment>/<frequency/`, respectively.
+`data/cmip6/<experiment>/<frequency/`, respectively, where `<experiment>`
+is either `historical` (for both `historical` and `hist-1950`) or
+`abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
 ### GISS Surface Temperature Analysis (GISTEMP)
 

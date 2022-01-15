@@ -108,7 +108,9 @@ required by the main commands.
 
 In the examples below it is assumed that the CMIP5 and CMIP6 files are stored
 in `data/cmip5/<experiment>/<frequency/` and
-`data/cmip6/<experiment>/<frequency/`, respectively.
+`data/cmip6/<experiment>/<frequency/`, respectively, where `<experiment>`
+is either `historical` (for both `historical` and `hist-1950`) or
+`abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
 ### GISS Surface Temperature Analysis (GISTEMP)
 
@@ -365,6 +367,11 @@ Arguments:
 Options:
 
 - legend: Show legend ("true" or "false"). Default: "true".
+
+Examples:
+
+bin/plot_cto ecs 0 relative false data/models/historical/cto.nc data/ecs.csv plot/cto_historical_0_2003-2014.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+bin/plot_cto ecs 1-tas absolute false data/models/abrupt-4xCO2/cto.nc data/ecs.csv plot/cto_abrupt-4xCO2_1-tas_1850-1949.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
 ```
 
 

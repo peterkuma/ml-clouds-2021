@@ -20,6 +20,11 @@ Arguments:
 Options:
 
 - legend: Show legend ("true" or "false"). Default: "true".
+
+Examples:
+
+bin/plot_cto ecs 0 relative false data/models/historical/cto.nc data/ecs.csv plot/cto_historical_0_2003-2014.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+bin/plot_cto ecs 1-tas absolute false data/models/abrupt-4xCO2/cto.nc data/ecs.csv plot/cto_abrupt-4xCO2_1-tas_1850-1949.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
 '''
 
 import sys
@@ -296,20 +301,12 @@ if __name__ == '__main__':
 
 	ylim = plt.gca().get_ylim()
 
-	#if degree == 0:
-	#	plt.title('Model cloud type occurrence bias relative to CERES: CMIP6/amip 1985–2014 vs. CERES 2003–2020')
-	#elif degree == 1:
-	#	plt.title('Model cloud type trend: CMIP6/amip 1985–2014 and CERES 2003–2020')
-
-	#plt.text(0.91, -0.2, '$^*$68% error bars and confidence bands.',
-	#	transform=plt.gcf().transFigure,
-	#	ha='right',
-	#)
 	plt.suptitle(
 		(title if title is not None else ''),
 		linespacing=1.4,
 		y=0.93,
 		fontsize=10,
 	)
+
 	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight')
