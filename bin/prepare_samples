@@ -37,7 +37,6 @@ import pyproj
 import scipy.stats
 
 import pyximport; pyximport.install()
-from remap import remap5 as remap5
 
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -160,19 +159,7 @@ def random_latlon():
 def random_alpha():
 	return numpy.random.random_sample()*360.
 
-#def remap(data, lat, lon, lat2, lon2):
-#	k = data.shape[0]
-#	n2, m2 = lon2.shape
-#	data2 = np.full((k, n2, m2), np.nan, np.float64)
-#	for ki in range(k):
-#		for i2 in range(n2):
-#			for j2 in range(m2):
-#				i = np.argmin(np.abs(lat - lat2[i2,j2]))
-#				j = np.argmin(np.abs(lon - lon2[i2,j2]))
-#				data2[ki,i2,j2] = data[ki,i,j]
-#	return data2
-
-def remap2(data, lat, lon, lat2, lon2):
+def remap(data, lat, lon, lat2, lon2):
 	k = data.shape[0]
 	n, m = len(lat), len(lon)
 	n2, m2 = lon2.shape
@@ -186,84 +173,23 @@ def remap2(data, lat, lon, lat2, lon2):
 	data2[:,:,:] = data[:,ii,jj]
 	return data2
 
-def remap4(data, lat, lon, lat2, lon2):
-	k = data.shape[0]
-	n, m = len(lat), len(lon)
-	n2, m2 = lat2.shape
-	data2_0 = np.full((k, n2, m2), np.nan, np.float64)
-	ii = np.searchsorted(lat, lat2)
-	jj = np.searchsorted(lon, lon2)
-	ii[ii == n] = n - 1
-	jj[jj == m] = m - 1
-	data2_0[:,:,:] = data[:,ii,jj]
-	data2 = np.zeros((k, n2, m2), np.float64)
-	n = np.zeros((k, n2, m2), np.int64)
-	mask = np.isfinite(data)
-	lonxx1 = np.full((n2, m2), np.float64)
-	lonxx2 = np.full((n2, m2), np.float64)
-	latxx1 = np.full((n2, m2), np.float64)
-	latxx2 = np.full((n2, m2), np.float64)
-	for i in range(n2):
-		for j in range(m2):
-			lonx1 = 0.5*(lon2[max(i-1,0),j] + lon2[i,j])
-			lonx2 = 0.5*(lon2[min(i+1,n2-1),j] + lon2[i,j])
-			lonx3 = 0.5*(lon2[i,max(j-1,0)] + lon2[i,j])
-			lonx4 = 0.5*(lon2[i,min(j+1,m2-1)] + lon2[i,j])
-			latx1 = 0.5*(lat2[max(i-1,0),j] + lat2[i,j])
-			latx2 = 0.5*(lat2[min(i+1,n2-1),j] + lat2[i,j])
-			latx3 = 0.5*(lat2[i,max(j-1,0)] + lat2[i,j])
-			latx4 = 0.5*(lat2[i,min(j+1,m2-1)] + lat2[i,j])
-			lonxx1[i,j] = min(lonx1, lonx2, lonx3, lonx4)
-			lonxx2[i,j] = max(lonx1, lonx2, lonx3, lonx4)
-			latxx1[i,j] = min(latx1, latx2, latx3, latx4)
-			latxx2[i,j] = max(latx1, latx2, latx3, latx4)
-	i1 = np.searchsorted(lat, latxx1.flatten()).reshape((n2, m2))
-	i2 = np.searchsorted(lat, latxx2.flatten()).reshape((n2, m2))
-	j1 = np.searchsorted(lon, lonxx1.flatten()).reshape((n2, m2))
-	j2 = np.searchsorted(lon, lonxx2.flatten()).reshape((n2, m2))
-	for i in range(n2):
-		for j in range(m2):
-			data2[:,i,j] += np.nansum(data[:,i1[i,j]:i2[i,j],j1[i,j]:j2[i,j]], axis=(1,2))
-			n[:,i,j] += np.sum(mask[:,i1[i,j]:i2[i,j],j1[i,j]:j2[i,j]], axis=(1,2))
-	data2 /= n
-	mask = n == 0
-	data2[mask] = data2_0[mask]
-	return data2
-
 def take_sample(lat, lon, data):
 	lat0, lon0 = random_latlon()
 	alpha0 = random_alpha()
-	#alpha0 = 30
 	p1 = pyproj.Proj(proj='longlat', datum='WGS84')
 	p2 = pyproj.Proj(proj='aeqd', lat_0=lat0, lon_0=lon0, datum='WGS84')
 	x2 = np.linspace(-D, D, 40)
 	y2 = np.linspace(-D, D, 40)
 	xg2, yg2 = np.meshgrid(x2, y2)
 	shape = xg2.shape
-	#xg2, yg2 = rotate(xg2.flatten(), yg2.flatten(), alpha0)
-	#xg2 = xg2.reshape(shape)
-	#yg2 = yg2.reshape(shape)
 	lon2, lat2 = pyproj.transform(p2, p1, xg2.flatten(), yg2.flatten())
 	long_, latg = np.meshgrid(lon, lat)
 	x, y = pyproj.transform(p1, p2, long_.flatten(), latg.flatten())
 	x = x.reshape(data.shape[1:])
 	y = y.reshape(data.shape[1:])
-	#lon2 = lon2.reshape(shape).T
-	#lat2 = lat2.reshape(shape).T
 	lon2 = lon2.reshape(shape)
 	lat2 = lat2.reshape(shape)
-	#data2 = remap4(data, lat, lon, lat2, lon2)
-	data2 = remap2(data, lat, lon, lat2, lon2)
-	#print('remap5 start')
-	#data2 = remap5(
-	#	data.astype(np.double),
-	#	x.astype(np.double),
-	#	y.astype(np.double),
-	#	-D, D, 2*D/40, -D, D, 2*D/40
-	#)
-	#print('remap5 end')
-	#print(np.mean(np.abs(data3-data2)))
-	#assert np.array_equal(data2, data3)
+	data2 = remap(data, lat, lon, lat2, lon2)
 	return {
 		'data': data2,
 		'lon': lon2,
