@@ -1,0 +1,10 @@
+#!/bin/sh
+
+for f in *.nc; do
+	var="$(echo "$f" | sed 's/\([^_]*\)_\([^_]*\)_\([^_]*\)_.*/\1/')"
+	model="$(echo "$f" | sed 's/\([^_]*\)_\([^_]*\)_\([^_]*\)_.*/\3/')"
+	if [ "$var" != "" -a "$model" != "" ]; then
+		mkdir -p "by-var/$var/$model"
+		ln -s "../../../$f" "by-var/$var/$model/$(basename "$f")"
+	fi
+done
