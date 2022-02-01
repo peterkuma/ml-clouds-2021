@@ -9,6 +9,10 @@ Arguments:
 
 - input: Input file - the output of calc_dtau_pct (NetCDF).
 - output: Output plot (PDF).
+
+Example:
+
+bin/plot_dtau_pct data/dtau_pct.nc plot/dtau_pct.pdf
 '''
 
 import sys
