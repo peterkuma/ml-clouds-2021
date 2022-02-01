@@ -71,22 +71,26 @@ def read_ecs(filename):
 		'ecs': np.array(d['ECS']),
 		'tcr': np.array(d['TCR']),
 		'cld': np.array(d['CLD']),
-		'ext': np.array(d['Extended']),
+		'ext_ecs': np.array(d['Extended_ECS']),
+		'ext_tcr': np.array(d['Extended_TCR']),
+		'ext_cld': np.array(d['Extended_CLD']),
 		'.': {
 			'model': {'.dims': ['model']},
 			'ecs': {'.dims': ['model']},
 			'tcr': {'.dims': ['model']},
 			'cld': {'.dims': ['model']},
-			'ext': {'.dims': ['model']},
+			'ext_ecs': {'.dims': ['model']},
+			'ext_tcr': {'.dims': ['model']},
+			'ext_cld': {'.dims': ['model']},
 		}
 	}
 
 def get_ecs(d_ecs, var, model):
 	try:
 		i = np.where(d_ecs['model'] == model)[0][0]
-		return d_ecs[var][i]
+		return d_ecs[var][i], (d_ecs['ext_'+var][i] == 'Y')
 	except IndexError:
-		return None
+		return None, None
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
@@ -111,17 +115,17 @@ if __name__ == '__main__':
 		key = 'stats'
 		suptitle = 'Cloud type occurrence'
 		if absrel == 'relative':
-			ylabel = 'Cloud type occurrence difference (%)'
+			ylabel = 'Cloud type occurrence relative to CERES (%)'
 		else:
 			ylabel = 'Cloud type occurrence (%)'
 	elif degree == '1-time':
 		key = 'stats_time'
 		suptitle = 'Cloud type occurrence trend'
-		ylabel = 'Cloud type occurrence trend (%/100 yr)'
+		ylabel = 'Cloud type occurrence change trend (%/100 yr)'
 	elif degree == '1-tas':
 		key = 'stats_tas'
-		suptitle = 'Cloud type occurrence trend with respect to global near-surface air temperature'
-		ylabel = 'Cloud type occurrence trend (% K$^{-1}$)'
+		suptitle = 'Cloud type occurrence change with respect to GMST'
+		ylabel = 'Cloud type occurrence change with respect to GMST (% K$^{-1}$)'
 	else:
 		raise ValueError('Invalid degree "%s"' % degree)
 
