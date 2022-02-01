@@ -12,6 +12,10 @@ Arguments:
 - input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
+
+Examples:
+
+bin/plot_geo_cto 0 true data/models/historical/geo_cto_2003-2014_1/ data/ecs.csv plot/geo_cto_2003-2014_1.pdf
 '''
 
 import sys
@@ -49,22 +53,26 @@ def read_ecs(filename):
 		'ecs': np.array(d['ECS']),
 		'tcr': np.array(d['TCR']),
 		'cld': np.array(d['CLD']),
-		'ext': np.array(d['Extended']),
+		'ext_ecs': np.array(d['Extended_ECS']),
+		'ext_tcr': np.array(d['Extended_TCR']),
+		'ext_cld': np.array(d['Extended_CLD']),
 		'.': {
 			'model': {'.dims': ['model']},
 			'ecs': {'.dims': ['model']},
 			'tcr': {'.dims': ['model']},
 			'cld': {'.dims': ['model']},
-			'ext': {'.dims': ['model']},
+			'ext_scs': {'.dims': ['model']},
+			'ext_tcr': {'.dims': ['model']},
+			'ext_cld': {'.dims': ['model']},
 		}
 	}
 
-def get_ecs(d_ecs, model):
+def get_ecs(d_ecs, var, model):
 	try:
-		i = np.where(d_ecs['model'] == model)[-1][-1]
-		return d_ecs['ecs'][i], d_ecs['ext'][i]
+		i = np.where(d_ecs['model'] == model)[0][0]
+		return d_ecs[var][i], (d_ecs['ext_'+var][i] == 'Y')
 	except IndexError:
-		return np.nan
+		return np.nan, False
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
@@ -123,7 +131,7 @@ if __name__ == '__main__':
 		8: (8, 7.85),
 		9: (8, 8.84),
 		10: (8, 9.8),
-		11: (8, 10.8),
+		11: (8, 12.4),
 		12: (8, 12),
 	}[nrows]
 
@@ -139,7 +147,7 @@ if __name__ == '__main__':
 	dd_wo_ceres = [d for d in dd if d is not d_ceres]
 
 	for d in dd_wo_ceres:
-		d['ecs'], d['ext'] = get_ecs(d_ecs, d['name'])
+		d['ecs'], d['ext'] = get_ecs(d_ecs, 'ecs', d['name'])
 	order = np.argsort([d['ecs'] for d in dd_wo_ceres])
 	dd_wo_ceres = [dd_wo_ceres[i] for i in order]
 
@@ -161,11 +169,14 @@ if __name__ == '__main__':
 				transform=ax.transAxes,
 				va='top',
 				ha='left',
-				fontsize=6,
+				fontsize=7,
 				weight='bold',
 			)
 			if name != 'CERES':
 				varx = var if var in d else var_alt
+				if varx not in d:
+					print('Skipping %s because it does not define required variables' % name)
+					continue
 				if d[varx].ndim == 4:
 					z = d[varx][0,j,:,:]
 				else:
@@ -184,13 +195,13 @@ if __name__ == '__main__':
 				e_mean = np.average(z*100., weights=weights)
 				if relative:
 					mse = np.average((z*100.)**2, weights=weights)
-					ax.text(0.5, 0.01, 'ME %.0f%%, RMSE %.0f%%' % (
+					ax.text(0.5, -0.02, 'ME %.0f%% | RMSE %.0f%%' % (
 							e_mean, np.sqrt(mse),
 						),
 						transform=ax.transAxes,
 						fontsize=7,
 						ha='center',
-						va='bottom',
+						va='top',
 					)
 					total_mse += mse
 					if j == len(CLOUD_TYPES) - 1:
@@ -203,11 +214,12 @@ if __name__ == '__main__':
 							rotation=90.,
 						)
 				else:
-					ax.text(0.5, 0.01, 'Mean %d%s' % (e_mean, units),
+					fmt = 'mean %d%s' if deg == 0 else 'mean %.2f%s'
+					ax.text(0.5, -0.02, fmt % (e_mean, units),
 						transform=ax.transAxes,
-						fontsize=5,
+						fontsize=7,
 						ha='center',
-						va='bottom',
+						va='top',
 					)
 			else:
 				varx = var if var in d else var_alt
@@ -222,11 +234,11 @@ if __name__ == '__main__':
 				latg, long_ = np.meshgrid(d['lat'], d['lon'])
 				weights = np.cos(latg.T/180.*np.pi)
 				e_mean = np.average(z*100., weights=weights)
-				ax.text(0.5, 0.01, 'Mean %d%s' % (e_mean, units),
+				ax.text(0.5, -0.02, 'mean %d%s' % (e_mean, units),
 					transform=ax.transAxes,
 					fontsize=7,
 					ha='center',
-					va='bottom',
+					va='top',
 				)
 
 			ax.coastlines(lw=0.4)
@@ -236,30 +248,30 @@ if __name__ == '__main__':
 					transform=ax.transAxes,
 					va='center',
 					ha='center',
-					fontsize=8,
+					fontsize=7,
 				)
 			if j == 0:
 				if 'ecs' in d and np.isfinite(d['ecs']):
 					star = '$^*$' if d['ext'] else ''
-					ax.text(-0.06, 0.5,
+					ax.text(-0.07, 0.5,
 						name + ('\nECS %.1f K%s' % (d['ecs'], star)),
 						transform=ax.transAxes, va='center', ha='center',
-						rotation=90, fontsize=5.5)
+						rotation=90, fontsize=(6.5 if len(name) > 12 else 7))
 				else:
 					ax.text(-0.03, 0.5, name, transform=ax.transAxes, \
-						va='center', ha='center', rotation=90, fontsize=5.5)
+						va='center', ha='center', rotation=90, fontsize=7)
 
-	plt.subplots_adjust(hspace=0, wspace=0, right=0.89)
+	plt.subplots_adjust(hspace=0.06, wspace=0, right=0.89)
 
 	if relative:
-		cax = fig.add_axes([0.125, 0.085, 0.35, 0.01])
+		cax = fig.add_axes([0.125, 0.092, 0.35, 0.007])
 		cb = fig.colorbar(cf_ref, cax=cax, ticks=np.arange(0, 110, 10),
 			orientation='horizontal')
 		cb.set_label(label='Cloud type occurrence (%)', fontsize=7)
 		cb.ax.tick_params(labelsize=6)
 
-	cax = fig.add_axes([0.54, 0.085, 0.35, 0.01] if relative else \
-		[0.91, 0.55, 0.01, 0.3])
+	cax = fig.add_axes([0.54, 0.092, 0.35, 0.007] if relative else \
+		[0.33, 0.092, 0.35, 0.007])
 	cb = fig.colorbar(cf, cax=cax, orientation='horizontal')
 	cb.set_label(label=label, fontsize=7)
 	cb.ax.tick_params(labelsize=6)
