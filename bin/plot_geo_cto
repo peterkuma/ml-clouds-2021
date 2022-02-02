@@ -96,7 +96,7 @@ if __name__ == '__main__':
 	}[deg]
 
 	abs_levels = {
-		0: 100.*np.arange(0, 1.02, 0.02),
+		0: 100.*np.arange(0.15, 0.875, 0.025),
 		1: 100.*np.arange(-0.05, 0.055, 0.005),
 	}[deg]
 
@@ -229,7 +229,7 @@ if __name__ == '__main__':
 					z = d[varx][j,:,:]
 				cf_ref = ax.contourf(d['lon'], d['lat'], z*100.,
 					levels=abs_levels,
-					cmap=('Greys_r' if deg == 0 else 'bwr'),
+					cmap=('viridis' if deg == 0 else 'bwr'),
 				)
 				latg, long_ = np.meshgrid(d['lat'], d['lon'])
 				weights = np.cos(latg.T/180.*np.pi)
