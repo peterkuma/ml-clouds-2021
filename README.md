@@ -245,7 +245,8 @@ Arguments:
 
 
 ```
-Merge samples.
+Merge daily sample files produced by tf into yearly files. Filter samples by
+number of stations greater or equal to 100.
 
 Usage: merge_samples <input> <output>
 
