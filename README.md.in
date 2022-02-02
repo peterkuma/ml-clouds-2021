@@ -1,4 +1,4 @@
-# Code for the paper "Cloud type machine learning shows better present-day cloud representation in climate models is associated with higher climate sensitivity"
+# Code for the paper "Machine learning of cloud types shows higher climate sensitivity is associated with lower cloud biases"
 
 Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
 
@@ -6,9 +6,8 @@ Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, 
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
 <sup>3</sup>Norwegian Meteorological Institute, Oslo, Norway
 
-This repository contains code for the paper "Cloud type machine learning shows
-better present-day cloud representation in climate models is associated with
-higher climate sensitivity".
+This repository contains code for the paper "Machine learning of cloud types
+shows higher climate sensitivity is associated with lower cloud biases".
 
 If you have any questions about the code you can contact the authors or submit
 an Issue on GitHub.
