@@ -3,11 +3,11 @@
 
 Usage: calc_cto <input> <tas> <output>
 
-Depends on: tf gittemp_to_nc
+Depends on: merge_samples gittemp_to_nc
 
 Arguments:
 
-- input: Input directory - the output of tf apply (NetCDF).
+- input: Input directory - the output of merge_samples (NetCDF).
 - tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
 '''

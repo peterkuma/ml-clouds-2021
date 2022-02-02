@@ -3,9 +3,11 @@
 
 Usage: plot_samples <input> <n> <output>
 
+Depends on: tf
+
 Arguments:
 
-- input: Input sample (NetCDF).
+- input: Input sample (NetCDF) - the output of tf.
 - n: Sample number.
 - output: Output plot (PDF).
 '''
@@ -64,27 +66,18 @@ def plot_data(d, n, k, title, xlabel=True, ylabel=True):
 	return im
 
 def stats_to_label(stats, stats_n):
-	#return stats[:-1]/stats_n[:-1]
-	#return np.argmax(stats[[1,2,3,5,6,8,9,10,11,12]])
 	stats2 = np.zeros(4, np.float64)
 	stats2_n = np.zeros(4, np.float64)
 	stats2[0] = np.nansum(stats[1:4]) # Ci, Cs, Cc
 	stats2_n[0] = stats_n[1]
-	#stats2_n[0] = stats_n[9]
 	stats2[1] = np.nansum(stats[5:7]) # As, Ac
-	#stats2_n[1] = stats_n[9]
 	stats2_n[1] = stats_n[5]
 	stats2[2] = np.nansum([stats[8], stats[11], stats[12]]) # Cu, Cb
 	stats2_n[2] = stats_n[8]
-	#stats2_n[2] = stats_n[9]
 	stats2[3] = np.nansum(stats[9:11]) # Sc, St
 	stats2_n[3] = stats_n[9]
-	#stats2[4] = np.nansum(stats[13])
-	#stats2_n[4] = stats_n[13]
-	#return np.argmax(stats2)
 	return np.array([stats2[i]/stats2_n[i] if stats2_n[i] > 0 else 0
 		for i in range(len(stats2))])
-	#return np.argsort(stats)[-1]
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)

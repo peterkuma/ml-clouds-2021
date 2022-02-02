@@ -60,15 +60,22 @@ Below is an overview of the available commands showing their dependencies
 and the paper figures they produce.
 
 ```
-prepare_samples -> tf -> plot_idd_stations [Figure 1a]
-                      -> plot_sample [Figure 1b, c]
-                      -> plot_training_history [Figure 3]
-                      -> calc_dtau_pct -> plot_dtau_pct [Figure 6]
-
-prepare_samples -> tf -> calc_geo_co -> plot_geo_cto [Figure 4, 5]
-                                     -> plot_geo_cto_rmse [Figure 8b, c, d]
-                      -> calc_cto -> plot_cto [Figure 7]
-                                  -> calc_cto_ecs -> plot_cto_ecs [Figure 8a]
+prepare_samples
+  tf
+    plot_idd_stations [Figure 1a]
+    plot_sample [Figure 1b, c]
+    plot_training_history [Figure 3]
+    merge_samples
+      calc_dtau_pct
+	    plot_dtau_pct [Figure 6]
+      calc_geo_cto
+        plot_geo_cto [Figure 4, 5]
+        plot_geo_cto_rmse [Figure 11b, c, d]
+      calc_cto
+        plot_cto [Figure 10]
+        calc_cto_ecs
+		  plot_cto_ecs [Figure 11a]
+plot_tf_scheme [Figure 2]
 ```
 
 ## Input datasets
@@ -134,22 +141,6 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 {tf}
 
-### calc\_geo\_cto
-
-{calc_geo_cto}
-
-### calc\_cto
-
-{calc_cto}
-
-### calc\_cto\_ecs
-
-{calc_cto_ecs}
-
-### calc\_dtau\_pct
-
-{calc_dtau_pct}
-
 ### plot\_idd\_stations [Figure 1a]
 
 {plot_idd_stations}
@@ -162,25 +153,49 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 {plot_training_history}
 
-### plot\_geo\_cto [Figure 4, 5]
+### merge\_samples
 
-{plot_geo_cto}
+{merge_samples}
+
+### calc\_dtau\_pct
+
+{calc_dtau_pct}
 
 ### plot\_dtau\_pct [Figure 6]
 
 {plot_dtau_pct}
 
-### plot\_cto [Figure 7]
+### calc\_geo\_cto
+
+{calc_geo_cto}
+
+### plot\_geo\_cto [Figure 4, 5]
+
+{plot_geo_cto}
+
+### plot\_geo\_cto\_rmse [Figure 11b, c, d]
+
+{plot_geo_cto_rmse}
+
+### calc\_cto
+
+{calc_cto}
+
+### plot\_cto [Figure 10]
 
 {plot_cto}
 
-### plot\_cto\_ecs [Figure 8a]
+### calc\_cto\_ecs
+
+{calc_cto_ecs}
+
+### plot\_cto\_ecs [Figure 11a]
 
 {plot_cto_ecs}
 
-### plot\_geo\_cto\_rmse [Figure 8b, c, d]
+### plot\_tf\_scheme [Figure 2]
 
-{plot_geo_cto_rmse}
+{plot_tf_scheme}
 
 ## Auxiliary commands
 

@@ -60,15 +60,22 @@ Below is an overview of the available commands showing their dependencies
 and the paper figures they produce.
 
 ```
-prepare_samples -> tf -> plot_idd_stations [Figure 1a]
-                      -> plot_sample [Figure 1b, c]
-                      -> plot_training_history [Figure 3]
-                      -> calc_dtau_pct -> plot_dtau_pct [Figure 6]
-
-prepare_samples -> tf -> calc_geo_co -> plot_geo_cto [Figure 4, 5]
-                                     -> plot_geo_cto_rmse [Figure 8b, c, d]
-                      -> calc_cto -> plot_cto [Figure 7]
-                                  -> calc_cto_ecs -> plot_cto_ecs [Figure 8a]
+prepare_samples
+  tf
+    plot_idd_stations [Figure 1a]
+    plot_sample [Figure 1b, c]
+    plot_training_history [Figure 3]
+    merge_samples
+      calc_dtau_pct
+	    plot_dtau_pct [Figure 6]
+      calc_geo_cto
+        plot_geo_cto [Figure 4, 5]
+        plot_geo_cto_rmse [Figure 11b, c, d]
+      calc_cto
+        plot_cto [Figure 10]
+        calc_cto_ecs
+		  plot_cto_ecs [Figure 11a]
+plot_tf_scheme [Figure 2]
 ```
 
 ## Input datasets
@@ -180,78 +187,6 @@ Arguments (apply):
 ```
 
 
-### calc\_geo\_cto
-
-
-```
-Calculate geographical distribution of cloud type occurrence distribution.
-
-Usage: calc_geo_cto <input> <tas> <output>
-
-Depends on: tf gistemp_to_nc
-
-Arguments:
-
-- input: Input file or directory - the output of tf apply (NetCDF).
-- tas: Input directory with tas - the output of gistemp_to_nc (NetCDF).
-- output: Output file (NetCDF).
-```
-
-
-### calc\_cto
-
-
-```
-Calculate global mean cloud type occurrence.
-
-Usage: calc_cto <input> <tas> <output>
-
-Depends on: tf gittemp_to_nc
-
-Arguments:
-
-- input: Input directory - the output of tf apply (NetCDF).
-- tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
-- output: Output file (NetCDF).
-```
-
-
-### calc\_cto\_ecs
-
-
-```
-Calculate cloud type occurrence vs. ECS regression.
-
-Usage: calc_cto_ecs <input> <ecs> <output>
-
-Depends on: calc_cto
-
-Arguments:
-
-- input: Input file - the output of calc_cto (NetCDF).
-- ecs: ECS, TCR and CLD input (CSV).
-- output: Output files (NetCDF).
-```
-
-
-### calc\_dtau\_pct
-
-
-```
-Calculate cloud optical depth - cloud top press histogram.
-
-Usage: calc_dtau_pct <samples> <ceres> <output>
-
-Depends on: tf
-
-Arguments:
-
-- samples: Directory with samples - the output of tf apply (NetCDF).
-- ceres: Directory with CERES SYN1deg (NetCDF).
-- output: Output file (NetCDF).
-```
-
-
 ### plot\_idd\_stations [Figure 1a]
 
 
@@ -280,9 +215,11 @@ Plot sample.
 
 Usage: plot_samples <input> <n> <output>
 
+Depends on: tf
+
 Arguments:
 
-- input: Input sample (NetCDF).
+- input: Input sample (NetCDF) - the output of tf.
 - n: Sample number.
 - output: Output plot (PDF).
 ```
@@ -305,23 +242,38 @@ Arguments:
 ```
 
 
-### plot\_geo\_cto [Figure 4, 5]
+### merge\_samples
 
 
 ```
-Plot geographical distribution of cloud type occurrence.
+Merge samples.
 
-Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output>
+Usage: merge_samples <input> <output>
 
-Depends on: calc_geo_cto
+Depends on: tf
 
 Arguments:
 
-- deg: Degree. One of: 0 (absolute value) or 1 (trend).
-- relative: Plot relative to CERES. One of: true or false.
-- input: Input directory - the output of calc_geo_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+- input: Input directory - the output of tf.
+- output: Output file.
+```
+
+
+### calc\_dtau\_pct
+
+
+```
+Calculate cloud optical depth - cloud top press histogram.
+
+Usage: calc_dtau_pct <samples> <ceres> <output>
+
+Depends on: merge_samples
+
+Arguments:
+
+- samples: Directory with samples - the output of merge_samples (NetCDF).
+- ceres: Directory with CERES SYN1deg (NetCDF).
+- output: Output file (NetCDF).
 ```
 
 
@@ -339,10 +291,104 @@ Arguments:
 
 - input: Input file - the output of calc_dtau_pct (NetCDF).
 - output: Output plot (PDF).
+
+Example:
+
+bin/plot_dtau_pct data/dtau_pct.nc plot/dtau_pct.pdf
 ```
 
 
-### plot\_cto [Figure 7]
+### calc\_geo\_cto
+
+
+```
+Calculate geographical distribution of cloud type occurrence distribution.
+
+Usage: calc_geo_cto <input> <tas> <output>
+
+Depends on: merge_samples gistemp_to_nc
+
+Arguments:
+
+- input: Input file or directory - the output of merge_samples (NetCDF).
+- tas: Input directory with tas - the output of gistemp_to_nc (NetCDF).
+- output: Output file (NetCDF).
+```
+
+
+### plot\_geo\_cto [Figure 4, 5]
+
+
+```
+Plot geographical distribution of cloud type occurrence.
+
+Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output>
+
+Depends on: calc_geo_cto
+
+Arguments:
+
+- deg: Degree. One of: 0 (absolute value) or 1 (trend).
+- relative: Plot relative to CERES. One of: true or false.
+- input: Input directory - the output of calc_geo_cto (NetCDF).
+- ecs: ECS file (CSV).
+- output: Output plot (PDF).
+
+Examples:
+
+bin/plot_geo_cto 0 true data/models/historical/geo_cto_2003-2014_1/ data/ecs.csv plot/geo_cto_2003-2014_1.pdf
+```
+
+
+### plot\_geo\_cto\_rmse [Figure 11b, c, d]
+
+
+```
+Plot scatter plot of RMSE of the geographical distribution of cloud type
+occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
+
+Usage: plot_geo_cto_rmse <var> <input> <ecs> <output> [legend: <legend>]
+
+Depends on: calc_geo_cto
+
+Arguments:
+
+- var: One of: "ecs" (ECS), "tcr" (TCR), "cld" (CLD).
+- input: Input directory - the output of calc_geo_cto (NetCDF).
+- ecs: ECS file (CSV).
+- output: Output plot (PDF).
+
+Options:
+
+- legend: Plot legend ("true" or "false"). Default: "true".
+
+Examples:
+
+bin/plot_geo_cto_rmse ecs data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse tcr data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse cld data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
+```
+
+
+### calc\_cto
+
+
+```
+Calculate global mean cloud type occurrence.
+
+Usage: calc_cto <input> <tas> <output>
+
+Depends on: merge_samples gittemp_to_nc
+
+Arguments:
+
+- input: Input directory - the output of merge_samples (NetCDF).
+- tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
+- output: Output file (NetCDF).
+```
+
+
+### plot\_cto [Figure 10]
 
 
 ```
@@ -375,7 +421,25 @@ bin/plot_cto ecs 1-tas absolute false data/models/abrupt-4xCO2/cto.nc data/ecs.c
 ```
 
 
-### plot\_cto\_ecs [Figure 8a]
+### calc\_cto\_ecs
+
+
+```
+Calculate cloud type occurrence vs. ECS regression.
+
+Usage: calc_cto_ecs <input> <ecs> <output>
+
+Depends on: calc_cto
+
+Arguments:
+
+- input: Input file - the output of calc_cto (NetCDF).
+- ecs: ECS, TCR and CLD input (CSV).
+- output: Output files (NetCDF).
+```
+
+
+### plot\_cto\_ecs [Figure 11a]
 
 
 ```
@@ -396,33 +460,17 @@ Arguments:
 ```
 
 
-### plot\_geo\_cto\_rmse [Figure 8b, c, d]
+### plot\_tf\_scheme [Figure 2]
 
 
 ```
-Plot scatter plot of RMSE of the geographical distribution of cloud type
-occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
+Plot a TensorFlow model scheme.
 
-Usage: plot_geo_cto_rmse <var> <input> <ecs> <output> [legend: <legend>]
-
-Depends on: calc_geo_cto
+Usage: plot_tf_scheme <output>
 
 Arguments:
 
-- var: One of: "ecs" (ECS), "tcr" (TCR), "cld" (CLD).
-- input: Input directory - the output of calc_geo_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
-
-Options:
-
-- legend: Plot legend ("true" or "false"). Default: "true".
-
-Examples:
-
-bin/plot_geo_cto_rmse ecs data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
-bin/plot_geo_cto_rmse tcr data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
-bin/plot_geo_cto_rmse cld data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
+- output: Output file (PNG).
 ```
 
 

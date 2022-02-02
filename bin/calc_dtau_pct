@@ -3,11 +3,11 @@
 
 Usage: calc_dtau_pct <samples> <ceres> <output>
 
-Depends on: tf
+Depends on: merge_samples
 
 Arguments:
 
-- samples: Directory with samples - the output of tf apply (NetCDF).
+- samples: Directory with samples - the output of merge_samples (NetCDF).
 - ceres: Directory with CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
 '''
