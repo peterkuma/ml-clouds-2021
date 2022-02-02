@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+'''Merge samples.
+
+Usage: merge_samples <input> <output>
+
+Depends on: tf
+
+Arguments:
+
+- input: Input directory - the output of tf.
+- output: Output file.
+'''
+
+import sys
+import os
+import re
+import numpy as np
+import ds_format as ds
+import aquarius_time as aq
+
+if __name__ == '__main__':
+	if len(sys.argv) != 3:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = sys.argv[1]
+	output = sys.argv[2]
+
+	dd = ds.readdir(input_, [], full=True)
+	nn = sum(d['.']['data']['.size'][0] for d in dd)
+	shape = dd[0]['.']['data']['.size'][1:]
+	shape2 = dd[0]['.']['data']['.size'][2:]
+	data = np.full([nn] + list(shape), np.nan, np.float64)
+	lon = np.full([nn] + list(shape2), np.nan, np.float64)
+	lat = np.full([nn] + list(shape2), np.nan, np.float64)
+	time = np.full(nn, np.nan, np.float64)
+	mask = np.full(nn, False, bool)
+	has_stats = False
+	stats = np.full([nn, 14], np.nan, np.float64)
+	stats_n = np.full([nn, 14], np.nan, np.float64)
+
+	dd = ds.readdir(input_, ['data', 'lon', 'lat', 'stats', 'stats_n'])
+	i = 0
+	for d in dd:
+		print('<- %s' % d['filename'])
+		m = re.match(r'(.*)\.nc', os.path.basename(d['filename']))
+		n = d['data'].shape[0]
+		data[i:(i+n),::] = d['data'][::]
+		lon[i:(i+n),::] = d['lon'][::]
+		lat[i:(i+n),::] = d['lat'][::]
+		time[i:(i+n)] = aq.from_iso(m[1])*np.ones(n)
+		if 'stats' in d:
+			has_stats = True
+			mask[i:(i+n)] = d['stats_n'][:,0] >= 100
+			stats[i:(i+n),:]  = d['stats'][::]
+			stats_n[i:(i+n),:]  = d['stats_n'][::]
+		else:
+			mask[i:(i+n)] = True
+		i += n
+
+	do = {
+		'data': data[mask,::],
+		'lon': lon[mask,:,:],
+		'lat': lat[mask,:,:],
+		'time': time[mask],
+		'.': {
+			'data': dd[0]['.']['data'],
+			'lon': {'.dims': ['sample', 'x', 'y']},
+			'lat': {'.dims': ['sample', 'x', 'y']},
+			'time': {'.dims': ['sample']},
+		},
+	}
+	if has_stats:
+		do['stats'] = stats[mask,::]
+		do['stats_n'] = stats_n[mask,::]
+		do['.']['stats'] = dd[0]['.']['stats']
+		do['.']['stats_n'] = dd[0]['.']['stats_n']
+	print('-> %s' % output)
+	ds.write(output, do)
