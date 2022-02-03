@@ -14,24 +14,26 @@ an Issue on GitHub.
 
 ## Requirements
 
-The code can be run on a Linux distribution with the following software:
+The code can be run on a Linux distribution with the following software
+(exact versions are listed for reproducibility, but newer version may work
+equally well):
 
-- Python 3
-- Cython
-- aria2
+- Python 3.7.3
+- Cython 0.29.2
+- aria2 1.34.0
 
 and Python packages:
 
-- tensorflow
-- scipy
-- numpy
-- matplotlib
-- pymc3
-- pst-format
-- aquarius-time
-- ds-format
-- pyproj
-- pandas
+- tensorflow 1.14.0
+- scipy 1.7.0
+- numpy 1.21.1
+- matplotlib 3.5.1
+- pymc3 3.11.2
+- pst-format 1.1.1
+- aquarius-time 0.1.1
+- ds-format 1.2.0
+- pyproj 2.6.1
+- pandas 1.3.0
 
 On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
