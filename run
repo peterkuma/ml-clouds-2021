@@ -28,7 +28,7 @@ prepare_ceres)
 prepare_historical)
 	for model in $(cat "$DATA"/models_historical); do
 		mkdir -p "$DATA"/samples/historical/$model/{2003..2014}
-		parallel -j$JOBS -v prepare_samples cmip input/cmip6/historical/daily/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/historical/$model/{} ::: {2003..2014}
+		parallel -j$JOBS -v bin/prepare_samples cmip input/cmip6/historical/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/historical/$model/{} ::: {2003..2014}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/historical/$model/{} "$DATA"/samples_tf/historical/$model/{}.nc ::: {2003..2014}
 	done
 	;;
@@ -36,7 +36,7 @@ prepare_historical)
 prepare_abrupt-4xCO2)
 	for model in $(cat "$DATA"/models_abrupt-4xCO2); do
 		mkdir -p "$DATA"/samples/abrupt-4xCO2/$model/{1850..1949}
-		parallel -j$JOBS -v prepare_samples cmip input/cmip6/abrupt-4xCO2/daily/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/abrupt-4xCO2/$model/{} ::: {1850..1949}
+		parallel -j$JOBS -v prepare_samples cmip input/cmip6/abrupt-4xCO2/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/abrupt-4xCO2/$model/{} ::: {1850..1949}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/abrupt-4xCO2/$model/{} "$DATA"/samples_tf/abrupt-4xCO2/$model/{}.nc ::: {1850..1949}
 	done
 	;;
@@ -62,7 +62,7 @@ label_abrupt-4xCO2)
 	;;
 
 calc_dtau_pct)
-	bin/calc_dtau_pct "$DATA"/samples_tf/ceres input/ceres "$DATA"/dtau_pct/dtau_pct.n
+	bin/calc_dtau_pct "$DATA"/samples_tf/ceres input/ceres "$DATA"/dtau_pct/dtau_pct.nc
 	;;
 
 plot_dtau_pct)
@@ -71,11 +71,11 @@ plot_dtau_pct)
 
 calc_geo_cto_historical)
 	mkdir -p "$DATA"/geo_cto/historical/all
-	bin/calc_geo_cto "$DATA"/samples_tf/ceres "$DATA"/tas/historical/CERES.nc "$DATA"/geo_cto/historical/all/CERES.nc
+	#bin/calc_geo_cto "$DATA"/samples_tf/ceres "$DATA"/tas/historical/CERES.nc "$DATA"/geo_cto/historical/all/CERES.nc
 	for model in $(cat "$DATA"/models_historical); do
 		bin/calc_geo_cto "$DATA"/samples_tf/historical/$model "$DATA"/tas/historical/$model.nc "$DATA"/geo_cto/historical/all/$model.nc
 	done
-	mkdir -p "$DATA"/geo_cto/historical/part_1/
+	mkdir -p "$DATA"/geo_cto/historical/part_{1,2}/
 	for model in $(cat "$DATA"/models_historical_part_1); do
 		cp "$DATA"/geo_cto/historical/all/$model.nc "$DATA"/geo_cto/historical/part_1/
 	done
@@ -89,11 +89,11 @@ calc_geo_cto_abrupt-4xCO2)
 	for model in $(cat "$DATA"/models_abrupt-4xCO2); do
 		bin/calc_geo_cto "$DATA"/samples_tf/abrupt-4xCO2/$model "$DATA"/tas/abrupt-4xCO2/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc
 	done
-	mkdir -p "$DATA"/geo_cto/abrupt-4xCO2/part_1/
-	for model in $(cat "$DATA"/models_historical_part_1); do
+	mkdir -p "$DATA"/geo_cto/abrupt-4xCO2/part_{1,2}/
+	for model in $(cat "$DATA"/models_abrupt-4xCO2_part_1); do
 		cp "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/part_1/
 	done
-	for model in $(cat "$DATA"/models_historical_part_2); do
+	for model in $(cat "$DATA"/models_abrupt-4xCO2_part_2); do
 		cp "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/part_2/
 	done
 	;;

@@ -206,7 +206,7 @@ data
 
 The `input` directory should be populated with the required input files.
 The CMIP input files should be indexed with `create_by_model`. The space
-requirements in the data directory are about 8 TB.
+requirement in the data directory are about 8 TB.
 
 ```sh
 export JOBS=12
