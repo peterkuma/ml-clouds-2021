@@ -202,6 +202,38 @@ data
       <model>/<year>.nc: Samples labelled with tf apply for a model/year in the abrupt-4xCO2 experiment.
 ```
 
+## How to run
+
+The `input` directory should be populated with the required input files.
+The CMIP input files should be indexed with `create_by_model`. The space
+requirements in the data directory are about 8 TB.
+
+```sh
+export JOBS=12
+export DATA=data
+./run prepare_ceres_training
+./run train_ann
+./run prepare_ceres
+./run prepare_historical
+./run prepare_abrupt-4xCO2
+./run label_ceres
+./run label_historical
+./run label_abrupt-4xCO2
+./run calc_dtau_pct
+./run plot_dtau_pct
+./run calc_geo_cto_historical
+./run calc_geo_cto_abrupt-4xCO2
+./run plot_geo_cto_historical
+./run plot_geo_cto_abrupt-4xCO2
+./run plot_geo_cto_rsme_historical
+./run plot_geo_cto_rmse_abrupt-4xCO2
+./run calc_cto_historical
+./run calc_cto_abrupt-4xCO2
+./run plot_cto_historical
+./run plot_cto_abrupt-4xCO2
+./run plot_tf_scheme
+```
+
 ## Main commands
 
 Below is description of the available commands. They should be run in the Linux
@@ -267,8 +299,8 @@ Arguments (apply):
 
 Examples:
 
-bin/tf train data/ceres/samples data/ann/ceres.h5 data/ann/history.nc
-bin/tf apply data/ann/ceres.h5 data/ceres/samples 2003 2020 data/samples_tf/ceres
+bin/tf train data/samples/ceres_training data/ann/ceres.h5 data/ann/history.nc
+bin/tf apply data/ann/ceres.h5 data/samples/ceres 2003 2020 data/samples_tf/ceres
 bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 data/samples_tf/historical/AWI-ESM-1-1-LR
 ```
 
@@ -346,8 +378,8 @@ Arguments:
 
 Examples:
 
-bin/merge_samples data/samples_tf/ceres/2003{,.nc}
-bin/merge_samples data/samples_tf/historical/AWI-ESM-1-1-LR/2003{,.nc}
+bin/merge_samples data/samples/ceres/2003{,.nc}
+bin/merge_samples data/samples/historical/AWI-ESM-1-1-LR/2003{,.nc}
 ```
 
 
@@ -366,6 +398,10 @@ Arguments:
 - samples: Directory with samples - the output of merge_samples (NetCDF).
 - ceres: Directory with CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
+
+Examples:
+
+bin/calc_dtau_pct data/samples_tf/ceres input/ceres data/dtau_pct/dtau_pct.nc
 ```
 
 
@@ -408,8 +444,8 @@ Arguments:
 
 Examples:
 
-bin/calc_geo_cto data/samples_tf/ceres data/tas/historical/CERES.nc data/geo_cto/historical/CERES.nc
-bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/AWI-ESM-1-1-LR.nc
+bin/calc_geo_cto data/samples_tf/ceres data/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
+bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/all/AWI-ESM-1-1-LR.nc
 ```
 
 
@@ -566,7 +602,7 @@ Arguments:
 
 Examples:
 
-bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2/cto.nc data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf ''
+bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2/cto.nc data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 ```
 
 
@@ -678,6 +714,7 @@ Example:
 
 bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 ```
+
 
 ## License
 
