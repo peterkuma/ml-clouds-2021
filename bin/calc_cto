@@ -13,7 +13,8 @@ Arguments:
 
 Examples:
 
-bin/calc_cto data/samples_stats/historical/2003-2020 data/tas/historical data/cto/historical/2003-2020.nc
+bin/calc_cto data/samples_tf/historical data/tas/historical data/cto/historical/cto.nc
+bin/calc_cto data/samples_tf/abrupt-4xCO2 data/tas/abrupt-4xCO2 data/cto/abrupt-4xCO2/cto.nc
 '''
 
 import sys

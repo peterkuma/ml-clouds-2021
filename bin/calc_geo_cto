@@ -13,8 +13,8 @@ Arguments:
 
 Examples:
 
-bin/calc_geo_cto data/samples_stats/ceres data/tas/historical/CERES.nc data/geo_cto/historical/2003-2020/CERES.nc
-bin/calc_geo_cto data/samples_stats/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/2003-2020/AWI-ESM-1-1-LR.nc
+bin/calc_geo_cto data/samples_tf/ceres data/tas/historical/CERES.nc data/geo_cto/historical/CERES.nc
+bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/AWI-ESM-1-1-LR.nc
 '''
 
 import sys

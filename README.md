@@ -165,14 +165,20 @@ data
 	abrupt-4xCO2
   cto
     historical
-	  2003-2014
+	  cto.nc
 	abrupt-4xCO2
-	  1850-1949
+	  cto.nc
+  cto_ecs
+    cto_ecs.nc
   geo_cto
     historical
-	  2003-2014
+      all
+      part_1
+      part_2
 	abrupt-4xCO2
-	  1850-1949
+      all
+      part_1
+      part_2
 ```
 
 ## Main commands
@@ -241,8 +247,8 @@ Arguments (apply):
 Examples:
 
 bin/tf train data/ceres/samples data/ann/ceres.h5 data/ann/history.nc
-bin/tf apply data/ann/ceres.h5 data/ceres/samples 2003 2020 data/samples_stats/ceres
-bin/tf apply data/ann/ceres.h5 input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR 2003 2020 data/samples/historical/AWI-ESM-1-1-LR
+bin/tf apply data/ann/ceres.h5 data/ceres/samples 2003 2020 data/samples_tf/ceres
+bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 data/samples_tf/historical/AWI-ESM-1-1-LR
 ```
 
 
@@ -319,8 +325,8 @@ Arguments:
 
 Examples:
 
-bin/merge_samples data/samples/ceres/2003{,.nc}
-bin/merge_samples data/samples/historical/AWI-ESM-1-1-LR/2003{,.nc}
+bin/merge_samples data/samples_tf/ceres/2003{,.nc}
+bin/merge_samples data/samples_tf/historical/AWI-ESM-1-1-LR/2003{,.nc}
 ```
 
 
@@ -381,8 +387,8 @@ Arguments:
 
 Examples:
 
-bin/calc_geo_cto data/samples_stats/ceres data/tas/historical/CERES.nc data/geo_cto/historical/2003-2020/CERES.nc
-bin/calc_geo_cto data/samples_stats/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/2003-2020/AWI-ESM-1-1-LR.nc
+bin/calc_geo_cto data/samples_tf/ceres data/tas/historical/CERES.nc data/geo_cto/historical/CERES.nc
+bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/AWI-ESM-1-1-LR.nc
 ```
 
 
@@ -406,8 +412,8 @@ Arguments:
 
 Examples:
 
-bin/plot_geo_cto 0 true data/geo_cto/historical_2003-2014_1/ data/ecs/ecs.csv plot/geo_cto_historical_2003-2014_1.pdf
-bin/plot_geo_cto 0 true data/geo_cto/historical_2003-2014_2/ data/ecs/ecs.csv plot/geo_cto_historical_2003-2014_2.pdf
+bin/plot_geo_cto 0 true data/geo_cto/historical/part_1 data/ecs/ecs.csv plot/geo_cto_historical_1.pdf
+bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 data/ecs/ecs.csv plot/geo_cto_historical_2.pdf
 ```
 
 
@@ -435,9 +441,9 @@ Options:
 
 Examples:
 
-bin/plot_geo_cto_rmse ecs data/geo_cto/historical_2003-2014 data/ecs/ecs.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
-bin/plot_geo_cto_rmse tcr data/geo_cto/historical_2003-2014 data/ecs/ecs.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
-bin/plot_geo_cto_rmse cld data/geo_cto/historical_2003-2014 data/ecs/ecs.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs_historical.pdf
+bin/plot_geo_cto_rmse tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr_historical.pdf
+bin/plot_geo_cto_rmse cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld_historical.pdf
 ```
 
 
@@ -459,7 +465,8 @@ Arguments:
 
 Examples:
 
-bin/calc_cto data/samples_stats/historical/2003-2020 data/tas/historical data/cto/historical/2003-2020.nc
+bin/calc_cto data/samples_tf/historical data/tas/historical data/cto/historical/cto.nc
+bin/calc_cto data/samples_tf/abrupt-4xCO2 data/tas/abrupt-4xCO2 data/cto/abrupt-4xCO2/cto.nc
 ```
 
 
@@ -491,8 +498,8 @@ Options:
 
 Examples:
 
-bin/plot_cto ecs 0 relative false data/cto/historical_2003-2014.nc data/ecs/ecs.csv plot/cto_historical_2003-2014.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
-bin/plot_cto ecs 1-tas absolute false data/cto/abrupt-4xCO2_1850-1949.nc data/ecs/ecs.csv plot/cto_abrupt-4xCO2_1850-1949.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
+bin/plot_cto ecs 0 relative false data/cto/historical/cto.nc data/ecs/ecs.csv plot/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+bin/plot_cto ecs 1-tas absolute false data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv plot/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
 ```
 
 
@@ -514,7 +521,7 @@ Arguments:
 
 Examples:
 
-bin/calc_cto_ecs data/cto/abrupt-4xCO2/1850-1949.nc data/ecs/ecs.csv data/cto_ecs/abrupt-4xCO2/1850_1949.nc
+bin/calc_cto_ecs data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
 ```
 
 
@@ -538,7 +545,7 @@ Arguments:
 
 Examples:
 
-bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2_1850-1949.nc data/cto_ecs/abrupt-4xCO2_1850_1949.nc plot/cto_ecs_abrupt-4xCO2.pdf ''
+bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2/cto.nc data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf ''
 ```
 
 

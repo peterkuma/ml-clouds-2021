@@ -165,14 +165,20 @@ data
 	abrupt-4xCO2
   cto
     historical
-	  2003-2014
+	  cto.nc
 	abrupt-4xCO2
-	  1850-1949
+	  cto.nc
+  cto_ecs
+    cto_ecs.nc
   geo_cto
     historical
-	  2003-2014
+      all
+      part_1
+      part_2
 	abrupt-4xCO2
-	  1850-1949
+      all
+      part_1
+      part_2
 ```
 
 ## Main commands

@@ -15,7 +15,7 @@ Arguments:
 
 Examples:
 
-bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2_1850-1949.nc data/cto_ecs/abrupt-4xCO2_1850_1949.nc plot/cto_ecs_abrupt-4xCO2.pdf ''
+bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2/cto.nc data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf ''
 '''
 
 import sys

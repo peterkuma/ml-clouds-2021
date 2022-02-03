@@ -15,8 +15,8 @@ Arguments:
 
 Examples:
 
-bin/plot_geo_cto 0 true data/geo_cto/historical_2003-2014_1/ data/ecs/ecs.csv plot/geo_cto_historical_2003-2014_1.pdf
-bin/plot_geo_cto 0 true data/geo_cto/historical_2003-2014_2/ data/ecs/ecs.csv plot/geo_cto_historical_2003-2014_2.pdf
+bin/plot_geo_cto 0 true data/geo_cto/historical/part_1 data/ecs/ecs.csv plot/geo_cto_historical_1.pdf
+bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 data/ecs/ecs.csv plot/geo_cto_historical_2.pdf
 '''
 
 import sys
