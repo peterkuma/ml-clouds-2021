@@ -13,8 +13,8 @@ Arguments:
 
 Examples:
 
-bin/merge_samples data/samples_tf/ceres/2003{,.nc}
-bin/merge_samples data/samples_tf/historical/AWI-ESM-1-1-LR/2003{,.nc}
+bin/merge_samples data/samples/ceres/2003{,.nc}
+bin/merge_samples data/samples/historical/AWI-ESM-1-1-LR/2003{,.nc}
 '''
 
 import sys

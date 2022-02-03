@@ -202,6 +202,38 @@ data
       <model>/<year>.nc: Samples labelled with tf apply for a model/year in the abrupt-4xCO2 experiment.
 ```
 
+## How to run
+
+The `input` directory should be populated with the required input files.
+The CMIP input files should be indexed with `create_by_model`. The space
+requirements in the data directory are about 8 TB.
+
+```sh
+export JOBS=12
+export DATA=data
+./run prepare_ceres_training
+./run train_ann
+./run prepare_ceres
+./run prepare_historical
+./run prepare_abrupt-4xCO2
+./run label_ceres
+./run label_historical
+./run label_abrupt-4xCO2
+./run calc_dtau_pct
+./run plot_dtau_pct
+./run calc_geo_cto_historical
+./run calc_geo_cto_abrupt-4xCO2
+./run plot_geo_cto_historical
+./run plot_geo_cto_abrupt-4xCO2
+./run plot_geo_cto_rsme_historical
+./run plot_geo_cto_rmse_abrupt-4xCO2
+./run calc_cto_historical
+./run calc_cto_abrupt-4xCO2
+./run plot_cto_historical
+./run plot_cto_abrupt-4xCO2
+./run plot_tf_scheme
+```
+
 ## Main commands
 
 Below is description of the available commands. They should be run in the Linux

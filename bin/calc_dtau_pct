@@ -10,6 +10,10 @@ Arguments:
 - samples: Directory with samples - the output of merge_samples (NetCDF).
 - ceres: Directory with CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
+
+Examples:
+
+bin/calc_dtau_pct data/samples_tf/ceres input/ceres data/dtau_pct/dtau_pct.nc
 '''
 
 import sys

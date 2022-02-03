@@ -22,8 +22,8 @@ Arguments (apply):
 
 Examples:
 
-bin/tf train data/ceres/samples data/ann/ceres.h5 data/ann/history.nc
-bin/tf apply data/ann/ceres.h5 data/ceres/samples 2003 2020 data/samples_tf/ceres
+bin/tf train data/samples/ceres_training data/ann/ceres.h5 data/ann/history.nc
+bin/tf apply data/ann/ceres.h5 data/samples/ceres 2003 2020 data/samples_tf/ceres
 bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 data/samples_tf/historical/AWI-ESM-1-1-LR
 '''
 

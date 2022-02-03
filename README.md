@@ -679,7 +679,6 @@ Example:
 bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 ```
 
-
 ## License
 
 MIT License
