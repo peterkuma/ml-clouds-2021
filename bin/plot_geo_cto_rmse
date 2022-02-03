@@ -94,14 +94,15 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 			c1*y_sd/x_sd, \
 			sd*y_sd
 
-def read_ecs(filename):
+def read_ecs(filename, var):
+	var_u = var.upper()
 	d = pd.read_csv(filename)
 	return {
 		'model': np.array(d['Model']),
 		'ecs': np.array(d['ECS']),
 		'tcr': np.array(d['TCR']),
 		'cld': np.array(d['CLD']),
-		'ext': np.array(d['Extended'] == 'Y'),
+		'ext': np.array(d['Extended_'+var_u] == 'Y'),
 		'.': {
 			'model': {'.dims': ['model']},
 			'ecs': {'.dims': ['model']},
@@ -119,12 +120,12 @@ if __name__ == '__main__':
 	var = args[1]
 	input_ = args[2]
 	ecs = args[3]
-	output = args[5]
+	output = args[4]
 
 	dd = ds.readdir(input_)
 
 	print('<- %s' % ecs)
-	d_ecs = read_ecs(ecs)
+	d_ecs = read_ecs(ecs, var)
 
 	fig = plt.figure(figsize=(6, 5))
 
@@ -149,17 +150,15 @@ if __name__ == '__main__':
 			else:
 				z = (d['cloud_occurrence'][j,:,:] - d_ceres['stats_geo'][0,j,:,:])*100.
 			weights = np.cos(d['lat']/180.*np.pi)
-			#mse += np.mean(np.average(z**2, weights=weights, axis=0))
-			mse += np.mean(z**2)
+			mse += np.mean(np.average(z**2, weights=weights, axis=0))
+			#mse += np.mean(z**2)
 		mse /= len(CLOUD_TYPES)
 		rmse = np.sqrt(mse)
 		y = d_ecs[var][d_ecs['model'] == name][0]
 		ext = d_ecs['ext'][d_ecs['model'] == name][0]
 		if not ext:
-			y = y1
 			label = name
 		else:
-			y = y2
 			label = name + '$^*$'
 		plt.scatter(rmse, y, label=label, color=cmap(i))
 		rmse_all += [rmse]
