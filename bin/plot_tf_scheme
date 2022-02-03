@@ -1,0 +1,56 @@
+#!/usr/bin/env python3
+'''Plot a TensorFlow model scheme.
+
+Usage: plot_tf_scheme <output>
+
+Arguments:
+
+- output: Output file (PNG).
+
+Examples:
+
+plot_tf_scheme plot/tf_scheme.pdf
+'''
+
+import warnings
+warnings.filterwarnings('ignore')
+
+import sys
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import Conv2D, AveragePooling2D, MaxPooling2D, \
+	Flatten, Dense, Dropout
+from tensorflow.keras.utils import plot_model
+
+if __name__ == '__main__':
+	if len(sys.argv) != 2:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	output = sys.argv[1]
+
+	nclasses = 4
+	model = Sequential()
+	model.add(Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(64,64, 2)))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(32, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Dropout(0.1))
+	model.add(Conv2D(64, (3, 3), activation='relu', padding='same'))
+	model.add(AveragePooling2D((2, 2)))
+	model.add(Flatten())
+	model.add(Dropout(0.1))
+	model.add(Dense(64, activation='relu'))
+	model.add(Dropout(0.1))
+	model.add(Dense(64, activation='relu'))
+	model.add(Dropout(0.1))
+	model.add(Dense(nclasses, activation='sigmoid'))
+
+	plot_model(model, to_file=output, show_shapes=False, show_layer_names=True)
