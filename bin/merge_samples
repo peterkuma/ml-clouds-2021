@@ -10,6 +10,11 @@ Arguments:
 
 - input: Input directory - the output of tf.
 - output: Output file.
+
+Examples:
+
+bin/merge_samples data/samples/ceres/2003{,.nc}
+bin/merge_samples data/samples/historical/AWI-ESM-1-1-LR/2003{,.nc}
 '''
 
 import sys

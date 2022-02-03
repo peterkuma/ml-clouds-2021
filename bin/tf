@@ -18,7 +18,13 @@ Arguments (apply):
 - input: Input directory with samples - the output of prepare_samples (NetCDF).
 - y1: Start year.
 - y2: End year.
-- output: Output statistics directory (NetCDF).
+- output: Output samples directory (NetCDF).
+
+Examples:
+
+bin/tf train data/ceres/samples data/ann/ceres.h5 data/ann/history.nc
+bin/tf apply data/ann/ceres.h5 data/ceres/samples 2003 2020 data/samples_stats/ceres
+bin/tf apply data/ann/ceres.h5 input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR 2003 2020 data/samples/historical/AWI-ESM-1-1-LR
 '''
 
 import warnings

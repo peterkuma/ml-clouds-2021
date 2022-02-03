@@ -23,8 +23,8 @@ Options:
 
 Examples:
 
-bin/plot_cto ecs 0 relative false data/models/historical/cto.nc data/ecs.csv plot/cto_historical_0_2003-2014.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
-bin/plot_cto ecs 1-tas absolute false data/models/abrupt-4xCO2/cto.nc data/ecs.csv plot/cto_abrupt-4xCO2_1-tas_1850-1949.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
+bin/plot_cto ecs 0 relative false data/cto/historical_2003-2014.nc data/ecs/ecs.csv plot/cto_historical_2003-2014.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+bin/plot_cto ecs 1-tas absolute false data/cto/abrupt-4xCO2_1850-1949.nc data/ecs/ecs.csv plot/cto_abrupt-4xCO2_1850-1949.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
 '''
 
 import sys

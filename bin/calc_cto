@@ -10,6 +10,10 @@ Arguments:
 - input: Input directory - the output of merge_samples (NetCDF).
 - tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
+
+Examples:
+
+bin/calc_cto data/samples_stats/historical/2003-2020 data/tas/historical data/cto/historical/2003-2020.nc
 '''
 
 import sys

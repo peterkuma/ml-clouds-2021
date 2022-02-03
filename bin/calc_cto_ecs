@@ -10,6 +10,10 @@ Arguments:
 - input: Input file - the output of calc_cto (NetCDF).
 - ecs: ECS, TCR and CLD input (CSV).
 - output: Output files (NetCDF).
+
+Examples:
+
+bin/calc_cto_ecs data/cto/abrupt-4xCO2/1850-1949.nc data/ecs/ecs.csv data/cto_ecs/abrupt-4xCO2/1850_1949.nc
 '''
 
 import sys

@@ -7,7 +7,7 @@ Depends on: tf
 
 Arguments:
 
-- input: IDD data directory (NetCDF).
+- input: IDD input directory (NetCDF).
 - sample: CERES sample - the output of tf apply (NetCDF).
 - n: Sample number.
 - output: Output plot (PDF).

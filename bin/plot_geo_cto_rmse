@@ -19,9 +19,9 @@ Options:
 
 Examples:
 
-bin/plot_geo_cto_rmse ecs data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
-bin/plot_geo_cto_rmse tcr data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
-bin/plot_geo_cto_rmse cld data/models/historical/stats_geo_2003-2014_summary/ data/cmip.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse ecs data/geo_cto/historical_2003-2014 data/ecs/ecs.csv plot/geo_cto_rmse_ecs_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse tcr data/geo_cto/historical_2003-2014 data/ecs/ecs.csv plot/geo_cto_rmse_tcr_historical_2003-2014.pdf
+bin/plot_geo_cto_rmse cld data/geo_cto/historical_2003-2014 data/ecs/ecs.csv plot/geo_cto_rmse_cld_historical_2003-2014.pdf
 '''
 
 import sys
