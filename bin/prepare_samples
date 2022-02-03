@@ -22,8 +22,8 @@ Options:
 
 Examples:
 
-prepare_samples ceres input/ceres data/idd/synop data/idd/buoy data/landmask/ne_110m_land.nc 2003-01-01 2020-12-31 data/samples/samples
-prepare_samples cmip input/cmip6/historical/daily/by-model/AWI-ESM-1-1-LR none none none 2003-01-01 2014-12-31 data/samples/historical/AWI-ESM-1-1-LR
+prepare_samples ceres input/ceres data/idd/synop input/idd/buoy data/landmask/ne_110m_land.nc both 2009-01-01 2009-12-31 data/samples/ceres_training/2009
+prepare_samples cmip input/cmip6/historical/daily/by-model/AWI-ESM-1-1-LR none none none 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
 '''
 
 import sys
@@ -119,18 +119,22 @@ META = {
 	'station_lon': {
 		'.dims': ['station_number'],
 		'long_name': 'station longitude',
+		'units': 'degrees_east',
 	},
 	'station_lat': {
 		'.dims': ['station_number'],
 		'long_name': 'station latitude',
+		'units': 'degrees_north',
 	},
 	'station_x': {
 		'.dims': ['station_number'],
 		'long_name': 'station x coordinate',
+		'units': 'm',
 	},
 	'station_y': {
 		'.dims': ['station_number'],
 		'long_name': 'station y coordinate',
+		'units': 'm',
 	},
 	'station_type': {
 		'.dims': ['station_number'],

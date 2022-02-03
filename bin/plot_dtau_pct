@@ -12,7 +12,7 @@ Arguments:
 
 Example:
 
-bin/plot_dtau_pct data/dtau_pct.nc plot/dtau_pct.pdf
+bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
 '''
 
 import sys
