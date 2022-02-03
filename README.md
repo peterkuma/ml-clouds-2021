@@ -155,6 +155,7 @@ input
   idd
     buoy: IDD buoy NetCDF files.
     syop: IDD synop NetCDF files.
+  models_*: Lists of models available in the historical and abrupt-4xCO experiments.
 ```
 
 ## Data directory
