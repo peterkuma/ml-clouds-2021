@@ -257,8 +257,7 @@ export DATA=data
 ./run calc_geo_cto_abrupt-4xCO2
 ./run plot_geo_cto_historical
 ./run plot_geo_cto_abrupt-4xCO2
-./run plot_geo_cto_rsme_historical
-./run plot_geo_cto_rmse_abrupt-4xCO2
+./run plot_geo_cto_rsme
 ./run calc_cto_historical
 ./run calc_cto_abrupt-4xCO2
 ./run plot_cto_historical
