@@ -85,13 +85,13 @@ plot_tf_scheme [Figure 2]
 
 The IDD dataset contains ship and buoy records from the Global Telecommunication
 System. It can be downloaded from [Research Data
-Archive](https://rda.ucar.edu/datasets/ds336.0/) (RDA). The relevant files are
+Archive](https://rda.ucar.edu/datasets/ds336.0/). The relevant files are
 the SYNOP and BUOY NetCDF files (2008-present), and the HISTSURFACEOBS tar
 files (2003-2008). The HISTSURFACEOBS files have to be unpacked after
 downloading.
 
 In the examples below it is assumed that the IDD files are stored under
-`data/idd/synop` and `data/idd/buoy` for the synop and buoy files,
+`input/idd/synop` and `input/idd/buoy` for the synop and buoy files,
 respectively.
 
 ### Climate Model Intercomparison Project (CMIP)
@@ -115,8 +115,8 @@ symlinks in the directory where the downloaded files are stored. This index is
 required by the main commands.
 
 In the examples below it is assumed that the CMIP5 and CMIP6 files are stored
-in `data/cmip5/<experiment>/<frequency/` and
-`data/cmip6/<experiment>/<frequency/`, respectively, where `<experiment>`
+in `input/cmip5/<experiment>/<frequency/` and
+`input/cmip6/<experiment>/<frequency/`, respectively, where `<experiment>`
 is either `historical` (for both `historical` and `hist-1950`) or
 `abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
@@ -128,35 +128,63 @@ commands). The original dataset has been downloaded from [NASA
 GISS](https://data.giss.nasa.gov/gistemp/), and the original terms of use of
 this dataset apply.
 
+### CERES
+
+SYN1deg Level 3 daily means can be downloaded from the [CERES website](https://ceres.larc.nasa.gov).
+They have to be converted to NetCDF with h4toh5 and stored in `input/ceres`.
+
+### ERA5
+
+ERA5 hourly data on pressure levels from 1979 to present can be downloaded
+from the [Copernicus website](https://cds.climate.copernicus.eu/#!/search?text=ERA5&type=dataset).
+They have to be converted to daily mean files with cdo and stored in
+`input/era5`.
+
+### MERRA-2
+
+The M2T1NXRAD MERRA-2 product can be downloaded from [NASA EarthData](https://disc.gsfc.nasa.gov/datasets?project=MERRA-2).
+Daily means can be downloaded with the GES DISC Subsetter. They have to
+be stored in `input/merra-2`.
+
 ## Input directory
 
 The input should contain the necessary input files. If not provided in this
 repository, the files need to be downloaded from the CERES projet website,
 the CMIP5 and CMIP6 archives, and RDA and placed in the respective directories.
-Below is a description of the structure of the input directory:
+NorESM is optional. Below is a description of the structure of the input
+directory:
 
 ```
 input
-  ceres: CERES SYN1deg daily NetCDF files.
+  ceres: CERES SYN1deg daily mean NetCDF files.
+  noresm:
+    historical
+	  day
+	    <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+	abrupt-4xCO2
+      day
+	    <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
   cmip5
     abrupt-4xCO2
-      day: Daily CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      day: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
         by-model: Directory created by create_by_model.
-      mon: Daily CMIP5 files in the abrupt-4xCO2 experiment (tas).
+      mon: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (tas).
   cmip6
     abrupt-4xCO2
-      day: Daily CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      day: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
         by-model: Directory created by create_by_model.
-      mon: Daily CMIP6 files in the abrupt-4xCO2 experiment (tas).
+      mon: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (tas).
     hist-1950
-      day: Daily CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      day: Daily mean CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
     historical
-      day: Daily CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      day: Daily mean CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
         by-model: Directory created by create_by_model.
         by-model: Directory created by create_by_model.
+  era5: Daily mean ERA5 NetCDF files with all variables in each file: tisr, tsr, tsrc, ttr, ttrc.
   idd
     buoy: IDD buoy NetCDF files.
     syop: IDD synop NetCDF files.
+  merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
   models_*: Lists of models available in the historical and abrupt-4xCO experiments.
 ```
 
@@ -216,6 +244,7 @@ export JOBS=12
 export DATA=data
 ./run prepare_ceres_training
 ./run train_ann
+./run plot_training_history
 ./run prepare_ceres
 ./run prepare_historical
 ./run prepare_abrupt-4xCO2
@@ -360,6 +389,10 @@ Arguments:
 
 - input: Input history file - the output of tf (NetCDF).
 - output: Output plot (PDF).
+
+Examples:
+
+bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 ```
 
 
