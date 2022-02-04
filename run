@@ -32,7 +32,7 @@ prepare_ceres)
 prepare_historical)
 	exp=historical
 	for model in $(cat "$INPUT"/models_$exp); do
-		if [ -e "$DATA"/samples/$exp/$model ]; then
+		if [ ! -e "$INPUT"/cmip6/$exp/day/by-model/$model -o -e "$DATA"/samples/$exp/$model/2003.nc ]; then
 			continue
 		fi
 		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
@@ -40,36 +40,30 @@ prepare_historical)
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
 	done
 	model=EC-Earth3P
-	if [ ! -e "$DATA"/samples/$exp/$model ]; then
+	if [ ! -e "$DATA"/samples/$exp/$model/2003.nc ]; then
 		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
 		parallel -j$JOBS -v bin/prepare_samples cmip "$INPUT"/cmip6/hist-1950/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
 	fi
-	if [ -e "$INPUT"/merra2 ]; then
-		model=MERRA-2
-		if [ -e "$DATA"/samples/$exp/$model ]; then
-			continue
-		fi
+	model=MERRA-2
+	if [ -e "$INPUT"/merra-2 -a ! -e "$DATA"/samples/$exp/$model/2003.nc ]; then
 		mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
-		parallel -j$JOBS -v bin/prepare_samples merra2 "$INPUT"/merra2 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
+		parallel -j$JOBS -v bin/prepare_samples merra2 "$INPUT"/merra-2 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
 	fi
-	if [ -e "$INPUT"/era5 ]; then
-		model=ERA5
-		if [ -e "$DATA"/samples/$exp/$model ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
-		parallel -j$JOBS -v bin/prepare_samples era5 "$INPUT"/era5 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
-	fi
-	if [ -e "$INPUT"/noresm2 ]; then
-		model=NorESM2-LM
+	model=ERA5
+	#if [ -e "$INPUT"/era5 -a ! -e "$DATA"/samples/$exp/$model ]; then
+	#	mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
+	#	parallel -j$JOBS -v bin/prepare_samples era5 "$INPUT"/era5 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
+	#	parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
+	#fi
+	model=NorESM2-LM
+	if [ -e "$INPUT"/noresm2 -a ! -e "$DATA"/samples/$exp/$model/2003.nc ]; then
 		if [ -e "$DATA"/samples/$exp/$model ]; then
 			continue
 		fi
 		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/noresm2/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/$model/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
 	fi
 	;;
@@ -77,25 +71,18 @@ prepare_historical)
 prepare_abrupt-4xCO2)
 	exp=abrupt-4xCO2
 	for model in $(cat "$INPUT"/models_$exp); do
-		if [ -e "$DATA"/samples/$exp/$model ]; then
+		if [ ! -e "$INPUT"/cmip6/$exp/day/by-model/$model -o -e "$DATA"/samples/$exp/$model/1850.nc ]; then
 			continue
 		fi
 		mkdir -p "$DATA"/samples/$exp/$model/{1850..1949}
 		parallel -j$JOBS -v prepare_samples cmip "$INPUT"/cmip6/$exp/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {1850..1949}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples_tf/$exp/$model/{}.nc ::: {1850..1949}
 	done
-	model=EC-Earth3P
-	mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
-	parallel -j$JOBS -v bin/prepare_samples cmip "$INPUT"/cmip6/hist-1950/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
-	parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
-	if [ -e "$INPUT"/noresm ]; then
-		model=NorESM2-LM
-		if [ -e "$DATA"/samples/$exp/$model ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples/$exp/noresm/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/noresm/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
+	model=NorESM2-LM
+	if [ -e "$INPUT"/noresm -a ! -e "$DATA"/samples/$exp/$model/1850.nc ]; then
+		mkdir -p "$DATA"/samples/$exp/noresm/{1850..1949}
+		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/noresm/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {1850..1949}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {1850..1949}
 	fi
 	;;
 
