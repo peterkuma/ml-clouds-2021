@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -e -x
 
-# Set JOBS to the number of available CPU cores.
 JOBS="${JOBS:-12}"
-
 DATA="${DATA:-data}"
+PLOT="${PLOT:-plot}"
 
 case "$1" in
 prepare_ceres_training)
@@ -19,6 +18,10 @@ train_ann)
 	bin/tf train "$DATA"/samples/ceres_training/ "$DATA"/ann/ceres.h5 "$DATA"/ann/history.nc
 	;;
 
+plot_training_history)
+	bin/plot_training_history "$DATA"/ann/history.nc "$PLOT"/training_history.pdf
+	;;
+
 prepare_ceres)
 	mkdir -p "$DATA"/samples/ceres/{2003..2014}
 	parallel -j$JOBS -v bin/prepare_samples ceres input/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres/{} ::: {2003..2014}
@@ -26,20 +29,73 @@ prepare_ceres)
 	;;
 
 prepare_historical)
-	for model in $(cat input/models_historical); do
-		mkdir -p "$DATA"/samples/historical/$model/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples cmip input/cmip6/historical/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/historical/$model/{} ::: {2003..2014}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/historical/$model/{} "$DATA"/samples_tf/historical/$model/{}.nc ::: {2003..2014}
+	exp=historical
+	for model in $(cat input/models_$exp); do
+		if [ -e "$DATA"/samples/$exp/$model ]; then
+			continue
+		fi
+		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
+		parallel -j$JOBS -v bin/prepare_samples cmip input/cmip6/$exp/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
 	done
+	model=EC-Earth3P
+	mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
+	parallel -j$JOBS -v bin/prepare_samples cmip input/cmip6/hist-1950/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+	parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
+	if [ -e input/merra2 ]; then
+		model=MERRA-2
+		if [ -e "$DATA"/samples/$exp/$model ]; then
+			continue
+		fi
+		mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
+		parallel -j$JOBS -v bin/prepare_samples merra2 input/merra2 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
+	fi
+	if [ -e input/era5 ]; then
+		model=ERA5
+		if [ -e "$DATA"/samples/$exp/$model ]; then
+			continue
+		fi
+		mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
+		parallel -j$JOBS -v bin/prepare_samples era5 input/era5 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
+	fi
+	if [ -e input/noresm ]; then
+		model=NorESM2-LM
+		if [ -e "$DATA"/samples/$exp/$model ]; then
+			continue
+		fi
+		mkdir -p "$DATA"/samples/$exp/noresm/{2003..2014}
+		parallel -j$JOBS -v bin/prepare_samples noresm input/noresm/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
+	fi
 	;;
 
 prepare_abrupt-4xCO2)
-	for model in $(cat input/models_abrupt-4xCO2); do
-		mkdir -p "$DATA"/samples/abrupt-4xCO2/$model/{1850..1949}
-		parallel -j$JOBS -v prepare_samples cmip input/cmip6/abrupt-4xCO2/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/abrupt-4xCO2/$model/{} ::: {1850..1949}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/abrupt-4xCO2/$model/{} "$DATA"/samples_tf/abrupt-4xCO2/$model/{}.nc ::: {1850..1949}
+	exp=abrupt-4xCO2
+	for model in $(cat input/models_$exp); do
+		if [ -e "$DATA"/samples/$exp/$model ]; then
+			continue
+		fi
+		mkdir -p "$DATA"/samples/$exp/$model/{1850..1949}
+		parallel -j$JOBS -v prepare_samples cmip input/cmip6/$exp/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {1850..1949}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples_tf/$exp/$model/{}.nc ::: {1850..1949}
 	done
+	model=EC-Earth3P
+	mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
+	parallel -j$JOBS -v bin/prepare_samples cmip input/cmip6/hist-1950/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+	parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
+	if [ -e input/noresm ]; then
+		model=NorESM2-LM
+		if [ -e "$DATA"/samples/$exp/$model ]; then
+			continue
+		fi
+		mkdir -p "$DATA"/samples/$exp/noresm/{2003..2014}
+		parallel -j$JOBS -v bin/prepare_samples noresm input/noresm/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
+	fi
 	;;
+
 
 label_ceres)
 	mkdir -p "$DATA"/samples_tf/ceres/
@@ -66,7 +122,7 @@ calc_dtau_pct)
 	;;
 
 plot_dtau_pct)
-	bin/plot_dtau_pct "$DATA"/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
+	bin/plot_dtau_pct "$DATA"/dtau_pct/dtau_pct.nc "$PLOT"/dtau_pct.pdf
 	;;
 
 calc_geo_cto_historical)
@@ -99,24 +155,24 @@ calc_geo_cto_abrupt-4xCO2)
 	;;
 
 plot_geo_cto_historical)
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_1 "$DATA"/ecs/ecs.csv plot/geo_cto_historical_1.pdf
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_2 "$DATA"/ecs/ecs.csv plot/geo_cto_historical_2.pdf
+	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_1 "$DATA"/ecs/ecs.csv "$PLOT"/geo_cto_historical_1.pdf
+	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_2 "$DATA"/ecs/ecs.csv "$PLOT"/geo_cto_historical_2.pdf
 	;;
 
 plot_geo_cto_abrupt-4xCO2)
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$DATA"/ecs/ecs.csv plot/geo_cto_abrupt-4xCO2_1.pdf
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$DATA"/ecs/ecs.csv plot/geo_cto_abrupt-4xCO2_2.pdf
+	bin/plot_geo_cto 0 true "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$DATA"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_1.pdf
+	bin/plot_geo_cto 0 true "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$DATA"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_2.pdf
 	;;
 
 plot_geo_cto_rmse_historical)
 	for var in ecs tcr cld; do
-		bin/plot_geo_cto_rmse $var "$DATA"/geo_cto/historical/all "$DATA"/ecs/ecs.csv plot/geo_cto_rmse_$var_historical.pdf
+		bin/plot_geo_cto_rmse $var "$DATA"/geo_cto/historical/all "$DATA"/ecs/ecs.csv "$PLOT"/geo_cto_rmse_$var_historical.pdf
 	done
 	;;
 
 plot_geo_cto_rmse_abrupt-4xCO2)
 	for var in ecs tcr cld; do
-		bin/plot_geo_cto_rmse $var "$DATA"/geo_cto/abrupt-4xCO2/all "$DATA"/ecs/ecs.csv plot/geo_cto_rmse_$var_abrupt-4xCO2.pdf
+		bin/plot_geo_cto_rmse $var "$DATA"/geo_cto/abrupt-4xCO2/all "$DATA"/ecs/ecs.csv "$PLOT"/geo_cto_rmse_$var_abrupt-4xCO2.pdf
 	done
 	;;
 
@@ -129,11 +185,11 @@ calc_cto_abrupt-4xCO2)
 	;;
 
 plot_cto_historical)
-	bin/plot_cto ecs 0 relative false "$DATA"/cto/historical/cto.nc "$DATA"/ecs/ecs.csv plot/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+	bin/plot_cto ecs 0 relative false "$DATA"/cto/historical/cto.nc "$DATA"/ecs/ecs.csv "$PLOT"/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
 	;;
 
 plot_cto_abrupt-4xCO2)
-	bin/plot_cto ecs 1-tas absolute false "$DATA"/cto/abrupt-4xCO2/cto.nc "$DATA"/ecs/ecs.csv plot/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
+	bin/plot_cto ecs 1-tas absolute false "$DATA"/cto/abrupt-4xCO2/cto.nc "$DATA"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
 	;;
 
 calc_cto_esc)
@@ -141,11 +197,11 @@ calc_cto_esc)
 	;;
 
 plot_cto_ecs)
-	bin/plot_cto_ecs ecs "$DATA"/cto/abrupt-4xCO2/cto.nc "$DATA"/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
+	bin/plot_cto_ecs ecs "$DATA"/cto/abrupt-4xCO2/cto.nc "$DATA"/cto_ecs/cto_ecs.nc "$PLOT"/cto_ecs.pdf
 	;;
 
 plot_tf_scheme)
-	plot_tf_scheme plot/tf_scheme.pdf
+	bin/plot_tf_scheme "$PLOT"/tf_scheme.pdf
 	;;
 
 *)

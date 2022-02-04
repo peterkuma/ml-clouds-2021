@@ -9,6 +9,10 @@ Arguments:
 
 - input: Input history file - the output of tf (NetCDF).
 - output: Output plot (PDF).
+
+Examples:
+
+bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 '''
 
 import sys
