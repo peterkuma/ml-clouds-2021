@@ -25,7 +25,6 @@ import pandas as pd
 import pymc3 as pm
 
 CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
-#VARS = ['ecs', 'tcr', 'cld']
 VARS = ['ecs']
 NBURN = 100
 NSAMPLES = 1000
@@ -51,10 +50,8 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 		c0 = pm.Uniform('c0', lower=-100, upper=100)
 		mu += c0
 		sd = pm.Uniform('sd', lower=0, upper=10)
-		#obs = pm.Normal('obs', mu, sd, observed=yn)
 		obs = pm.Cauchy('obs', mu, sd, observed=yn)
 		err = pm.Cauchy('err', 0, sd)
-		#err = pm.Normal('err', 0, sd)
 
 	with model:
 		step = pm.Metropolis()

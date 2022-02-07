@@ -54,7 +54,6 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 		mu += c0
 		sd = pm.Uniform('sd', lower=0, upper=10)
 		obs = pm.Normal('obs', mu, sd, observed=yn)
-		#obs = pm.Cauchy('obs', mu, sd, observed=yn)
 
 	with model:
 		step = pm.Metropolis()
@@ -174,11 +173,8 @@ if __name__ == '__main__':
 
 	for i, cloud_type in enumerate(CLOUD_TYPES):
 		for j, d in enumerate(dd):
-			#print(d['filename'])
-			#stats_time[j,i], stats_time_samples[j,i,:] = calc_trend_bayes('time', d, i)
 			if dd_tas[j] is not None:
 				stats_tas[j,i], stats_tas_samples[j,i,:] = calc_trend_bayes('tas', d, i, dd_tas[j])
-				#print(np.mean(stats_tas_samples[j,i,:])*100, np.std(stats_tas_samples[j,i,:])*100)
 	do = {
 		'stats': stats,
 		'stats_time': stats_time,

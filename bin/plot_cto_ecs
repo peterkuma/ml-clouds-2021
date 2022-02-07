@@ -76,10 +76,8 @@ if __name__ == '__main__':
 
 	res = 0
 	for i, cloud_type in enumerate(['Hi', 'Mi', 'Cu', 'St']):
-		#ref = d['stats_tas'][i_ceres,i]
 		plt.scatter(
 			(d['stats_tas'][:,i])*100,
-			#d['stats_tas'][:,i]*100,
 			var,
 			s=20,
 			color=COLORS[i]
@@ -90,20 +88,11 @@ if __name__ == '__main__':
 		yhigh = np.full(len(x), np.nan)
 		s = np.mean([sp.stats.cauchy.ppf(0.84, 0, sd) for sd in d_summary['sd_'+varname+'_samples'][i]])
 		for j in range(len(x)):
-			#u = d_summary['c1_'+varname+'_samples'][i,:]*x[j] + \
-			#	d_summary['c0_'+varname+'_samples'][i,:] + \
-			#	d_summary['err'+varname+'_samples'][i,:]
 			y[j] = d_summary['c1_'+varname][i]*x[j] + d_summary['c0_'+varname][i]
-			#y[j] = np.mean(u)
-			#ylow[j] = np.percentile(u, (100-68)/2)
-			#yhigh[j] = np.percentile(u, 100-(100-68)/2)
 			ylow[j] = y[j] - s
 			yhigh[j] = y[j] + s
 		plt.fill_between(x, ylow, yhigh, color=COLORS[i], alpha=0.1, edgecolor='none')
 		plt.plot(x, y, color=COLORS[i], lw=0.8, label=CLOUD_TYPES[i])
-		#res += d['c1'][i]*ref*100
-		#print(d['c1'][i]*ref*100)
-		#plt.axvline(d['stats_tas'][i_ceres,i]*100, linestyle='dashed', color=COLORS[i], lw=1)
 	plt.xlim(-0.6, 0.4)
 	if varname == 'ecs':
 		plt.ylim(1, 6)

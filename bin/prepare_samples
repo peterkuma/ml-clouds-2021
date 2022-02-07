@@ -234,13 +234,9 @@ def read_idd(dirname, type_, t):
 	return {
 		'lon': d['Lon'],
 		'lat': d['Lat'],
-		#'cloud_type': d['cloudGenus'],
-		#'cloud_cover': d['cloudCover'],
 		'cloud_l': d['cloudLow'],
 		'cloud_m': d['cloudMiddle'],
 		'cloud_h': d['cloudHigh'],
-		#'wmoid': d['wmoId'],
-		#'station_name': d['stnName']
 		'type': np.array([type_]*len(d['Lon'])),
 	}
 
@@ -266,22 +262,11 @@ def lookup_idd(d, lat0, lon0, alpha0, x, y):
 		np.isfinite(d['cloud_l']) | \
 		np.isfinite(d['cloud_m']) | \
 		np.isfinite(d['cloud_h'])
-	#mask &= d['cloud_cover'] >= 0
-	#cloud_cover = d['cloud_cover'][mask]
-	#cloud_type = d['cloud_type'][mask,:]
 	station_lon = d['lon'][mask]
 	station_lat = d['lat'][mask]
 	station_x = x2[mask]
 	station_y = y2[mask]
 	station_type = d['type'][mask]
-	#wmoid = d['wmoid'][mask]
-	#station_name = [b''.join(name).decode('ascii').rstrip('\0') for name in d['station_name'][mask,:]]
-	#station_name = np.array(station_name)
-
-	#stats = np.zeros(11, np.int64)
-	#for i in range(10):
-	#	stats[i] = np.nansum(cloud_type == i)
-	#stats[10] = np.sum(cloud_cover == 0) # Clear sky.
 
 	cloud_l = d['cloud_l'][mask]
 	cloud_m = d['cloud_m'][mask]
@@ -313,17 +298,6 @@ def lookup_idd(d, lat0, lon0, alpha0, x, y):
 	)
 
 	return stats, stats_n, station_lon, station_lat, station_x, station_y, station_type
-
-def calc_land_fract(d, landmask):
-	n, m = d['data'].shape[1:3]
-	lon = d['lon'].flatten()
-	lat = d['lat'].flatten()
-	ii = np.searchsorted(landmask['lon'], lon)
-	jj = np.searchsorted(landmask['lat'], lat)
-	for i in range(n):
-		for j in range(m):
-			lon = d['lon'][i,j]
-			lat = d['lat'][i,j]
 
 def read_ceres(dirname, start, end):
 	files = sorted(os.listdir(dirname))
@@ -608,14 +582,6 @@ if __name__ == '__main__':
 			continue
 		if idd_synop is not None and idd_buoy is not None:
 			idd = merge_idd(idd_synop, idd_buoy)
-		#d2['pct'] = np.nanmin(
-		#	d['Observed_Cloud_Layer_Properties_obs_cld_top_press'],
-		#	axis=0,
-		#)
-		#d2['dtau'] = np.nansum(
-		#	d['Observed_Cloud_Layer_Properties_obs_cld_od'],
-		#	axis=0,
-		#)
 		d2 = d
 		d2['cre_sw_rel'] = (d2['rsutcs'] - d2['rsut'])/d2['rsdt']
 		d2['cre_sw_rel'][d2['rsdt'] < 50] = np.nan
@@ -628,24 +594,13 @@ if __name__ == '__main__':
 			data = np.stack([
 				-d2['cre_sw_rel'],
 				d2['cre_lw_rel'],
-				#-d2['rsut'],
-				#d2['rlut'],
-				#d2['dtau'],
 			])
-			#shape = d2['rsut'].shape
-			#data = d2['rsut'].reshape((1, shape[0], shape[1]))
 			dx = take_sample(d2['lat'], d2['lon'], data)
-			#if np.any(np.isnan(dx['data'])):
-			#	continue
-
 			dx['time'] = d2['time']
 
 			if np.sum(np.isnan(dx['data']))/dx['data'].size > 0.25:
 				continue
 
-			#land_fract = calc_land_fract(dx, landmask)
-			#dx['data'][0,::] = dx['data'][0,::].T
-			#dx['data'][1,::] = dx['data'][1,::].T
 			if idd is not None:
 				dx['stats'], \
 				dx['stats_n'], \
@@ -682,5 +637,5 @@ if __name__ == '__main__':
 			name = '%s.nc' % aq.to_iso(d['time'])
 			output_filename = os.path.join(output, name)
 			print('-> %s' % output_filename)
-			del dout['alpha0']
+			#del dout['alpha0']
 			ds.write(output_filename, dout)

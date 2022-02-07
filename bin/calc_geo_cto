@@ -101,7 +101,6 @@ if __name__ == '__main__':
 		d = ds.read(filename)
 		if tas is not None:
 			year[j] = int(file_[:-3])
-		#time[j] = d['time']
 		for i, cloud_type in enumerate(CLOUD_TYPES):
 			stats_geo[j,i,:,:] = calc_abs_value(d, i)
 		time[j] = np.mean(d['time'])
@@ -121,14 +120,6 @@ if __name__ == '__main__':
 		for i, cloud_type in enumerate(CLOUD_TYPES):
 			stats_geo_mean[j,i] = np.mean(np.average(
 				stats_geo[j,i,:,:], axis=0, weights=weights))
-
-	#import matplotlib.pyplot as plt
-	#for i, cloud_type in enumerate(CLOUD_TYPES):
-	#	order = np.argsort(x)
-	#	#plt.plot(x[order], stats_geo_mean[:,i][order])
-	#	plt.plot(year, x)
-	#plt.savefig('plot.pdf')
-
 
 	if tas is not None:
 		for i, cloud_type in enumerate(CLOUD_TYPES):
