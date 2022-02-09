@@ -250,8 +250,12 @@ The CMIP input files should be indexed with `create_by_model`. The space
 requirement in the data directory are about 8 TB.
 
 ```sh
-export JOBS=12
-export DATA=data
+# Optional configuration:
+export JOBS=12 # Number of concurrent jobs
+export INPUT=input # Input directory
+export DATA=data # Data directory
+export PLOT=plot # Plot directory
+
 ./run prepare_ceres_training
 ./run train_ann
 ./run plot_idd_stations
