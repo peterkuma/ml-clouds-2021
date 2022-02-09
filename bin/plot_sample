@@ -10,6 +10,8 @@ Arguments:
 - input: Input sample (NetCDF) - the output of tf.
 - n: Sample number.
 - output: Output plot (PDF).
+
+bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.pdf
 '''
 
 import sys

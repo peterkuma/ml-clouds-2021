@@ -62,8 +62,8 @@ and the paper figures they produce.
 
 ```
 prepare_samples
+  plot_idd_stations [Figure 1a]
   tf
-    plot_idd_stations [Figure 1a]
     plot_sample [Figure 1b, c]
     plot_training_history [Figure 3]
     merge_samples
@@ -244,6 +244,7 @@ export JOBS=12
 export DATA=data
 ./run prepare_ceres_training
 ./run train_ann
+./run plot_idd_stations
 ./run plot_training_history
 ./run prepare_ceres
 ./run prepare_historical
@@ -353,6 +354,10 @@ Arguments:
 - n: Sample number.
 - output: Output plot (PDF).
 - title: Plot title.
+
+Examples:
+
+bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.pdf '2010-01-01'
 ```
 
 
@@ -371,6 +376,8 @@ Arguments:
 - input: Input sample (NetCDF) - the output of tf.
 - n: Sample number.
 - output: Output plot (PDF).
+
+bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.pdf
 ```
 
 

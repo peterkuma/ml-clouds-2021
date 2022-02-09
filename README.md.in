@@ -62,8 +62,8 @@ and the paper figures they produce.
 
 ```
 prepare_samples
+  plot_idd_stations [Figure 1a]
   tf
-    plot_idd_stations [Figure 1a]
     plot_sample [Figure 1b, c]
     plot_training_history [Figure 3]
     merge_samples
@@ -244,6 +244,7 @@ export JOBS=12
 export DATA=data
 ./run prepare_ceres_training
 ./run train_ann
+./run plot_idd_stations
 ./run plot_training_history
 ./run prepare_ceres
 ./run prepare_historical

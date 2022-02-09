@@ -23,6 +23,17 @@ plot_training_history)
 	bin/plot_training_history "$DATA"/ann/history.nc "$PLOT"/training_history.pdf
 	;;
 
+plot_idd_stations)
+	mkdir -p "$DATA/idd_sample"
+	cp "$INPUT"/idd/synop/Surface_Synoptic_20100101_0000.nc "$DATA"/idd_sample/
+	cp "$INPUT"/idd/buoy/Surface_Buoy_20100101_0000.nc "$DATA"/idd_sample/
+	bin/plot_idd_stations "$DATA"/idd_sample/ "$DATA"/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 "$PLOT"/idd_stations.pdf '2010-01-01'
+	;;
+
+plot_sample)
+	bin/plot_sample "$DATA"/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 "$PLOT"/sample.pdf
+	;;
+
 prepare_ceres)
 	mkdir -p "$DATA"/samples/ceres/{2003..2014}
 	parallel -j$JOBS -v bin/prepare_samples ceres "$INPUT"/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres/{} ::: {2003..2014}

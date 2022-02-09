@@ -12,6 +12,10 @@ Arguments:
 - n: Sample number.
 - output: Output plot (PDF).
 - title: Plot title.
+
+Examples:
+
+bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.pdf '2010-01-01'
 '''
 
 import sys
