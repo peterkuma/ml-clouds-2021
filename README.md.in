@@ -1,6 +1,6 @@
 # Code for the paper "Machine learning of cloud types shows higher climate sensitivity is associated with lower cloud biases"
 
-Peter Kuma<sup>1</sup>, Frida Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
+Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian J. McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
 
 <sup>1</sup>Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden\
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
