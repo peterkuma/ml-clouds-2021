@@ -71,7 +71,7 @@ prepare_samples
         plot_dtau_pct [Figure 6]
       calc_geo_cto
         plot_geo_cto [Figure 4, 5]
-        plot_geo_cto_rmse [Figure 11b, c, d]
+        plot_cto_rmse_ecs [Figure 11b, c, d]
       calc_cto
         plot_cto [Figure 10]
         calc_cto_ecs
@@ -272,7 +272,7 @@ export PLOT=plot # Plot directory
 ./run calc_geo_cto_abrupt-4xCO2
 ./run plot_geo_cto_historical
 ./run plot_geo_cto_abrupt-4xCO2
-./run plot_geo_cto_rmse
+./run plot_cto_rmse_ecs
 ./run calc_cto_historical
 ./run calc_cto_abrupt-4xCO2
 ./run plot_cto_historical
@@ -530,14 +530,14 @@ bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 data/ecs/ecs.csv plot/geo
 ```
 
 
-### plot\_geo\_cto\_rmse [Figure 11b, c, d]
+### plot\_cto\_rmse\_ecs [Figure 11b, c, d]
 
 
 ```
 Plot scatter plot of RMSE of the geographical distribution of cloud type
 occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
-Usage: plot_geo_cto_rmse <var> <input> <ecs> <output> [legend: <legend>]
+Usage: plot_cto_rmse_ecs <var> <input> <ecs> <output> [legend: <legend>]
 
 Depends on: calc_geo_cto
 
@@ -554,9 +554,9 @@ Options:
 
 Examples:
 
-bin/plot_geo_cto_rmse ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs_historical.pdf
-bin/plot_geo_cto_rmse tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr_historical.pdf
-bin/plot_geo_cto_rmse cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld_historical.pdf
+bin/plot_cto_rmse_ecs ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs_historical.pdf
+bin/plot_cto_rmse_ecs tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr_historical.pdf
+bin/plot_cto_rmse_ecs cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld_historical.pdf
 ```
 
 

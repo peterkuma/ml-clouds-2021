@@ -191,9 +191,9 @@ plot_geo_cto_abrupt-4xCO2)
 	bin/plot_geo_cto 0 true "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_2.pdf
 	;;
 
-plot_geo_cto_rmse)
+plot_cto_rmse_ecs)
 	for var in ecs tcr cld; do
-		bin/plot_geo_cto_rmse $var "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_rmse_${var}.pdf
+		bin/plot_cto_rmse_ecs $var "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse_${var}.pdf
 	done
 	;;
 

@@ -71,7 +71,7 @@ prepare_samples
         plot_dtau_pct [Figure 6]
       calc_geo_cto
         plot_geo_cto [Figure 4, 5]
-        plot_geo_cto_rmse [Figure 11b, c, d]
+        plot_cto_rmse_ecs [Figure 11b, c, d]
       calc_cto
         plot_cto [Figure 10]
         calc_cto_ecs
@@ -272,7 +272,7 @@ export PLOT=plot # Plot directory
 ./run calc_geo_cto_abrupt-4xCO2
 ./run plot_geo_cto_historical
 ./run plot_geo_cto_abrupt-4xCO2
-./run plot_geo_cto_rmse
+./run plot_cto_rmse_ecs
 ./run calc_cto_historical
 ./run calc_cto_abrupt-4xCO2
 ./run plot_cto_historical
@@ -326,9 +326,9 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 {plot_geo_cto}
 
-### plot\_geo\_cto\_rmse [Figure 11b, c, d]
+### plot\_cto\_rmse\_ecs [Figure 11b, c, d]
 
-{plot_geo_cto_rmse}
+{plot_cto_rmse_ecs}
 
 ### calc\_cto
 
