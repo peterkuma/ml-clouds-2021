@@ -143,12 +143,19 @@ if __name__ == '__main__':
 	cmap = plt.get_cmap('tab20')
 	for i, d in enumerate(dd_wo_ceres):
 		name = os.path.basename(d['filename'])[:-3]
+		if name not in list(d_ecs['model']):
+			continue
 		mse = 0
 		for j, cloud_type in enumerate(CLOUD_TYPES):
 			if 'stats_geo' in d:
-				z = (d['stats_geo'][0,j,:,:] - d_ceres['stats_geo'][0,j,:,:])*100.
+				co = d['stats_geo'][0,j,:,:]
 			else:
-				z = (d['cloud_occurrence'][j,:,:] - d_ceres['stats_geo'][0,j,:,:])*100.
+				co = d['cloud_occurrence'][j,:,:]
+			if 'stats_geo' in d_ceres:
+				co_ceres = d_ceres['stats_geo'][0,j,:,:]
+			else:
+				co_ceres = d_ceres['cloud_occurrence'][j,:,:]
+			z = (co - co_ceres)*100.
 			weights = np.cos(d['lat']/180.*np.pi)
 			mse += np.mean(np.average(z**2, weights=weights, axis=0))
 			#mse += np.mean(z**2)
