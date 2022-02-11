@@ -198,10 +198,12 @@ plot_cto_rmse_ecs)
 	;;
 
 calc_cto_historical)
+	mkdir -p "$DATA"/cto/historical
 	bin/calc_cto "$DATA"/samples_tf/historical "$INPUT"/tas/historical "$DATA"/cto/historical/cto.nc
 	;;
 
 calc_cto_abrupt-4xCO2)
+	mkdir -p "$DATA"/cto/abrupt-4xCO2
 	bin/calc_cto "$DATA"/samples_tf/abrupt-4xCO2 "$INPUT"/tas/abrupt-4xCO2 "$DATA"/cto/abrupt-4xCO2/cto.nc
 	;;
 
