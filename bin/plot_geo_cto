@@ -175,6 +175,7 @@ if __name__ == '__main__':
 			)
 			if name != 'CERES':
 				varx = var if var in d else var_alt
+				varx_ceres = var if var in d_ceres else var_alt
 				if varx not in d:
 					print('Skipping %s because it does not define required variables' % name)
 					continue
@@ -183,10 +184,10 @@ if __name__ == '__main__':
 				else:
 					z = d[varx][j,:,:]
 				if relative:
-					if d_ceres[var].ndim == 4:
-						z -= d_ceres[var][0,j,:,:]
+					if d_ceres[varx_ceres].ndim == 4:
+						z -= d_ceres[varx_ceres][0,j,:,:]
 					else:
-						z -= d_ceres[var][j,:,:]
+						z -= d_ceres[varx_ceres][j,:,:]
 				cf = ax.contourf(d['lon'], d['lat'], z*100.,
 					levels=(rel_levels if relative else abs_levels),
 					cmap='bwr',
@@ -224,6 +225,7 @@ if __name__ == '__main__':
 					)
 			else:
 				varx = var if var in d else var_alt
+				varx_ceres = var if var in d_ceres else var_alt
 				if d[varx].ndim == 4:
 					z = d[varx][0,j,:,:]
 				else:
