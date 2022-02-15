@@ -45,6 +45,7 @@ mpl.rc('grid', lw=0.1)
 
 COLORS = ['#46e64c', '#5b5bff']
 LABELS = ['SYNOP', 'BUOY']
+MARKERS = ['o', 's']
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
@@ -79,8 +80,9 @@ if __name__ == '__main__':
 				(~d['cloudMiddle'].mask) | \
 				(~d['cloudLow'].mask)
 		else:
-			mask = np.ones(len(d['lon']))
-		plt.scatter(d['lon'][mask], d['lat'][mask], s=1, lw=0.2, color='none', edgecolors=COLORS[i], marker='o', label=LABELS[i])
+			mask = np.ones(len(d['Lon']))
+		plt.scatter(d['Lon'][mask], d['Lat'][mask], s=3, lw=0.2, color='none',
+			edgecolors=COLORS[i], marker=MARKERS[i], label=LABELS[i])
 	ax.coastlines(lw=0.2)
 	ax.outline_patch.set_linewidth(0.3)
 	plt.xlim(-180, 180)
