@@ -267,15 +267,22 @@ if __name__ == '__main__':
 	plt.subplots_adjust(hspace=0.06, wspace=0, right=0.89)
 
 	if relative:
-		cax = fig.add_axes([0.125, 0.092, 0.35, 0.007])
+		# Horizontal:
+		# cax = fig.add_axes([0.125, 0.092, 0.35, 0.007])
+		# Vertical:
+		cax = fig.add_axes([0.915, 0.525, 0.01, 0.2])
 		cb = fig.colorbar(cf_ref, cax=cax, ticks=np.arange(0, 110, 10),
-			orientation='horizontal')
+			orientation='vertical')
 		cb.set_label(label='Cloud type occurrence (%)', fontsize=7)
 		cb.ax.tick_params(labelsize=6)
 
-	cax = fig.add_axes([0.54, 0.092, 0.35, 0.007] if relative else \
+	# Horizontal:
+	#cax = fig.add_axes([0.54, 0.092, 0.35, 0.007] if relative else \
+	#	[0.33, 0.092, 0.35, 0.007])
+	# Vertical:
+	cax = fig.add_axes([0.915, 0.275, 0.01, 0.2] if relative else \
 		[0.33, 0.092, 0.35, 0.007])
-	cb = fig.colorbar(cf, cax=cax, orientation='horizontal')
+	cb = fig.colorbar(cf, cax=cax, orientation='vertical')
 	cb.set_label(label=label, fontsize=7)
 	cb.ax.tick_params(labelsize=6)
 
