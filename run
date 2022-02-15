@@ -8,13 +8,12 @@ PLOT="${PLOT:-plot}"
 
 case "$1" in
 prepare_ceres_training)
-	mkdir -p "$DATA"/samples/ceres_training
-	parallel -j$JOBS -v bin/prepare_samples ceres "$INPUT"/ceres "$INPUT"/idd/synop "$INPUT"/idd/buoy "$INPUT"/landmask/ne_110m_land.nc both {}-01-01 {}-12-31 "$DATA"/samples/ceres_training/{} ::: {2009..2020}
-	parallel -j1 -v bin/merge_samples "$DATA"/samples/ceres_training/{} "$DATA"/samples/ceres_training/{}.nc ::: {2009..2020}
+	mkdir -p "$DATA"/samples/ceres_training/{2004,2005,2007} "$DATA"/samples/ceres_training/{2009..2020}
+	parallel -j$JOBS -v bin/prepare_samples ceres "$INPUT"/ceres "$INPUT"/idd/synop "$INPUT"/idd/buoy "$INPUT"/landmask/ne_110m_land.nc both {}-01-01 {}-12-31 "$DATA"/samples/ceres_training/{} ::: 2004 2005 2007 {2009..2020}
+	parallel -j1 -v bin/merge_samples "$DATA"/samples/ceres_training/{} "$DATA"/samples/ceres_training/{}.nc ::: 2004 2005 2007 {2009..2020}
 	;;
 
 train_ann)
-	# Train the ANN.
 	mkdir -p "$DATA"/ann
 	bin/tf train "$DATA"/samples/ceres_training/ "$DATA"/ann/ceres.h5 "$DATA"/ann/history.nc
 	;;
@@ -74,7 +73,7 @@ prepare_historical)
 			continue
 		fi
 		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/$model/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
+		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/noresm2/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
 		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
 	fi
 	;;
@@ -97,14 +96,12 @@ prepare_abrupt-4xCO2)
 	fi
 	;;
 
-
 label_ceres)
 	mkdir -p "$DATA"/samples_tf/ceres/
 	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres 2003 2020 "$DATA"/samples_tf/ceres
 	;;
 
 label_historical)
-	mkdir -p "$DATA"/samples_tf/ceres/
 	for model in $(cat "$INPUT"/models_historical); do
 		if [ ! -e "$DATA"/samples/historical/$model -o -e "$DATA"/samples_tf/historical/$model ]; then
 			continue
@@ -125,7 +122,7 @@ label_abrupt-4xCO2)
 	;;
 
 calc_dtau_pct)
-	bin/calc_dtau_pct "$DATA"/samples_tf/ceres "$INPUT"/ceres "$DATA"/dtau_pct/dtau_pct.nc
+	bin/calc_dtau_pct "$DATA"/samples_tf/historical/CERES "$INPUT"/ceres "$DATA"/dtau_pct/dtau_pct.nc
 	;;
 
 plot_dtau_pct)
@@ -135,7 +132,7 @@ plot_dtau_pct)
 calc_geo_cto_historical)
 	mkdir -p "$DATA"/geo_cto/historical/all
 	if [ ! -e "$DATA"/geo_cto/historical/all/CERES.nc ]; then
-		bin/calc_geo_cto "$DATA"/samples_tf/ceres "$INPUT"/tas/historical/CERES.nc "$DATA"/geo_cto/historical/all/CERES.nc
+		bin/calc_geo_cto "$DATA"/samples_tf/historical/CERES "$INPUT"/tas/historical/CERES.nc "$DATA"/geo_cto/historical/all/CERES.nc
 	fi
 	for model in $(cat "$INPUT"/models_historical); do
 		if [ ! -e "$DATA"/samples_tf/historical/$model -o -e "$DATA"/geo_cto/historical/all/$model.nc ]; then
