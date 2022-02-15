@@ -22,6 +22,7 @@ import sys
 import os
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+from matplotlib.lines import Line2D
 import ds_format as ds
 import numpy as np
 import aquarius_time as aq
@@ -52,6 +53,8 @@ LABELS = {
 	'cld': 'Cloud feedback (Wm$^{-2}$K$^{-1}$)',
 }
 CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+LINESTYLES = ['solid', 'dashed', 'dotted', 'dashdot']
+MARKERS = ['o', 's', 'D', '^']
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
@@ -74,13 +77,16 @@ if __name__ == '__main__':
 
 	var = d_summary[varname]
 
+	handles = []
+	labels = []
 	res = 0
 	for i, cloud_type in enumerate(['Hi', 'Mi', 'Cu', 'St']):
 		plt.scatter(
 			(d['stats_tas'][:,i])*100,
 			var,
 			s=20,
-			color=COLORS[i]
+			color=COLORS[i],
+			marker=MARKERS[i],
 		)
 		x = np.linspace(-2, 2, 200)
 		y = np.full(len(x), np.nan)
@@ -92,7 +98,11 @@ if __name__ == '__main__':
 			ylow[j] = y[j] - s
 			yhigh[j] = y[j] + s
 		plt.fill_between(x, ylow, yhigh, color=COLORS[i], alpha=0.1, edgecolor='none')
-		plt.plot(x, y, color=COLORS[i], lw=0.8, label=CLOUD_TYPES[i])
+		plt.plot(x, y, color=COLORS[i], lw=1.2, label=CLOUD_TYPES[i],
+			linestyle=LINESTYLES[i])
+		labels += [CLOUD_TYPES[i]]
+		handles += [Line2D(range(1), range(1), marker=MARKERS[i], lw=1.2,
+			markersize=4, color=COLORS[i], linestyle=LINESTYLES[i])]
 	plt.xlim(-0.6, 0.4)
 	if varname == 'ecs':
 		plt.ylim(1, 6)
@@ -103,7 +113,8 @@ if __name__ == '__main__':
 		plt.ylim(-0.2, 0.9)
 	plt.xlabel('Cloud type occurrence change (% K$^{-1}$)')
 	plt.ylabel(LABELS[varname])
-	plt.legend(loc='lower center', fontsize=8)
+	plt.legend(handles, labels, loc='lower center', fontsize=7,
+		handlelength=4, bbox_to_anchor=(0.62, 0))
 	plt.gca().set_aspect(1.0/plt.gca().get_data_ratio(), adjustable='box')
 	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight')
