@@ -49,8 +49,10 @@ if __name__ == '__main__':
 	x = np.arange(0, len(d['loss']))
 	xticks = np.arange(0, len(d['loss']), 2)
 	plt.subplot(2, 1, 1)
-	plt.plot(x, np.sqrt(d['loss'])*100, label='Training set loss function', color=COLORS[0])
-	plt.plot(x, np.sqrt(d['val_loss'])*100, label='Validation set loss function', color=COLORS[1])
+	plt.plot(x, np.sqrt(d['loss'])*100, label='Training set loss function',
+		color=COLORS[0], linestyle='solid')
+	plt.plot(x, np.sqrt(d['val_loss'])*100, label='Validation set loss function',
+		color=COLORS[1], linestyle='dashed')
 	plt.legend()
 	plt.ylabel('Root mean square error (%)')
 	plt.ylim(0, 12)
@@ -59,8 +61,12 @@ if __name__ == '__main__':
 	plt.title('Training phase history')
 	plt.xlabel('Training iteration number')
 	plt.subplot(2, 1, 2)
-	plt.bar(np.arange(5)-0.15, list(d['rmse_rnd']) + [d['rmse_rnd_total']], width=0.3, color=COLORS[1], label='Uninformative predictor')
-	plt.bar(np.arange(5)+0.15, list(d['rmse_pred']) + [d['rmse_pred_total']], width=0.3, color=COLORS[0], label='ANN predictor')
+	plt.bar(np.arange(5)-0.15, list(d['rmse_rnd']) + [d['rmse_rnd_total']],
+		width=0.3, color=COLORS[1], label='Uninformative predictor',
+		hatch='///', alpha=0.999)
+	plt.bar(np.arange(5)+0.15, list(d['rmse_pred']) + [d['rmse_pred_total']],
+		width=0.3, color=COLORS[0], label='ANN predictor', hatch='---',
+		alpha=0.999)
 	plt.ylim(0, 20)
 	plt.ylabel('Root mean square error (%)')
 	plt.title('Validation results')
