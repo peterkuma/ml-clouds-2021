@@ -4,12 +4,12 @@ occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
 Usage: plot_cto_rmse_ecs <var> <input> <ecs> <output> [legend: <legend>]
 
-Depends on: calc_geo_cto
+Depends on: calc_geo_cto | calc_cto
 
 Arguments:
 
 - var: One of: "ecs" (ECS), "tcr" (TCR), "cld" (CLD).
-- input: Input directory - the output of calc_geo_cto (NetCDF).
+- input: Input directory - the output of calc_geo_cto or calc_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
 
@@ -19,9 +19,10 @@ Options:
 
 Examples:
 
-bin/plot_cto_rmse_ecs ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs_historical.pdf
-bin/plot_cto_rmse_ecs tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr_historical.pdf
-bin/plot_cto_rmse_ecs cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld_historical.pdf
+bin/plot_cto_rmse_ecs ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
+bin/plot_cto_rmse_ecs tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr.pdf
+bin/plot_cto_rmse_ecs cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld.pdf
+bin/plot_cto_rmse_ecs ecs data/cto/historical/all data/ecs/ecs.csv plot/cto_rmse_ecs_historical.pdf
 '''
 
 import sys
@@ -31,6 +32,10 @@ import numpy as np
 import ds_format as ds
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import matplotlib.patches as mpatches
+import matplotlib.text as mtext
+from matplotlib.lines import Line2D
+from matplotlib.legend_handler import HandlerPatch
 import pandas as pd
 import pymc3 as pm
 import pst
@@ -53,13 +58,40 @@ mpl.rc('grid', lw=0.1)
 
 CLOUD_TYPES = ['Hi', 'Mi', 'Cu', 'St']
 
-NBURN = 1000
-NBURN = 100
-NSAMPLES = 1000
+#NBURN = 1000
+NBURN = 10
+#NSAMPLES = 10000
+NSAMPLES = 100
 # Increase NSAMPLES to calculate Bayes factor accurately:
 # NSAMPLES = 1000000
 NCHAINS = 12
 NCORES = 12
+
+class Handle:
+    def __init__(self, text, color):
+        self.text = text
+        self.color = color
+
+class HandlerCircle(HandlerPatch):
+    def legend_artist(self, legend, orig_handle, fontsize, handlebox):
+        x0, y0 = handlebox.xdescent, handlebox.ydescent
+        w, h = handlebox.width, handlebox.height
+        r = 4
+        p1 = mpatches.Circle((x0 + r/2 + w/2, y0 + r/2), r,
+            facecolor=orig_handle.color,
+			linewidth=0,
+            transform=handlebox.get_transform()
+        )
+        p2 = mtext.Text(x0 + w/2 + r/2, y0 + r/2, orig_handle.text,
+            color='k',
+            fontsize=5.5,
+            horizontalalignment='center',
+            verticalalignment='center',
+            transform=handlebox.get_transform()
+        )
+        handlebox.add_artist(p1)
+        handlebox.add_artist(p2)
+        return (p1, p2)
 
 def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 	x_m = np.mean(x)
@@ -112,38 +144,22 @@ def read_ecs(filename, var):
 		}
 	}
 
-if __name__ == '__main__':
-	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 5:
-		sys.stderr.write(sys.modules[__name__].__doc__)
-		sys.exit(1)
-	var = args[1]
-	input_ = args[2]
-	ecs = args[3]
-	output = args[4]
-
+def read_geo_cto(dirname):
 	dd = ds.readdir(input_)
-
-	print('<- %s' % ecs)
-	d_ecs = read_ecs(ecs, var)
-
-	fig = plt.figure(figsize=(6, 5))
 
 	d_ceres = None
 	for i, d in enumerate(dd):
-		name = os.path.basename(d['filename'])[:-3]
-		if name == 'CERES':
+		model0 = os.path.basename(d['filename'])[:-3]
+		if model0 == 'CERES':
 			d_ceres = d
 
-	dd_wo_ceres = [d for d in dd if d is not d_ceres]
+	model = []
+	rmse = []
+	ecs = []
 
-	rmse_all = []
-	y_all = []
-
-	cmap = plt.get_cmap('tab20')
-	for i, d in enumerate(dd_wo_ceres):
-		name = os.path.basename(d['filename'])[:-3]
-		if name not in list(d_ecs['model']):
+	for i, d in enumerate(dd):
+		model0 = os.path.basename(d['filename'])[:-3]
+		if model0 == 'CERES':
 			continue
 		mse = 0
 		for j, cloud_type in enumerate(CLOUD_TYPES):
@@ -160,22 +176,91 @@ if __name__ == '__main__':
 			mse += np.mean(np.average(z**2, weights=weights, axis=0))
 			#mse += np.mean(z**2)
 		mse /= len(CLOUD_TYPES)
-		rmse = np.sqrt(mse)
-		y = d_ecs[var][d_ecs['model'] == name][0]
-		ext = d_ecs['ext'][d_ecs['model'] == name][0]
-		if not ext:
-			label = name
+		rmse0 = np.sqrt(mse)
+
+		model += [model0]
+		rmse += [rmse0]
+
+	return {
+		'model': model,
+		'rmse': np.array(rmse),
+	}
+
+def read_cto(filename):
+	d = ds.read(filename)
+	n = len(d['models'])
+
+	for i in range(n):
+		if d['models'][i] == 'CERES':
+			stats_ceres = d['stats'][i]
+
+	model = []
+	rmse = []
+	for i in range(n):
+		if d['models'][i] == 'CERES':
+			continue
+		model0 = d['models'][i]
+		rmse0 = np.sqrt(np.mean((100*(d['stats'][i] - stats_ceres))**2))
+		model += [model0]
+		rmse += [rmse0]
+
+	return {
+		'model': model,
+		'rmse': np.array(rmse),
+	}
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 5:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	var = args[1]
+	input_ = args[2]
+	ecs = args[3]
+	output = args[4]
+
+	print('<- %s' % ecs)
+	d_ecs = read_ecs(ecs, var)
+
+	print('<- %s' % input_)
+	if os.path.isdir(input_):
+		d = read_geo_cto(input_)
+	else:
+		d = read_cto(input_)
+
+	n = len(d['model'])
+
+	fig = plt.figure(figsize=(6, 5))
+
+	ecs = []
+	cmap = plt.get_cmap('tab20')
+	handles= []
+	labels = []
+	for i in range(n):
+		if d['model'][i] in list(d_ecs['model']):
+			ecs0 = d_ecs[var][d_ecs['model'] == d['model'][i]][0]
+			ext = d_ecs['ext'][d_ecs['model'] == d['model'][i]][0]
+			if not ext:
+				label = d['model'][i]
+			else:
+				label = d['model'][i] + '$^*$'
+			plt.scatter(d['rmse'][i], ecs0, label=label, color=cmap(i), s=50)
+			labels += [label]
+			#lines += [Line2D([], [], color=cmap(i), marker='o', markerfacecolor=cmap(i), lw=0)]
+			#lines += [mpatches.Circle((0.5, 0.5), 0.25, facecolor=cmap(i), linewidth=0)]
+			handles += [Handle('%d' % (i + 1), cmap(i))]
+			plt.text(d['rmse'][i], ecs0, i + 1,
+				fontsize=5.5,
+				va='center',
+				ha='center',
+			)
 		else:
-			label = name + '$^*$'
-		plt.scatter(rmse, y, label=label, color=cmap(i))
-		rmse_all += [rmse]
-		y_all += [y]
+			ecs0 = np.nan
+		ecs += [ecs0]
+	ecs = np.array(ecs)
 
-	rmse_all = np.array(rmse_all)
-	y_all = np.array(y_all)
-
-	mask = np.isfinite(rmse_all) & np.isfinite(y_all)
-	c0, c1, sd = bayes(rmse_all[mask], y_all[mask])
+	mask = np.isfinite(d['rmse']) & np.isfinite(ecs)
+	c0, c1, sd = bayes(d['rmse'][mask], ecs[mask])
 	sd_m = np.mean(sd)
 	plt.xlim(1, 12)
 	ylim = {
@@ -215,6 +300,10 @@ if __name__ == '__main__':
 	plt.ylabel('%s (%s)' % (label, units))
 
 	if opts.get('legend', True):
-		plt.legend(fontsize=5.5, loc='lower left')
+		plt.legend(handles, labels,
+			handler_map={Handle: HandlerCircle()},
+			fontsize=5.5,
+			loc='lower left',
+		)
 
 	plt.savefig(output, bbox_inches='tight')
