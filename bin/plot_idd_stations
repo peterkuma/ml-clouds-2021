@@ -59,7 +59,7 @@ if __name__ == '__main__':
 	if sample is not None:
 		d_s = ds.read(sample)
 	dd = ds.readdir(input_, \
-		['lat', 'lon', 'cloudHigh', 'cloudMiddle', 'cloudLow'])
+		['Lat', 'Lon', 'cloudHigh', 'cloudMiddle', 'cloudLow'])
 	fig = plt.figure(figsize=(5, 5))
 	ax = fig.add_subplot(1, 1, 1, projection=ccrs.PlateCarree())
 	if sample is not None:
