@@ -64,6 +64,13 @@ LABELS = {
 
 CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
 
+HATCH = [
+	'///',
+	'---',
+	'\\\\\\',
+	'...',
+]
+
 def read_ecs(filename):
 	d = pd.read_csv(filename)
 	return {
@@ -204,7 +211,8 @@ if __name__ == '__main__':
 		x[:] += i*0.2 - 0.2*2 + 0.1
 		if absrel == 'relative':
 			h -= d[key][i_ceres,i]
-		plt.bar(x, h*100., width=0.2, label=cloud_type, color=COLORS[i])
+		plt.bar(x, h*100., width=0.2, hatch=HATCH[i], alpha=0.999, label=cloud_type,
+			color=COLORS[i])
 		if (key+'_samples') in d:
 			h_samples = d[key+'_samples'][mask,i,:]
 			if absrel == 'relative':
