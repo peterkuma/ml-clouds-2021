@@ -71,11 +71,13 @@ prepare_samples
         plot_dtau_pct [Figure 6]
       calc_geo_cto
         plot_geo_cto [Figure 4, 5]
-        plot_cto_rmse_ecs [Figure 11b, c, d]
+        plot_cto_rmse_ecs [Figure 10b, c, d]
+		calc_cto_hist
+		  plot_cto_hist [Figure 8]
       calc_cto
-        plot_cto [Figure 10]
+        plot_cto [Figure 9]
         calc_cto_ecs
-          plot_cto_ecs [Figure 11a]
+          plot_cto_ecs [Figure 10a]
 plot_tf_scheme [Figure 2]
 ```
 
@@ -277,6 +279,8 @@ export PLOT=plot # Plot directory
 ./run plot_cto_historical
 ./run plot_cto_abrupt-4xCO2
 ./run plot_tf_scheme
+./run calc_cto_hist
+./run plot_cto_hist
 ```
 
 ## Main commands
@@ -325,7 +329,7 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 {plot_geo_cto}
 
-### plot\_cto\_rmse\_ecs [Figure 11b, c, d]
+### plot\_cto\_rmse\_ecs [Figure 10b, c, d]
 
 {plot_cto_rmse_ecs}
 
@@ -333,7 +337,7 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 {calc_cto}
 
-### plot\_cto [Figure 10]
+### plot\_cto [Figure 9]
 
 {plot_cto}
 
@@ -341,13 +345,21 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 
 {calc_cto_ecs}
 
-### plot\_cto\_ecs [Figure 11a]
+### plot\_cto\_ecs [Figure 10a]
 
 {plot_cto_ecs}
 
 ### plot\_tf\_scheme [Figure 2]
 
 {plot_tf_scheme}
+
+### calc\_cto\_hist
+
+{calc_cto_hist}
+
+### plot\_cto\_hist [Figure 8]
+
+{plot_cto_hist}
 
 ## Auxiliary commands
 

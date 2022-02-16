@@ -71,11 +71,13 @@ prepare_samples
         plot_dtau_pct [Figure 6]
       calc_geo_cto
         plot_geo_cto [Figure 4, 5]
-        plot_cto_rmse_ecs [Figure 11b, c, d]
+        plot_cto_rmse_ecs [Figure 10b, c, d]
+		calc_cto_hist
+		  plot_cto_hist [Figure 8]
       calc_cto
-        plot_cto [Figure 10]
+        plot_cto [Figure 9]
         calc_cto_ecs
-          plot_cto_ecs [Figure 11a]
+          plot_cto_ecs [Figure 10a]
 plot_tf_scheme [Figure 2]
 ```
 
@@ -277,6 +279,8 @@ export PLOT=plot # Plot directory
 ./run plot_cto_historical
 ./run plot_cto_abrupt-4xCO2
 ./run plot_tf_scheme
+./run calc_cto_hist
+./run plot_cto_hist
 ```
 
 ## Main commands
@@ -529,7 +533,7 @@ bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 data/ecs/ecs.csv plot/geo
 ```
 
 
-### plot\_cto\_rmse\_ecs [Figure 11b, c, d]
+### plot\_cto\_rmse\_ecs [Figure 10b, c, d]
 
 
 ```
@@ -583,7 +587,7 @@ bin/calc_cto data/samples_tf/abrupt-4xCO2 data/tas/abrupt-4xCO2 data/cto/abrupt-
 ```
 
 
-### plot\_cto [Figure 10]
+### plot\_cto [Figure 9]
 
 
 ```
@@ -638,7 +642,7 @@ bin/calc_cto_ecs data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv data/cto_ecs/cto_
 ```
 
 
-### plot\_cto\_ecs [Figure 11a]
+### plot\_cto\_ecs [Figure 10a]
 
 
 ```
@@ -677,6 +681,38 @@ Arguments:
 Examples:
 
 plot_tf_scheme plot/tf_scheme.pdf
+```
+
+
+### calc\_cto\_hist
+
+
+```
+Calculate cloud type occurrence histograms.
+
+Usage: calc_cto_hist <input> <output>
+
+Depends on: prepare_samples | tf | calc_geo_cto
+
+Arguments:
+
+- input: Input directory with samples or geographical distribution of cloud type occurrence - the output of prepare_samples, tf apply or calc_geo_cto (NetCDF).
+- output: Output file (NetCDF).
+```
+
+
+### plot\_cto\_hist [Figure 8]
+
+
+```
+Plot cloud type occurrence histograms.
+
+Usage: plot_cto_hist [<input> <title>]... <output>
+
+Arguments:
+
+- input: Input file - the output of calc_cto_hist (NetCDF).
+- output: Output file (PDF).
 ```
 
 
