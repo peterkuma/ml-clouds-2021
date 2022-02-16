@@ -166,7 +166,7 @@ if __name__ == '__main__':
 		for j, cloud_type in enumerate(CLOUD_TYPES):
 			ax = fig.add_subplot(nrows, ncols, i*ncols + j + 1,
 				projection=ccrs.PlateCarree())
-			plt.text(0.01, 0.98, '%s%d)' % (string.ascii_lowercase[i], j+1),
+			plt.text(0.01, 0.98, '(%s%d)' % (string.ascii_lowercase[i], j+1),
 				transform=ax.transAxes,
 				va='top',
 				ha='left',
