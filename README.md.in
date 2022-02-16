@@ -212,8 +212,8 @@ data
   cto_ecs
     cto_ecs.nc: Cloud type occurrence vs. ECS calculated by calc_cto_ecs.
   cto_hist: Cloud type occurrence histograms.
-	geo.nc: For geographical distribution calculated from CERES samples.
-	tf.nc: For ANN-labeled CERES samples.
+    geo.nc: For geographical distribution calculated from CERES samples.
+    tf.nc: For ANN-labeled CERES samples.
     training.nc: For training CERES samples.
   dtau_pct
     dtau_pct.nc: Histogram calculated by calc_dtau_pct.
