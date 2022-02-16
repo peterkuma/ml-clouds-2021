@@ -56,11 +56,11 @@ if __name__ == '__main__':
 	ax.set_xscale('log')
 	ax.invert_yaxis()
 	plt.title('Mean')
-	plt.ylabel('Cloud top pressure (hPa)')
+	plt.text(0.07, 0.5, 'Cloud top pressure (hPa)',
+		ha='right', va='center', rotation=90, transform=plt.gcf().transFigure)
 	plt.ylim(1000, 0)
 	plt.xlim(1, 60)
-	lab = plt.xlabel('Cloud optical depth', loc='left')
-	plt.text(0.02, 0.98, string.ascii_lowercase[0] + ')',
+	plt.text(0.02, 0.98, '(' + string.ascii_lowercase[0] + ')',
 		transform=plt.gca().transAxes,
 		va='top', ha='left', weight='bold', fontsize=8, color='white')
 
@@ -75,11 +75,11 @@ if __name__ == '__main__':
 		)
 		ax.set_xscale('log')
 		ax.invert_yaxis()
-		plt.title(CLOUD_TYPES[i])
+		plt.title(CLOUD_TYPES[i], fontsize=11)
 		ax.yaxis.set_ticklabels([])
 		plt.ylim(1000, 0)
 		plt.xlim(1, 60)
-		plt.text(0.02, 0.98, string.ascii_lowercase[i + 1] + ')',
+		plt.text(0.02, 0.98, '(' + string.ascii_lowercase[i + 1] + ')',
 			transform=plt.gca().transAxes,
 			va='top', ha='left', weight='bold', fontsize=8)
 
@@ -93,23 +93,21 @@ if __name__ == '__main__':
 		ax.invert_yaxis()
 		if i != 0:
 			ax.yaxis.set_ticklabels([])
-		else:
-			lab = plt.ylabel('Cloud top pressure (hPa)')
-			lab.set_position([0, 0.25])
-		plt.xlabel('Cloud optical depth')
 		plt.ylim(1000, 0)
 		plt.xlim(1, 60)
-		plt.text(0.02, 0.98, string.ascii_lowercase[n + i + 1] + ')',
+		plt.text(0.02, 0.98, '(' + string.ascii_lowercase[n + i + 1] + ')',
 			transform=plt.gca().transAxes,
 			va='top', ha='left', weight='bold', fontsize=8)
+	plt.text(0.6, 0.03, 'Cloud optical depth',
+		va='top', ha='center', transform=plt.gcf().transFigure)
 
 	ticks_ref = np.arange(0, 11, 1)
 	#ticks1 = np.arange(-1.2, 1.4, 0.2)*100
 	ticks1 = np.arange(-1.2, 1.4, 0.2)
 	ticks2 = np.arange(-1.2, 1.4, 0.2)
 
-	cax = fig.add_axes([0.07, 0.35, 0.14, 0.03])
-	cb = fig.colorbar(cf_ref, cax=cax, orientation='horizontal',
+	cax = fig.add_axes([0.15, 0.1, 0.01, 0.35])
+	cb = fig.colorbar(cf_ref, cax=cax, orientation='vertical',
 		ticks=ticks_ref)
 	cb.set_label(label='Absolute density (a.u.)', fontsize=8)
 	cb.ax.tick_params(labelsize=7)
