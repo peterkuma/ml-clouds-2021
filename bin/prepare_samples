@@ -580,7 +580,7 @@ if __name__ == '__main__':
 				idd_synop = read_idd(synop_dir, 'synop', d['time'])
 			if buoy_dir is not None:
 				idd_buoy = read_idd(buoy_dir, 'buoy', d['time'])
-		except IOError as e:
+		except Exception as e:
 			logging.warning(e)
 			continue
 		if idd_synop is not None and idd_buoy is not None:
