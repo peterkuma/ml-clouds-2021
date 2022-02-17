@@ -70,7 +70,7 @@ if __name__ == '__main__':
 		#cf1 = plt.contourf(d['dtau'], d['pct']*1e-2, ((d['hist'][i,:,:] - hist_m)/hist_m).T*100,
 			#locator=mpl.ticker.LogLocator(),
 			#levels=np.arange(-0.4, 0.5, 0.01)*100,
-			levels=np.arange(-1.2, 1.3, 0.1),
+			levels=np.arange(-1.5, 1.6, 0.1),
 			cmap='bwr'
 		)
 		ax.set_xscale('log')
@@ -86,7 +86,7 @@ if __name__ == '__main__':
 	for i in range(n):
 		ax = plt.subplot(2, n + 1, (n + 1) + i + 2)
 		cf2 = plt.contourf(d['dtau'], d['pct']*1e-2, (d['hist'][i,:,:] - hist_m).T/hist_max*10,
-			levels=np.arange(-1.2, 1.3, 0.1),
+			levels=np.arange(-1, 1.1, 0.1),
 			cmap='bwr'
 		)
 		ax.set_xscale('log')
@@ -103,8 +103,8 @@ if __name__ == '__main__':
 
 	ticks_ref = np.arange(0, 11, 1)
 	#ticks1 = np.arange(-1.2, 1.4, 0.2)*100
-	ticks1 = np.arange(-1.2, 1.4, 0.2)
-	ticks2 = np.arange(-1.2, 1.4, 0.2)
+	ticks1 = np.arange(-1.5, 1.6, 0.5)
+	ticks2 = np.arange(-1, 1.2, 0.2)
 
 	cax = fig.add_axes([0.15, 0.1, 0.01, 0.35])
 	cb = fig.colorbar(cf_ref, cax=cax, orientation='vertical',
