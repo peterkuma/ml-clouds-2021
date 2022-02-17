@@ -185,25 +185,22 @@ if __name__ == '__main__':
 	else:
 		ncol = 1
 
-	width = 2 + 6*np.sum(mask)/23
-
-	if regression:
-		plt.figure(figsize=[12, 5])
-	else:
-		plt.figure(figsize=[width, 5])
+	plt.figure(figsize=[12, 4])
 
 	plt.subplot(nrow, ncol, 1)
 
 	if degree == 0:
 		if absrel == 'relative':
-			plt.ylim([-17, 13])
+			plt.ylim([-32, 32])
+			plt.yticks(np.arange(-20, 40, 10))
 		else:
 			plt.ylim([0, 60])
 	elif degree == '1-time':
 		plt.ylim([-3, 3])
 	elif degree == '1-tas':
-		plt.ylim([-0.73, 0.45])
+		plt.ylim([-0.7, 0.4])
 	ylim = plt.gca().get_ylim()
+	plt.xlim(-0.4, np.sum(mask) - 0.6)
 
 	for i, cloud_type in enumerate(CLOUD_TYPES):
 		h = d[key][mask,i]
@@ -226,23 +223,6 @@ if __name__ == '__main__':
 				linestyle='none',
 				capsize=1
 			)
-			for i, x0 in enumerate(x):
-				herr1 = herr[0,i]
-				herr2 = herr[1,i]
-				if (h[i] + herr2)*100 > ylim[1]:
-					plt.text(x0, ylim[1], ('[%.1f]\n:' % ((h[i] + herr2)*100)),
-						ha='center',
-						va='top',
-						fontsize=8,
-						bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0'),
-					)
-				if (h[i] - herr1)*100 < ylim[0]:
-					plt.text(x0, ylim[0], (':\n[%.1f]' % ((h[i] - herr1)*100)),
-						ha='center',
-						va='bottom',
-						fontsize=8,
-						bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0'),
-					)
 		plt.ylabel(ylabel)
 		plt.xticks(range(len(h)), [m for m in d['models'][mask]],
 			rotation='vertical')
@@ -250,25 +230,22 @@ if __name__ == '__main__':
 	x = np.arange(len(h), dtype=np.float64)
 	plt.grid(True, zorder=-1)
 	if opts.get('legend', True):
-		plt.legend(loc='upper center')
-	ytext = ylim[0] + (ylim[1] - ylim[0])*0.1
-	plt.text(x[0] - 0.75, ytext, varname.upper()+':\n(K)',
+		plt.legend(loc='upper right')
+	ytext = ylim[0] + (ylim[1] - ylim[0])*0.05
+	plt.text(x[0] - 0.45, ytext, varname.upper()+' (K):',
 		fontsize=9,
-		ha='center',
+		ha='right',
 		va='top',
 		bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0.05'),
 	)
 	for i in range(len(x)):
 		ecs, ext = get_ecs(d_ecs, varname, d['models'][mask][i])
-		color = '#000000' if not ext else '#888888'
+		color = 'k'
 		if ecs is not None and np.isfinite(ecs):
 			ecs_s = ('%.1f' % ecs) if not ext else (' %.1f$^*$' % ecs)
 		else:
 			ecs_s = ''
-		plt.text(
-			x[i],
-			ytext,
-			ecs_s,
+		plt.text(x[i], ytext, ecs_s,
 			fontsize=9,
 			ha='center',
 			va='top',
