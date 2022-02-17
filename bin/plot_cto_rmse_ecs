@@ -51,7 +51,7 @@ mpl.rc('legend', framealpha=1)
 mpl.rc('legend', facecolor='#eeeeee')
 mpl.rc('legend', edgecolor='none')
 mpl.rc('legend', fancybox=False)
-mpl.rc('legend', fontsize=8)
+mpl.rc('legend', fontsize=7)
 mpl.rc('grid', color='k')
 mpl.rc('grid', alpha=0.2)
 mpl.rc('grid', lw=0.1)
@@ -76,7 +76,7 @@ class HandlerCircle(HandlerPatch):
     def legend_artist(self, legend, orig_handle, fontsize, handlebox):
         x0, y0 = handlebox.xdescent, handlebox.ydescent
         w, h = handlebox.width, handlebox.height
-        r = 4
+        r = 5
         p1 = mpatches.Circle((x0 + r/2 + w/2, y0 + r/2), r,
             facecolor=orig_handle.color,
 			linewidth=0,
@@ -84,7 +84,7 @@ class HandlerCircle(HandlerPatch):
         )
         p2 = mtext.Text(x0 + w/2 + r/2, y0 + r/2, orig_handle.text,
             color='k',
-            fontsize=5.5,
+            fontsize=7,
             horizontalalignment='center',
             verticalalignment='center',
             transform=handlebox.get_transform()
@@ -174,7 +174,6 @@ def read_geo_cto(dirname):
 			z = (co - co_ceres)*100.
 			weights = np.cos(d['lat']/180.*np.pi)
 			mse += np.mean(np.average(z**2, weights=weights, axis=0))
-			#mse += np.mean(z**2)
 		mse /= len(CLOUD_TYPES)
 		rmse0 = np.sqrt(mse)
 
@@ -236,6 +235,7 @@ if __name__ == '__main__':
 	cmap = plt.get_cmap('tab20')
 	handles= []
 	labels = []
+	j = 0
 	for i in range(n):
 		if d['model'][i] in list(d_ecs['model']):
 			ecs0 = d_ecs[var][d_ecs['model'] == d['model'][i]][0]
@@ -244,16 +244,15 @@ if __name__ == '__main__':
 				label = d['model'][i]
 			else:
 				label = d['model'][i] + '$^*$'
-			plt.scatter(d['rmse'][i], ecs0, label=label, color=cmap(i), s=50)
+			plt.scatter(d['rmse'][i], ecs0, label=label, color=cmap(j), s=80)
 			labels += [label]
-			#lines += [Line2D([], [], color=cmap(i), marker='o', markerfacecolor=cmap(i), lw=0)]
-			#lines += [mpatches.Circle((0.5, 0.5), 0.25, facecolor=cmap(i), linewidth=0)]
-			handles += [Handle('%d' % (i + 1), cmap(i))]
-			plt.text(d['rmse'][i], ecs0, i + 1,
-				fontsize=5.5,
+			handles += [Handle('%d' % (j + 1), cmap(j))]
+			plt.text(d['rmse'][i], ecs0, j + 1,
+				fontsize=7,
 				va='center',
 				ha='center',
 			)
+			j += 1
 		else:
 			ecs0 = np.nan
 		ecs += [ecs0]
@@ -262,7 +261,7 @@ if __name__ == '__main__':
 	mask = np.isfinite(d['rmse']) & np.isfinite(ecs)
 	c0, c1, sd = bayes(d['rmse'][mask], ecs[mask])
 	sd_m = np.mean(sd)
-	plt.xlim(1, 12)
+	plt.xlim(0, 25)
 	ylim = {
 		'ecs': [1.5, 6],
 		'tcr': [1.2, 3],
@@ -285,11 +284,6 @@ if __name__ == '__main__':
 	plt.plot(x, c0_m + c1_m*x, linestyle='dashed', color='k', lw=0.5)
 	plt.gca().set_aspect(1.0/plt.gca().get_data_ratio(), adjustable='box')
 
-	# Uncomment to enable calculation of R^2.
-	#SStot = np.sum((y_all[mask] - np.mean(y_all[mask]))**2)
-	#SSres = np.sum((y_all[mask] - (c0_m + c1_m*rmse_all[mask]))**2)
-	#print('R^2 = %f' % (1 - SSres/SStot))
-
 	plt.xlabel('Cloud type occurrence RMSE (%)')
 	units = 'K' if var != 'cld' else 'Wm$^{-2}$K$^{-1}$'
 	label = {
@@ -302,8 +296,8 @@ if __name__ == '__main__':
 	if opts.get('legend', True):
 		plt.legend(handles, labels,
 			handler_map={Handle: HandlerCircle()},
-			fontsize=5.5,
-			loc='lower left',
+			fontsize=7,
+			loc='upper right',
 		)
 
 	plt.savefig(output, bbox_inches='tight')
