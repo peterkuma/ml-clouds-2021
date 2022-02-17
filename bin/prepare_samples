@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <seed>]
+Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <value>] [keep_stations: <value>]
 
 Arguments:
 
@@ -19,6 +19,8 @@ Arguments:
 Options:
 
 - seed: Random seed.
+- keep_stations: Keep station records in samples ("true" or "false").
+Default: "false".
 
 Examples:
 
@@ -553,6 +555,7 @@ if __name__ == '__main__':
 	end = aq.from_iso(args[8])
 	output = args[9]
 	seed = opts.get('seed')
+	keep_stations = opts.get('keep_stations', False)
 
 	if seed is not None:
 		np.random.seed(seed)
@@ -611,16 +614,29 @@ if __name__ == '__main__':
 				dx['station_type'] = lookup_idd(idd, \
 					dx['lat0'], dx['lon0'], dx['alpha0'],
 					dx['x'].flatten(), dx['y'].flatten())
-				#dx['stats_n'] = len(dx['station_lon'])
 				dx['station_number'] = np.arange(len(dx['station_lon']))
 				if np.sum(dx['stats']) == 0:
 					continue
-			#for k in ['station_lon', 'station_lat', 'station_number']:
-			#	if k in dx:
-			#		del dx[k]
-			#del dx['x'], dx['y'], dx['lat0'], dx['lon0']
-			if 'station_number' in dx:
-				del dx['station_number']
+			if not keep_stations:
+				for k in [
+					'station_type',
+					'station_lon',
+					'station_lat',
+					'station_x',
+					'station_y',
+				]:
+					if k in dx:
+						del dx[k]
+			for k in [
+				'station_number',
+				'x',
+				'y',
+				'lat0',
+				'lon0',
+				'alpha0',
+			]:
+				if k in dx:
+					del dx[k]
 			for k in ['station_lon', 'station_lat', 'station_x', 'station_y', 'station_type']:
 				if k in dx:
 					dx[k] = np.hstack([
