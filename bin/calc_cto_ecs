@@ -44,29 +44,35 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 	yn = (y - y_m)/y_sd
 
 	with pm.Model() as model:
-		mu = 0
-		c1 = pm.Uniform('c1', lower=-10, upper=10)
-		mu += c1*xn
+		#model_sel = pm.DiscreteUniform('model_sel', lower=0, upper=1)
 		c0 = pm.Uniform('c0', lower=-100, upper=100)
-		mu += c0
-		sd = pm.Uniform('sd', lower=0, upper=10)
+		#c1 = pm.Uniform('c1', lower=-10, upper=10)
+		c1ang = pm.Uniform('c1ang', lower=-np.pi/2, upper=np.pi/2)
+		#mu = c0 + model_sel*c1*xn
+		#mu = c0 + model_sel*np.tan(c1ang)*xn
+		mu = c0 + np.tan(c1ang)*xn
+		sd = pm.Uniform('sd', lower=0, upper=100)
 		obs = pm.Cauchy('obs', mu, sd, observed=yn)
-		err = pm.Cauchy('err', 0, sd)
 
 	with model:
 		step = pm.Metropolis()
 		trace = pm.sample(nsamples + nburn, step, chains=nchains, cores=ncores, progressbar=True)
 		c0 = trace['c0'][(nburn*nchains):]
-		c1 = trace['c1'][(nburn*nchains):]
-		err = trace['err'][(nburn*nchains):]
+		#c1 = trace['c1'][(nburn*nchains):]
+		c1ang = trace['c1ang'][(nburn*nchains):]
+		c1 = np.tan(c1ang)
 		sd = trace['sd'][(nburn*nchains):]
-		p = np.sum(c1 <= 0)/len(c1)
+		#model_sel = trace['model_sel'][(nburn*nchains):]
+		#mask = model_sel == 1
+		#c0 = c0[mask]
+		#c1 = c1[mask]
+		#sd = sd[mask]
+		#print('BF = %f' % (np.mean(model_sel)/(1-np.mean(model_sel))))
+		print('p = %f' % (np.sum(c1 >= 0)/len(c1)))
 		return \
 			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
 			c1*y_sd/x_sd, \
-			err*y_sd, \
-			sd*y_sd, \
-			min(p, 1. - p)
+			sd*y_sd
 
 def read_ecs(filename):
 	d = pd.read_csv(filename)
@@ -113,8 +119,7 @@ if __name__ == '__main__':
 		var = vars_[k]
 		for i, cloud_type in enumerate(CLOUD_TYPES):
 			mask = np.isfinite(var) & np.isfinite(d['stats_tas'][:,i])
-			c0_sample[k][i,:], c1_sample[k][i,:], err_sample[k][i,:], \
-				sd_sample[k][i,:], p[k][i] = \
+			c0_sample[k][i,:], c1_sample[k][i,:], sd_sample[k][i,:] = \
 				bayes(d['stats_tas'][mask,i]*100, var[mask])
 			c0[k][i] = np.mean(c0_sample[k][i,:])
 			c1[k][i] = np.mean(c1_sample[k][i,:])
@@ -127,9 +132,7 @@ if __name__ == '__main__':
 			('c1_'+k): c1[k],
 			('c0_'+k+'_samples'): c0_sample[k],
 			('c1_'+k+'_samples'): c1_sample[k],
-			('err_'+k+'_samples'): err_sample[k],
 			('sd_'+k+'_samples'): sd_sample[k],
-			('p_'+k): p[k],
 		})
 		do['.'].update({
 			k: {'.dims': ['model']},
@@ -137,9 +140,7 @@ if __name__ == '__main__':
 			('c1_'+k): {'.dims': ['cloud_type']},
 			('c0_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
 			('c1_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
-			('err_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
 			('sd_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
-			('p_'+k): {'.dims': ['cloud_type']},
 		})
 	print('-> %s' % output)
 	ds.write(output, do)
