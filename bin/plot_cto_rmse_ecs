@@ -104,8 +104,11 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 	with pm.Model() as model:
 		model_sel = pm.DiscreteUniform('model_sel', lower=0, upper=1)
 		c0 = pm.Uniform('c0', lower=-100, upper=100)
-		c1 = pm.Uniform('c1', lower=-20, upper=20)
-		mu = c0 + model_sel*c1*xn
+		#c1 = pm.Uniform('c1', lower=-10, upper=10)
+		c1ang = pm.Uniform('c1ang', lower=-np.pi/2, upper=np.pi/2)
+		#mu = c0 + model_sel*c1*xn
+		mu = c0 + model_sel*np.tan(c1ang)*xn
+		#mu = c0 + np.tan(c1ang)*xn
 		sd = pm.Uniform('sd', lower=0, upper=100)
 		obs = pm.Cauchy('obs', mu, sd, observed=yn)
 
@@ -113,7 +116,9 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 		step = pm.Metropolis()
 		trace = pm.sample(nsamples + nburn, step, chains=nchains, cores=ncores, progressbar=True)
 		c0 = trace['c0'][(nburn*nchains):]
-		c1 = trace['c1'][(nburn*nchains):]
+		#c1 = trace['c1'][(nburn*nchains):]
+		c1ang = trace['c1ang'][(nburn*nchains):]
+		c1 = np.tan(c1ang)
 		sd = trace['sd'][(nburn*nchains):]
 		model_sel = trace['model_sel'][(nburn*nchains):]
 		mask = model_sel == 1
@@ -121,6 +126,7 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 		c1 = c1[mask]
 		sd = sd[mask]
 		print('BF = %f' % (np.mean(model_sel)/(1-np.mean(model_sel))))
+		#print('p = %f' % (np.sum(c1 >= 0)/len(c1)))
 		return \
 			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
 			c1*y_sd/x_sd, \
