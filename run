@@ -6,11 +6,28 @@ INPUT="${INPUT:-input}"
 DATA="${DATA:-data}"
 PLOT="${PLOT:-plot}"
 
+prepare_model () {
+	exp="$1"
+	model="$2"
+	type_="$3"
+	inpath="$4"
+	y1="$5"
+	y2="$6"
+	years="$(seq $y1 $y2)"
+	if [ ! -e "$DATA"/samples/$exp/$model/$y1.nc -o -e "$DATA"/samples/$exp/$model/$y1.nc ]; then
+		for y in $years; do
+			mkdir -p "$DATA"/samples/$exp/$model/$y
+		done
+		parallel -j$JOBS bin/prepare_samples cmip "$inpath" none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: $years
+		parallel -j1 bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: $years
+	fi
+}
+
 case "$1" in
 prepare_ceres_training)
 	mkdir -p "$DATA"/samples/ceres_training/{2004,2005,2007} "$DATA"/samples/ceres_training/{2009..2020}
-	parallel -j$JOBS -v bin/prepare_samples ceres "$INPUT"/ceres "$INPUT"/idd/synop "$INPUT"/idd/buoy "$INPUT"/landmask/ne_110m_land.nc both {}-01-01 {}-12-31 "$DATA"/samples/ceres_training/{} ::: 2004 2005 2007 {2009..2020}
-	parallel -j1 -v bin/merge_samples "$DATA"/samples/ceres_training/{} "$DATA"/samples/ceres_training/{}.nc ::: 2004 2005 2007 {2009..2020}
+	parallel -j$JOBS bin/prepare_samples ceres "$INPUT"/ceres "$INPUT"/idd/synop "$INPUT"/idd/buoy "$INPUT"/landmask/ne_110m_land.nc both {}-01-01 {}-12-31 "$DATA"/samples/ceres_training/{} ::: 2004 2005 2007 {2009..2020}
+	parallel -j1 bin/merge_samples "$DATA"/samples/ceres_training/{} "$DATA"/samples/ceres_training/{}.nc ::: 2004 2005 2007 {2009..2020}
 	;;
 
 train_ann)
@@ -23,102 +40,93 @@ plot_training_history)
 	;;
 
 plot_idd_stations)
-	mkdir -p "$DATA/idd_sample"
-	cp "$INPUT"/idd/synop/Surface_Synoptic_20100101_0000.nc "$DATA"/idd_sample/
-	cp "$INPUT"/idd/buoy/Surface_Buoy_20100101_0000.nc "$DATA"/idd_sample/
-	bin/plot_idd_stations "$DATA"/idd_sample/ "$DATA"/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 "$PLOT"/idd_stations.pdf '2010-01-01'
+	mkdir -p "$DATA"/idd_sample/samples/2010
+	mkdir -p "$DATA"/idd_sample/samples_tf/
+	mkdir -p "$DATA"/idd_sample/idd
+	bin/prepare_samples ceres "$INPUT"/ceres "$INPUT"/idd/synop "$INPUT"/idd/buoy "$INPUT"/landmask/ne_110m_land.nc both 2010-01-01 2010-01-01 "$DATA"/idd_sample/samples/2010 keep_stations: true
+	bin/merge_samples "$DATA"/idd_sample/samples/2010 "$DATA"/idd_sample/samples/2010.nc
+	cp "$INPUT"/idd/synop/Surface_Synoptic_20100101_0000.nc "$DATA"/idd_sample/idd
+	cp "$INPUT"/idd/buoy/Surface_Buoy_20100101_0000.nc "$DATA"/idd_sample/idd
+	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/idd_sample/samples 2010 2010 "$DATA"/idd_sample/samples_tf
+	bin/plot_idd_stations "$DATA"/idd_sample/idd "$DATA/idd_sample/samples/2010/2010-01-01T00:00:00.nc" 0 "$PLOT"/idd_stations.png '2010-01-01'
 	;;
 
 plot_sample)
-	bin/plot_sample "$DATA"/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 "$PLOT"/sample.pdf
+	bin/plot_sample "$DATA/idd_sample/samples/2010/2010-01-01T00:00:00.nc" 0 "$PLOT"/sample.pdf
 	;;
 
 prepare_ceres)
-	mkdir -p "$DATA"/samples/ceres/{2003..2014}
-	parallel -j$JOBS -v bin/prepare_samples ceres "$INPUT"/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres/{} ::: {2003..2014}
-	parallel -j1 -v bin/merge_samples "$DATA"/samples/ceres/{} "$DATA"/samples/ceres/{}.nc ::: {2003..2014}
+	mkdir -p "$DATA"/samples/ceres/{2003..2020}
+	parallel -j$JOBS bin/prepare_samples ceres "$INPUT"/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres/{} ::: {2003..2020}
+	parallel -j1 bin/merge_samples "$DATA"/samples/ceres/{} "$DATA"/samples/ceres/{}.nc ::: {2003..2020}
+	;;
+
+prepare_ceres_dense)
+	mkdir -p "$DATA"/samples/ceres_dense
+	bin/prepare_samples ceres "$INPUT"/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres_dense/
 	;;
 
 prepare_historical)
 	exp=historical
+	y1=2003
+	y2=2014
 	for model in $(cat "$INPUT"/models_$exp); do
-		if [ ! -e "$INPUT"/cmip6/$exp/day/by-model/$model -o -e "$DATA"/samples/$exp/$model/2003.nc ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples cmip "$INPUT"/cmip6/$exp/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
+		prepare_model $exp $model cmip "$INPUT"/cmip6/$exp/day/by-model/$model $y1 $y2
 	done
-	model=EC-Earth3P
-	if [ ! -e "$DATA"/samples/$exp/$model/2003.nc ]; then
-		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples cmip "$INPUT"/cmip6/hist-1950/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
-	fi
-	model=MERRA-2
-	if [ -e "$INPUT"/merra-2 -a ! -e "$DATA"/samples/$exp/$model/2003.nc ]; then
-		mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
-		parallel -j$JOBS -v bin/prepare_samples merra2 "$INPUT"/merra-2 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
-	fi
-	model=ERA5
-	#if [ -e "$INPUT"/era5 -a ! -e "$DATA"/samples/$exp/$model ]; then
-	#	mkdir -p "$DATA"/samples/$exp/$model/{2003..2020}
-	#	parallel -j$JOBS -v bin/prepare_samples era5 "$INPUT"/era5 none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2020}
-	#	parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2020}
-	#fi
-	model=NorESM2-LM
-	if [ -e "$INPUT"/noresm2 -a ! -e "$DATA"/samples/$exp/$model/2003.nc ]; then
-		if [ -e "$DATA"/samples/$exp/$model ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples/$exp/$model/{2003..2014}
-		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/noresm2/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {2003..2014}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {2003..2014}
-	fi
+	prepare_model $exp EC-Earth3P cmip "$INPUT"/cmip6/hist-1950/day/by-model/$model $y1 $y2
+	prepare_model $exp MERRA-2 merra2 "$INPUT"/merra-2 $y1 $y2
+	prepare_model $exp ERA5 era5 "$INPUT"/era5 $y1 $y2
+	prepare_model $exp NorESM2-LM noresm "$INPUT"/noresm2/$exp/day $y1 $y2
 	;;
 
 prepare_abrupt-4xCO2)
 	exp=abrupt-4xCO2
+	y1=1850
+	y2=1949
 	for model in $(cat "$INPUT"/models_$exp); do
-		if [ ! -e "$INPUT"/cmip6/$exp/day/by-model/$model -o -e "$DATA"/samples/$exp/$model/1850.nc ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples/$exp/$model/{1850..1949}
-		parallel -j$JOBS -v prepare_samples cmip "$INPUT"/cmip6/$exp/day/by-model/$model none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {1850..1949}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples_tf/$exp/$model/{}.nc ::: {1850..1949}
+		prepare_model $exp $model cmip "$INPUT"/cmip6/$exp/day/by-model/$model $y1 $y2
 	done
-	model=NorESM2-LM
-	if [ -e "$INPUT"/noresm -a ! -e "$DATA"/samples/$exp/$model/1850.nc ]; then
-		mkdir -p "$DATA"/samples/$exp/noresm/{1850..1949}
-		parallel -j$JOBS -v bin/prepare_samples noresm "$INPUT"/noresm/$exp/day none none none none {}-01-01 {}-12-31 "$DATA"/samples/$exp/$model/{} ::: {1850..1949}
-		parallel -j1 -v bin/merge_samples "$DATA"/samples/$exp/$model/{} "$DATA"/samples/$exp/$model/{}.nc ::: {1850..1949}
-	fi
+	prepare_model $exp NorESM2-LM noresm "$INPUT"/noresm2/$exp/day $y1 $y2
 	;;
 
 label_ceres)
-	mkdir -p "$DATA"/samples_tf/ceres/
-	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres 2003 2020 "$DATA"/samples_tf/ceres
+	mkdir -p "$DATA"/samples_tf/historical/CERES
+	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres 2003 2020 "$DATA"/samples_tf/historical/CERES
 	;;
 
 label_historical)
-	for model in $(cat "$INPUT"/models_historical); do
-		if [ ! -e "$DATA"/samples/historical/$model -o -e "$DATA"/samples_tf/historical/$model ]; then
+	exp=historical
+	y1=2003
+	y2=2014
+	for model in $(cat "$INPUT"/models_$exp); do
+		if [ ! -e "$DATA"/samples/$exp/$model -o -e "$DATA"/samples_tf/$exp/$model ]; then
 			continue
 		fi
-		mkdir -p "$DATA"/samples_tf/historical/$model
-		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/historical/$model 2003 2014 "$DATA"/samples_tf/historical/$model
+		mkdir -p "$DATA"/samples_tf/$exp/$model
+		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model $y1 $y2 "$DATA"/samples_tf/$exp/$model
 	done
 	;;
 
 label_abrupt-4xCO2)
-	for model in $(cat "$INPUT"/models_abrupt-4xCO2); do
-		if [ ! -e "$DATA"/samples/historical/$model -o -e "$DATA"/samples_tf/historical/$model ]; then
+	exp=abrupt-4xCO2
+	y1=1850
+	y2=1949
+	y1a=0001
+	y2a=0049
+	for model in $(cat "$INPUT"/models_$exp); do
+		if [ ! -e "$DATA"/samples/$exp/$model -o -e "$DATA"/samples_tf/$exp/$model ]; then
 			continue
 		fi
-		mkdir -p "$DATA"/samples_tf/abrupt-4xCO2/$model
-		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/abrupt-4xCO2/$model 1850 1949 "$DATA"/samples_tf/abrupt-4xCO2/$model
+		mkdir -p "$DATA"/samples_tf/$exp/$model
+		if [ -e "$DATA"/samples/$exp/$model/0001.nc ]; then
+			bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model $y1a $y2a "$DATA"/samples_tf/$exp/$model
+		else
+			bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model $y1 $y2 "$DATA"/samples_tf/$exp/$model
+		fi
 	done
+	if [ ! -e "$DATA"/samples_tf/$exp/CERES ]; then
+		ln -s ../historical/CERES "$DATA"/samples_tf/$exp/CERES
+	fi
 	;;
 
 calc_dtau_pct)
@@ -138,7 +146,12 @@ calc_geo_cto_historical)
 		if [ ! -e "$DATA"/samples_tf/historical/$model -o -e "$DATA"/geo_cto/historical/all/$model.nc ]; then
 			continue
 		fi
-		bin/calc_geo_cto "$DATA"/samples_tf/historical/$model "$INPUT"/tas/historical/$model.nc "$DATA"/geo_cto/historical/all/$model.nc
+		if [ -e "$INPUT"/tas/historical/$model.nc ]; then
+			tas="$INPUT"/tas/historical/$model.nc
+		else
+			tas="none"
+		fi
+		bin/calc_geo_cto "$DATA"/samples_tf/historical/$model "$tas" "$DATA"/geo_cto/historical/all/$model.nc
 	done
 	mkdir -p "$DATA"/geo_cto/historical/part_{1,2}/
 	for model in $(cat "$INPUT"/models_historical_part_1); do
@@ -178,6 +191,11 @@ calc_geo_cto_abrupt-4xCO2)
 	done
 	;;
 
+calc_geo_cto_ceres_dense)
+	mkdir -p "$DATA"/geo_cto/ceres_dense
+	parallel -j$JOBS bin/calc_geo_cto {} "$INPUT"/tas/historical/CERES.nc "$DATA"/geo_cto/ceres_dense/[/} :::: $(ls "$DATA"/samples_tf/ceres_dense)
+	;;
+
 plot_geo_cto_historical)
 	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_1.pdf
 	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_2.pdf
@@ -189,8 +207,9 @@ plot_geo_cto_abrupt-4xCO2)
 	;;
 
 plot_cto_rmse_ecs)
-	for var in ecs tcr cld; do
-		bin/plot_cto_rmse_ecs $var "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse_${var}.pdf
+	bin/plot_cto_rmse_ecs ecs "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse_ecs.pdf
+	for var in tcr cld; do
+		bin/plot_cto_rmse_ecs $var "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse_${var}.pdf legend: false
 	done
 	;;
 
@@ -209,10 +228,10 @@ plot_cto_historical)
 	;;
 
 plot_cto_abrupt-4xCO2)
-	bin/plot_cto ecs 1-tas absolute false "$DATA"/cto/abrupt-4xCO2/cto.nc "$INPUT"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
+	bin/plot_cto ecs 1-tas absolute false "$DATA"/cto/abrupt-4xCO2/cto.nc "$INPUT"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)' legend: false
 	;;
 
-calc_cto_esc)
+calc_cto_ecs)
 	bin/calc_cto_ecs "$DATA"/cto/abrupt-4xCO2/cto.nc "$INPUT"/ecs/ecs.csv "$DATA"/cto_ecs/cto_ecs.nc
 	;;
 
@@ -222,6 +241,17 @@ plot_cto_ecs)
 
 plot_tf_scheme)
 	bin/plot_tf_scheme "$PLOT"/tf_scheme.pdf
+	;;
+
+calc_cto_hist)
+	mkdir -p "$DATA"/cto_hist
+	bin/calc_cto_hist "$DATA"/samples/ceres_training/ "$DATA"/cto_hist/training.nc
+	bin/calc_cto_hist "$DATA"/samples_tf/historical/CERES/ "$DATA"/cto_hist/tf.nc
+	bin/calc_cto_hist "$DATA"/geo_cto/ceres_dense/ "$DATA"/cto_hist/geo.nc
+	;;
+
+plot_cto_hist)
+	bin/plot_cto_hist "$DATA"/cto_hist/training.nc "Training samples" "$DATA"/cto_hist/tf.nc "ANN samples" "$DATA"/cto_hist/geo.nc "Geographical distribution" "$PLOT"/cto_hist.pdf
 	;;
 
 *)
