@@ -72,8 +72,8 @@ prepare_samples
       calc_geo_cto
         plot_geo_cto [Figure 4, 5]
         plot_cto_rmse_ecs [Figure 10b, c, d]
-		calc_cto_hist
-		  plot_cto_hist [Figure 8]
+          calc_cto_hist
+          plot_cto_hist [Figure 8]
       calc_cto
         plot_cto [Figure 9]
         calc_cto_ecs

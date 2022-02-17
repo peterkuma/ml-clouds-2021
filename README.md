@@ -72,8 +72,8 @@ prepare_samples
       calc_geo_cto
         plot_geo_cto [Figure 4, 5]
         plot_cto_rmse_ecs [Figure 10b, c, d]
-		calc_cto_hist
-		  plot_cto_hist [Figure 8]
+          calc_cto_hist
+          plot_cto_hist [Figure 8]
       calc_cto
         plot_cto [Figure 9]
         calc_cto_ecs
@@ -299,7 +299,7 @@ the main repository directory with `bin/<command> [<arguments>...]`.
 ```
 Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <seed>]
+Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <value>] [keep_stations: <value>]
 
 Arguments:
 
@@ -317,6 +317,8 @@ Arguments:
 Options:
 
 - seed: Random seed.
+- keep_stations: Keep station records in samples ("true" or "false").
+Default: "false".
 
 Examples:
 
