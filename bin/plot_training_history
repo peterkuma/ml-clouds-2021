@@ -58,7 +58,7 @@ if __name__ == '__main__':
 		color=COLORS[1], linestyle='dashed')
 	plt.legend()
 	plt.ylabel('Root mean square error (%)')
-	plt.ylim(0, 12)
+	plt.ylim(9, 15)
 	plt.xlim(1, len(d['loss']) - 1)
 	plt.xticks(xticks)
 	plt.title('Training phase history', fontsize=11)
@@ -73,7 +73,7 @@ if __name__ == '__main__':
 	plt.bar(np.arange(5)+0.15, list(d['rmse_pred']) + [d['rmse_pred_total']],
 		width=0.3, color=COLORS[0], label='ANN predictor', hatch='---',
 		alpha=0.999)
-	plt.ylim(0, 20)
+	plt.ylim(0, 25)
 	plt.ylabel('Root mean square error (%)')
 	plt.title('Validation results', fontsize=11)
 	for i in range(5):
