@@ -51,11 +51,12 @@ def plot_data(d, n, k, title, xlabel=True, ylabel=True):
 		station_lon = d['station_lon'][n,mask]
 		station_lat = d['station_lat'][n,mask]
 		station_type = d['station_type'][n,mask]
-		n = len(station_x)
 		color = np.where(station_type == 'synop', COLORS[0], COLORS[1])
-		marker = np.where(station_type == 'synop', 'o', 's')
-		plt.scatter(station_x*1e-3, station_y*1e-3,
-			s=10, lw=0.2, color='none', edgecolors=color, marker=marker)
+		marker = list(np.where(station_type == 'synop', 'o', 's'))
+		for i in range(len(station_x)):
+			plt.scatter(station_x[i]*1e-3, station_y[i]*1e-3,
+				s=10, lw=0.2, color='none', edgecolors=color[i],
+				marker=marker[i])
 	if xlabel:
 		plt.xlabel('West–East (km)')
 	else:
