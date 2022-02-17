@@ -56,7 +56,7 @@ if __name__ == '__main__':
 		time[i:(i+n)] = aq.from_iso(m[1])*np.ones(n)
 		if 'stats' in d:
 			has_stats = True
-			mask[i:(i+n)] = d['stats_n'][:,0] >= 100
+			mask[i:(i+n)] = d['stats_n'][:,0] >= 50
 			stats[i:(i+n),:]  = d['stats'][::]
 			stats_n[i:(i+n),:]  = d['stats_n'][::]
 		else:
