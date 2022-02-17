@@ -58,12 +58,8 @@ mpl.rc('grid', lw=0.1)
 
 CLOUD_TYPES = ['Hi', 'Mi', 'Cu', 'St']
 
-#NBURN = 1000
-NBURN = 10
-#NSAMPLES = 10000
-NSAMPLES = 100
-# Increase NSAMPLES to calculate Bayes factor accurately:
-# NSAMPLES = 1000000
+NBURN = 1000
+NSAMPLES = 10000
 NCHAINS = 12
 NCORES = 12
 
