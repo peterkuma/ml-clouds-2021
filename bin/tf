@@ -69,15 +69,17 @@ def read_samples(filename):
 			for i in range(n)]
 	else:
 		labels = None
-	#images = np.stack(images)
+	mask = np.array([
+		np.sum(np.isnan(d['data'][i,:,:])) == 0
+		for i in range(n)
+	])
 	labels = np.stack(labels) if labels is not None else None
-	images[:,:,:,0] /= np.nanmax(images[:,:,:,0])
-	images[:,:,:,1] /= np.nanmax(images[:,:,:,1])
-	images[images < 0] = 0
-	images[images > 1] = 1
-	images[np.isnan(images)] = 0
-	#images[:,:,:,2] /= np.max(images[:,:,:,2])
-	return images, labels, d.get('time'), d.get('lat'), d.get('lon')
+	return \
+		images[mask,:,:,:], \
+		labels[mask,:] if labels is not None else None, \
+		d['time'][mask] if 'time' in d else None, \
+		d['lat'][mask,:,:] if 'lat' in d else None, \
+		d['lon'][mask,:,:] if 'lon' in d else None
 
 def printa(label, *aa):
 	print(label, end=' ')
