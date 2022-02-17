@@ -192,6 +192,14 @@ input
     ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
   merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
   models_*: Lists of models available in the historical and abrupt-4xCO experiments.
+  tas.tar.xz: Near-surface air temperature (compressed archive).
+  tas: Near-surface air temperature (to be extracted from tas.tar.xz).
+    historical
+      CERES.nc: Near-surface air temperature from observations (GISTEMP).
+      <model>.nc: Near-surface air temperature of a model in the historical experiment.
+    abrupt-4xCO2
+      CERES.nc: Near-surface air temperature from observations (GISTEMP).
+      <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
 ```
 
 ## Data directory
