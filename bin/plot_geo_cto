@@ -102,7 +102,7 @@ if __name__ == '__main__':
 	}[deg]
 
 	rel_levels = {
-		0: 100.*np.arange(-0.4, 0.402, 0.02),
+		0: 100.*np.arange(-0.60, 0.625, 0.025),
 		1: 100.*np.arange(-0.025, 0.026, 0.001),
 	}[deg]
 
@@ -127,15 +127,7 @@ if __name__ == '__main__':
 	nrows = len(dd)
 	ncols = len(CLOUD_TYPES)
 
-	figsize = (8, 12.4*nrows/11)
-#		7: (8, 6),
-#		8: (8, 7.85),
-#		9: (8, 8.84),
-#		10: (8, 9.8),
-#		11: (8, 12.4),
-#		12: (8, 12),
-#	}[nrows]
-
+	figsize = (8, 10.8*nrows/11)
 	fig = plt.figure(figsize=figsize)
 
 	d_ceres = None
@@ -170,7 +162,7 @@ if __name__ == '__main__':
 				transform=ax.transAxes,
 				va='top',
 				ha='left',
-				fontsize=7,
+				fontsize=8,
 				weight='bold',
 			)
 			if name != 'CERES':
@@ -197,29 +189,26 @@ if __name__ == '__main__':
 				e_mean = np.average(z*100., weights=weights)
 				if relative:
 					mse = np.average((z*100.)**2, weights=weights)
-					ax.text(0.5, -0.02, 'ME %.0f%% | RMSE %.0f%%' % (
-							e_mean, np.sqrt(mse),
-						),
+					ax.text(0.02, 0.02, '%.0f%%' % e_mean,
 						transform=ax.transAxes,
-						fontsize=7,
-						ha='center',
-						va='top',
+						fontsize=8,
+						ha='left',
+						va='bottom',
+						weight='bold',
+					)
+					ax.text(0.98, 0.02, '%.0f%%' % np.sqrt(mse),
+						transform=ax.transAxes,
+						fontsize=8,
+						ha='right',
+						va='bottom',
+						weight='bold',
 					)
 					total_mse += mse
-					if j == len(CLOUD_TYPES) - 1:
-						ax.text(1.02, 0.5,
-							'Tot. RMSE %.0f%%' % np.sqrt(total_mse/len(CLOUD_TYPES)),
-							transform=ax.transAxes,
-							fontsize=7,
-							ha='left',
-							va='center',
-							rotation=90.,
-						)
 				else:
 					fmt = 'mean %d%s' if deg == 0 else 'mean %.2f%s'
 					ax.text(0.5, -0.02, fmt % (e_mean, units),
 						transform=ax.transAxes,
-						fontsize=7,
+						fontsize=8,
 						ha='center',
 						va='top',
 					)
@@ -237,11 +226,13 @@ if __name__ == '__main__':
 				latg, long_ = np.meshgrid(d['lat'], d['lon'])
 				weights = np.cos(latg.T/180.*np.pi)
 				e_mean = np.average(z*100., weights=weights)
-				ax.text(0.5, -0.02, 'mean %d%s' % (e_mean, units),
+				ax.text(0.5, 0.02, '%d%s' % (e_mean, units),
 					transform=ax.transAxes,
-					fontsize=7,
+					fontsize=8,
 					ha='center',
-					va='top',
+					va='bottom',
+					weight='bold',
+					color='white',
 				)
 
 			ax.coastlines(lw=0.4)
@@ -251,40 +242,36 @@ if __name__ == '__main__':
 					transform=ax.transAxes,
 					va='center',
 					ha='center',
-					fontsize=7,
+					fontsize=8,
 				)
 			if j == 0:
 				if 'ecs' in d and np.isfinite(d['ecs']):
 					star = '$^*$' if d['ext'] else ''
-					ax.text(-0.07, 0.5,
-						name + ('\nECS %.1f K%s' % (d['ecs'], star)),
-						transform=ax.transAxes, va='center', ha='center',
-						rotation=90, fontsize=(6.5 if len(name) > 12 else 7))
+					ax.text(-0.02, 0.5,
+						name +
+						('\nECS %.1f K%s' % (d['ecs'], star)) +
+						('\nTotal RMSE %.0f%%' % np.sqrt(total_mse/len(CLOUD_TYPES))),
+						transform=ax.transAxes, va='center', ha='right',
+						fontsize=8,
+					)
 				else:
 					ax.text(-0.03, 0.5, name, transform=ax.transAxes, \
-						va='center', ha='center', rotation=90, fontsize=7)
+						va='center', ha='right', fontsize=8)
 
-	plt.subplots_adjust(hspace=0.06, wspace=0, right=0.89)
+	plt.subplots_adjust(hspace=0, wspace=0, right=0.89)
 
 	if relative:
-		# Horizontal:
-		# cax = fig.add_axes([0.125, 0.092, 0.35, 0.007])
-		# Vertical:
-		cax = fig.add_axes([0.915, 0.525, 0.01, 0.2])
+		cax = fig.add_axes([0.9, 0.525, 0.01, 0.2])
 		cb = fig.colorbar(cf_ref, cax=cax, ticks=np.arange(0, 110, 10),
 			orientation='vertical')
-		cb.set_label(label='Cloud type occurrence (%)', fontsize=7)
-		cb.ax.tick_params(labelsize=6)
+		cb.set_label(label='Cloud type occurrence (%)', fontsize=8)
+		cb.ax.tick_params(labelsize=8)
 
-	# Horizontal:
-	#cax = fig.add_axes([0.54, 0.092, 0.35, 0.007] if relative else \
-	#	[0.33, 0.092, 0.35, 0.007])
-	# Vertical:
-	cax = fig.add_axes([0.915, 0.275, 0.01, 0.2] if relative else \
+	cax = fig.add_axes([0.9, 0.275, 0.01, 0.2] if relative else \
 		[0.33, 0.092, 0.35, 0.007])
 	cb = fig.colorbar(cf, cax=cax, orientation='vertical')
-	cb.set_label(label=label, fontsize=7)
-	cb.ax.tick_params(labelsize=6)
+	cb.set_label(label=label, fontsize=8)
+	cb.ax.tick_params(labelsize=8)
 
 	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight')
