@@ -155,9 +155,12 @@ if __name__ == '__main__':
 	for i, d in enumerate(dd_all):
 		name = os.path.basename(d['filename'])[:-3]
 		total_mse = 0.
+		ax1 = None
 		for j, cloud_type in enumerate(CLOUD_TYPES):
 			ax = fig.add_subplot(nrows, ncols, i*ncols + j + 1,
 				projection=ccrs.PlateCarree())
+			if j == 0:
+				ax1 = ax
 			plt.text(0.01, 0.98, '(%s%d)' % (string.ascii_lowercase[i], j+1),
 				transform=ax.transAxes,
 				va='top',
@@ -244,19 +247,18 @@ if __name__ == '__main__':
 					ha='center',
 					fontsize=8,
 				)
-			if j == 0:
-				if 'ecs' in d and np.isfinite(d['ecs']):
-					star = '$^*$' if d['ext'] else ''
-					ax.text(-0.02, 0.5,
-						name +
-						('\nECS %.1f K%s' % (d['ecs'], star)) +
-						('\nTotal RMSE %.0f%%' % np.sqrt(total_mse/len(CLOUD_TYPES))),
-						transform=ax.transAxes, va='center', ha='right',
-						fontsize=8,
-					)
-				else:
-					ax.text(-0.03, 0.5, name, transform=ax.transAxes, \
-						va='center', ha='right', fontsize=8)
+		label = name
+		if 'ecs' in d and np.isfinite(d['ecs']):
+			star = '$^*$' if d['ext'] else ''
+			label += '\nECS %.1f K%s' % (d['ecs'], star)
+		if name != 'CERES':
+			label += '\nTotal RMSE %.1f%%' % \
+				np.sqrt(total_mse/len(CLOUD_TYPES))
+		print(ax1)
+		ax1.text(-0.02, 0.5, label,
+			transform=ax1.transAxes, va='center', ha='right',
+			fontsize=8,
+		)
 
 	plt.subplots_adjust(hspace=0, wspace=0, right=0.89)
 
