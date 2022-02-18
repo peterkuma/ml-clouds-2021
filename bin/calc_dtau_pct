@@ -28,7 +28,7 @@ CLOUD_TYPES = ['high', 'middle', 'cumuliform', 'stratiform']
 DTAU = 10.**np.arange(np.log10(1), np.log10(100), 0.05)
 PCT = np.arange(0, 1000e2, 25e2)
 
-def read_ceres(dirname, time, lat, lon):
+def read_ceres(dirname, time):
 	date = aq.to_date(time)
 	date_s = '%04d%02d%02d' % (date[1], date[2], date[3])
 	cwd = os.getcwd()
@@ -60,7 +60,7 @@ def process(d, dtau, pct, ceres):
 		lon = d['lon'][i,:,:].flatten()
 		stats = d['stats'][i,:]
 		time = d['time'][i]
-		dx = read_ceres(ceres, time, lat, lon)
+		dx = read_ceres(ceres, time)
 		ii = np.searchsorted(dx['lat'], lat)
 		jj = np.searchsorted(dx['lon'], lon)
 		ii[ii == len(dx['lat'])] = len(dx['lat']) - 1
