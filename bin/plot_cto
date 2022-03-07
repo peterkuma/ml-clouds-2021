@@ -117,6 +117,7 @@ if __name__ == '__main__':
 		raise ValueError('Invalid varname "%s"' % varname)
 
 	rel_label = ' relative to CERES' if absrel == 'relative' else ''
+	ylabel_pos = None
 
 	if degree == 0:
 		key = 'stats'
@@ -125,6 +126,7 @@ if __name__ == '__main__':
 			ylabel = 'Cloud type occurrence relative to CERES (%)'
 		else:
 			ylabel = 'Cloud type occurrence (%)'
+		ylabel_pos = [-0.04, 0.54]
 	elif degree == '1-time':
 		key = 'stats_time'
 		suptitle = 'Cloud type occurrence trend'
@@ -133,6 +135,7 @@ if __name__ == '__main__':
 		key = 'stats_tas'
 		suptitle = 'Cloud type occurrence change with respect to GMST'
 		ylabel = 'Cloud type occurrence change with respect to GMST (% K$^{-1}$)'
+		ylabel_pos = [-0.055, 0.4]
 	else:
 		raise ValueError('Invalid degree "%s"' % degree)
 
@@ -224,6 +227,8 @@ if __name__ == '__main__':
 				capsize=1
 			)
 		plt.ylabel(ylabel)
+		if ylabel_pos is not None:
+			plt.gca().yaxis.set_label_coords(*ylabel_pos)
 		plt.xticks(range(len(h)), [m for m in d['models'][mask]],
 			rotation='vertical')
 
