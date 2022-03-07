@@ -88,7 +88,7 @@ plot_tf_scheme [Figure 2]
 The IDD dataset contains ship and buoy records from the Global Telecommunication
 System. It can be downloaded from [Research Data
 Archive](https://rda.ucar.edu/datasets/ds336.0/). The relevant files are
-the SYNOP and BUOY NetCDF files (2008–resent), and the HISTSURFACEOBS tar
+the SYNOP and BUOY NetCDF files (2008–present), and the HISTSURFACEOBS tar
 files (2003–2008). The HISTSURFACEOBS files have to be unpacked after
 downloading.
 
