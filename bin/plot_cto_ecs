@@ -92,7 +92,9 @@ if __name__ == '__main__':
 		y = np.full(len(x), np.nan)
 		ylow = np.full(len(x), np.nan)
 		yhigh = np.full(len(x), np.nan)
-		s = np.mean([sp.stats.cauchy.ppf(0.84, 0, sd) for sd in d_summary['sd_'+varname+'_samples'][i]])
+		s = np.mean([sp.stats.cauchy.ppf(0.84, 0, sd) \
+			for sd in d_summary['sd_'+varname+'_samples'][i] \
+			if np.isfinite(sd)])
 		for j in range(len(x)):
 			y[j] = d_summary['c1_'+varname][i]*x[j] + d_summary['c0_'+varname][i]
 			ylow[j] = y[j] - s
