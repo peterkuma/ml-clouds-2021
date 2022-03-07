@@ -35,6 +35,9 @@ and Python packages:
 - pyproj 2.6.1
 - pandas 1.3.0
 
+Space requirements for processing all of the CMIP6 and CMIP6 models, ERA5 and
+MERRA-2 reanalyses are up to 6 TB.
+
 On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
 
@@ -148,119 +151,124 @@ The M2T1NXRAD MERRA-2 product can be downloaded from [NASA EarthData](https://di
 Daily means can be downloaded with the GES DISC Subsetter. They have to
 be stored in `input/merra-2`.
 
+### Global mean near-surface temperature
+
+Global mean near-surface temperature datasets should be stored in `input/tas`.
+They are present in this repository and need to be extracted from the
+archive `input/tas.tar.xz`.
+
 ## Input directory
 
-The input should contain the necessary input files. If not provided in this
-repository, the files need to be downloaded from the CERES project website,
-the CMIP5 and CMIP6 archives, and RDA and placed in the respective directories.
-NorESM is optional. Below is a description of the structure of the input
-directory:
+The input directory should contain the necessary input files. Apart from the
+datasets already contained in this repository, the files need to be downloaded
+from the sources as described above. NorESM is optional. If NorESM data is not
+available, it should removed from the `input/models_*` files. Space
+requirements for the input directory are up to 4 TB. Below is description of
+the structure of the input directory:
 
 ```
-input
-  ceres: CERES SYN1deg daily mean NetCDF files.
-  noresm:
-    historical
-      day
-        <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
-    abrupt-4xCO2
-      day
-        <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
-  cmip5
-    abrupt-4xCO2
-      day: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-        by-model: Directory created by create_by_model.
-      mon: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (tas).
-  cmip6
-    abrupt-4xCO2
-      day: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-        by-model: Directory created by create_by_model.
-      mon: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (tas).
-    hist-1950
-      day: Daily mean CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-    historical
-      day: Daily mean CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-        by-model: Directory created by create_by_model.
-        by-model: Directory created by create_by_model.
-  ecs
-    ecs.csv: ECS, TCR and CLD values for CMIP5 and CMIP6 models.
-  era5: Daily mean ERA5 NetCDF files with all variables in each file: tisr, tsr, tsrc, ttr, ttrc.
-  idd
-    buoy: IDD buoy NetCDF files.
-    synop: IDD synop NetCDF files.
-  landmask
-    ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
-  merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
-  models_*: Lists of models available in the historical and abrupt-4xCO experiments.
-  tas.tar.xz: Near-surface air temperature (compressed archive).
-  tas: Near-surface air temperature (to be extracted from tas.tar.xz).
-    historical
-      CERES.nc: Near-surface air temperature from observations (GISTEMP).
-      <model>.nc: Near-surface air temperature of a model in the historical experiment.
-    abrupt-4xCO2
-      CERES.nc: Near-surface air temperature from observations (GISTEMP).
-      <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
+ceres: CERES SYN1deg daily mean NetCDF files.
+noresm:
+  historical
+    day
+      <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+  abrupt-4xCO2
+    day
+      <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+cmip5
+  abrupt-4xCO2
+    day: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      by-model: Directory created by create_by_model.
+    mon: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (tas).
+cmip6
+  abrupt-4xCO2
+    day: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      by-model: Directory created by create_by_model.
+    mon: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (tas).
+  hist-1950
+    day: Daily mean CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+  historical
+    day: Daily mean CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+      by-model: Directory created by create_by_model.
+      by-model: Directory created by create_by_model.
+ecs
+  ecs.csv: ECS, TCR and CLD values for CMIP5 and CMIP6 models.
+era5: Daily mean ERA5 NetCDF files with all variables in each file: tisr, tsr, tsrc, ttr, ttrc.
+idd
+  buoy: IDD buoy NetCDF files.
+  synop: IDD synop NetCDF files.
+landmask
+  ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
+merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
+models_*: Lists of models available in the historical and abrupt-4xCO experiments.
+tas.tar.xz: Near-surface air temperature (compressed archive).
+tas: Near-surface air temperature (to be extracted from tas.tar.xz).
+  historical
+    CERES.nc: Near-surface air temperature from observations (GISTEMP).
+    <model>.nc: Near-surface air temperature of a model in the historical experiment.
+  abrupt-4xCO2
+    CERES.nc: Near-surface air temperature from observations (GISTEMP).
+    <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
 ```
 
 ## Data directory
 
-The data directory should the output from the main commands. Below is a
-description of its structure:
+Output from the processing commands is written in the data directory. Below is
+a description of its structure:
 
 ```
-data
-  ann
-    ceres.h5: NetCDF file of ANN model generated by tf train from CERES data.
-    history.nc: ANN model training history file.
-  cto
-    abrupt-4xCO2
-      cto.nc: Cloud type occurrence calculated by calc_cto for the abrupt-4xCO2 experiment.
-    historical
-      cto.nc: Cloud type occurrence calculated by calc_cto for the historical experiment.
-  cto_ecs
-    cto_ecs.nc: Cloud type occurrence vs. ECS calculated by calc_cto_ecs.
-  cto_hist: Cloud type occurrence histograms.
-    geo.nc: For geographical distribution calculated from CERES samples.
-    tf.nc: For ANN-labeled CERES samples.
-    training.nc: For training CERES samples.
-  dtau_pct
-    dtau_pct.nc: Histogram calculated by calc_dtau_pct.
-  geo_cto
-    abrupt-4xCO2
-      all
-      part_1
-      part_2
-    historical
-      all
-      part_1
-      part_2
-  idd_sample: Sample IDD files for plotting stations.
-  samples
-    ceres
-      <year>: CERES samples generated by prepare_samples.
-      <year>.nc: Merged samples with merge_samples for a given year.
-    ceres_training
-      <year>: CERES samples generated by prepare_samples for training.
-      <year>.nc: Merged samples with merge_samples for a given year.
-    historical
-      <model>/<year>: Samples generated by prepare_samples for a model/year in the historical experiment.
-      <year>.nc: Merged samples with merge_samples for a given year.
-    abrupt-4xCO2
-      <model>/<year>: Samples generated by prepare_samples for a model/year in the abrupt-4xCO2 experiment.
-      <year>.nc: Merged samples with merge_samples for a given year.
-  samples_tf
-    historical
-      ceres/<year>.nc: CERES samples labeled with tf apply for a year.
-      <model>/<year>.nc: Samples labeled with tf apply for a model/year in the historical experiment.
-    abrupt-4xCO2
-      <model>/<year>.nc: Samples labeled with tf apply for a model/year in the abrupt-4xCO2 experiment.
+ann
+  ceres.h5: NetCDF file of ANN model generated by tf train from CERES data.
+  history.nc: ANN model training history file.
+cto
+  abrupt-4xCO2
+    cto.nc: Cloud type occurrence calculated by calc_cto for the abrupt-4xCO2 experiment.
+  historical
+    cto.nc: Cloud type occurrence calculated by calc_cto for the historical experiment.
+cto_ecs
+  cto_ecs.nc: Cloud type occurrence vs. ECS calculated by calc_cto_ecs.
+cto_hist: Cloud type occurrence histograms.
+  geo.nc: For geographical distribution calculated from CERES samples.
+  tf.nc: For ANN-labeled CERES samples.
+  training.nc: For training CERES samples.
+dtau_pct
+  dtau_pct.nc: Histogram calculated by calc_dtau_pct.
+geo_cto
+  abrupt-4xCO2
+    all
+    part_1
+    part_2
+  historical
+    all
+    part_1
+    part_2
+idd_sample: Sample IDD files for plotting stations.
+samples
+  ceres
+    <year>: CERES samples generated by prepare_samples.
+    <year>.nc: Merged samples with merge_samples for a given year.
+  ceres_training
+    <year>: CERES samples generated by prepare_samples for training.
+    <year>.nc: Merged samples with merge_samples for a given year.
+  historical
+    <model>/<year>: Samples generated by prepare_samples for a model/year in the historical experiment.
+    <year>.nc: Merged samples with merge_samples for a given year.
+  abrupt-4xCO2
+    <model>/<year>: Samples generated by prepare_samples for a model/year in the abrupt-4xCO2 experiment.
+    <year>.nc: Merged samples with merge_samples for a given year.
+samples_tf
+  historical
+    ceres/<year>.nc: CERES samples labeled with tf apply for a year.
+    <model>/<year>.nc: Samples labeled with tf apply for a model/year in the historical experiment.
+  abrupt-4xCO2
+    <model>/<year>.nc: Samples labeled with tf apply for a model/year in the abrupt-4xCO2 experiment.
 ```
 
 ## How to run
 
 The `input` directory should be populated with the required input files.
-The CMIP input files should be indexed with `create_by_model`. The space
-requirement in the data directory are about 8 TB.
+The CMIP input files should be indexed with `create_by_model` after they
+are downloaded. Space requirements for the data directory are up to 2 TB.
 
 ```sh
 # Optional configuration:
@@ -297,9 +305,11 @@ export PLOT=plot # Plot directory
 
 ## Main commands
 
-Below is description of the available commands. They should be run in the Linux
-terminal. The commands are located in the `bin` directory as should be run from
-the main repository directory with `bin/<command> [<arguments>...]`.
+Below is a description of the available commands. They can be run either
+individually or through the run command as described above. They should be run
+in the Linux terminal. The commands are located in the `bin` directory as
+should be run from the main repository directory with `bin/<command>
+[<arguments>...]`.
 
 ### prepare\_samples
 
