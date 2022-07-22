@@ -213,13 +213,13 @@ calc_geo_cto_ceres_dense)
 	;;
 
 plot_geo_cto_historical)
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_1.png classes: "$CLASSES" normalized: true
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_2.png classes: "$CLASSES" normalized: true with_ceres: false
+	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_1.pdf classes: "$CLASSES" normalized: false
+	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_2.pdf classes: "$CLASSES" normalized: false with_ceres: false
 	;;
 
 plot_geo_cto_abrupt-4xCO2)
-	bin/plot_geo_cto 1 false "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_1.png classes: "$CLASSES"
-	bin/plot_geo_cto 1 false "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_2.png classes: "$CLASSES"
+	bin/plot_geo_cto 1 false "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_1.pdf classes: "$CLASSES"
+	bin/plot_geo_cto 1 false "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_2.pdf classes: "$CLASSES"
 	;;
 
 plot_cto_rmse_ecs)
