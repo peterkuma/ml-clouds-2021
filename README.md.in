@@ -21,6 +21,8 @@ equally well):
 - Python 3.7.3
 - Cython 0.29.2
 - aria2 1.34.0
+- GNU parallel 20161222
+- cdo 1.9.10
 
 and Python packages:
 
@@ -36,13 +38,13 @@ and Python packages:
 - pandas 1.3.0
 
 Space requirements for processing all of the CMIP6 and CMIP6 models, ERA5 and
-MERRA-2 reanalyses are up to 6 TB.
+MERRA-2 reanalyses are about 6 TB.
 
 On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
 
 ```sh
-apt install python3 cython3 aria2
+apt install python3 cython3 aria2 parallel cdo
 ```
 
 We recommend installing the Python packages in a virtual environment (venv):
@@ -65,23 +67,19 @@ and the paper figures they produce.
 
 ```
 prepare_samples
-  plot_idd_stations [Figure 1a]
+  plot_idd_stations [Figure 2a]
   tf
-    plot_sample [Figure 1b, c]
-    plot_training_history [Figure 3]
+    plot_sample [Figure 2b, c]
+    plot_training_history [Figure S1]
     merge_samples
       calc_dtau_pct
-        plot_dtau_pct [Figure 6]
+        plot_dtau_pct [Figure 5]
       calc_geo_cto
-        plot_geo_cto [Figure 4, 5]
-        plot_cto_rmse_ecs [Figure 10b, c, d]
-          calc_cto_hist
-          plot_cto_hist [Figure 8]
-      calc_cto
-        plot_cto [Figure 9]
+        plot_geo_cto [Figure 3, 4, S2, S3]
+        plot_cto_rmse_ecs [Figure 9b, c, d, S4, S5, S6]
+        plot_cto [Figure 6, 7, 8]
         calc_cto_ecs
-          plot_cto_ecs [Figure 10a]
-plot_tf_scheme [Figure 2]
+          plot_cto_ecs [Figure 9a]
 ```
 
 ## Input datasets
@@ -125,6 +123,14 @@ in `input/cmip5/<experiment>/<frequency/` and
 is either `historical` (for both `historical` and `hist-1950`) or
 `abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
+After downloading, the data should be resambled to 2.5° resolution with [cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
+
+```sh
+# To be run in the directory with the CMIP NetCDF files.
+mkdir 2.5deg
+parallel cdo -remapcon,r144x96 {{}} 2.5deg/{{}} ::: *.nc
+```
+
 ### GISS Surface Temperature Analysis (GISTEMP)
 
 The GISTEMP dataset is in `data/gistemp` available as the original file
@@ -145,11 +151,17 @@ from the [Copernicus website](https://cds.climate.copernicus.eu/#!/search?text=E
 They have to be converted to daily mean files with cdo and stored in
 `input/era5`.
 
+The data should be resampled to 2.5° resolution in the same way as the CMIP
+data (see above).
+
 ### MERRA-2
 
 The M2T1NXRAD MERRA-2 product can be downloaded from [NASA EarthData](https://disc.gsfc.nasa.gov/datasets?project=MERRA-2).
 Daily means can be downloaded with the GES DISC Subsetter. They have to
 be stored in `input/merra-2`.
+
+The data should be resampled to 2.5° resolution in the same way as the CMIP
+data (see above).
 
 ### Global mean near-surface temperature
 
@@ -163,43 +175,52 @@ The input directory should contain the necessary input files. Apart from the
 datasets already contained in this repository, the files need to be downloaded
 from the sources as described above. NorESM is optional. If NorESM data is not
 available, it should removed from the `input/models_*` files. Space
-requirements for the input directory are up to 4 TB. Below is description of
+requirements for the input directory are about 5 TB. Below is description of
 the structure of the input directory:
 
 ```
 ceres: CERES SYN1deg daily mean NetCDF files.
 noresm:
   historical
-    day
+    day: Daily mean files.
       <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+	  2.5deg: The same as above, but resampled to 2.5°.
   abrupt-4xCO2
-    day
+    day: Daily mean files.
       <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+	  2.5deg: The same as above, but resampled to 2.5°.
+  abrupt-4xCO2
 cmip5
   abrupt-4xCO2
     day: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-      by-model: Directory created by create_by_model.
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
     mon: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (tas).
 cmip6
   abrupt-4xCO2
     day: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-      by-model: Directory created by create_by_model.
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
     mon: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (tas).
   hist-1950
     day: Daily mean CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
   historical
     day: Daily mean CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-      by-model: Directory created by create_by_model.
-      by-model: Directory created by create_by_model.
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
 ecs
   ecs.csv: ECS, TCR and CLD values for CMIP5 and CMIP6 models.
 era5: Daily mean ERA5 NetCDF files with all variables in each file: tisr, tsr, tsrc, ttr, ttrc.
+  2.5deg: The same as above, but resampled to 2.5°.
 idd
   buoy: IDD buoy NetCDF files.
   synop: IDD synop NetCDF files.
 landmask
   ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
 merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
+  2.5deg: The same as above, but resampled to 2.5°.
 models_*: Lists of models available in the historical and abrupt-4xCO experiments.
 tas.tar.xz: Near-surface air temperature (compressed archive).
 tas: Near-surface air temperature (to be extracted from tas.tar.xz).
@@ -268,11 +289,11 @@ samples_tf
 
 The `input` directory should be populated with the required input files.
 The CMIP input files should be indexed with `create_by_model` after they
-are downloaded. Space requirements for the data directory are up to 2 TB.
+are downloaded. Space requirements for the data directory are about 1 TB.
 
 ```sh
 # Optional configuration:
-export JOBS=12 # Number of concurrent jobs
+export JOBS=24 # Number of concurrent jobs
 export INPUT=input # Input directory
 export DATA=data # Data directory
 export PLOT=plot # Plot directory
@@ -294,13 +315,8 @@ export PLOT=plot # Plot directory
 ./run plot_geo_cto_historical
 ./run plot_geo_cto_abrupt-4xCO2
 ./run plot_cto_rmse_ecs
-./run calc_cto_historical
-./run calc_cto_abrupt-4xCO2
 ./run plot_cto_historical
 ./run plot_cto_abrupt-4xCO2
-./run plot_tf_scheme
-./run calc_cto_hist
-./run plot_cto_hist
 ```
 
 ## Main commands
@@ -319,15 +335,15 @@ should be run from the main repository directory with `bin/<command>
 
 {tf}
 
-### plot\_idd\_stations [Figure 1a]
+### plot\_idd\_stations
 
 {plot_idd_stations}
 
-### plot\_sample [Figure 1b, c]
+### plot\_sample
 
 {plot_sample}
 
-### plot\_training\_history [Figure 3]
+### plot\_training\_history
 
 {plot_training_history}
 
@@ -339,7 +355,7 @@ should be run from the main repository directory with `bin/<command>
 
 {calc_dtau_pct}
 
-### plot\_dtau\_pct [Figure 6]
+### plot\_dtau\_pct
 
 {plot_dtau_pct}
 
@@ -347,19 +363,15 @@ should be run from the main repository directory with `bin/<command>
 
 {calc_geo_cto}
 
-### plot\_geo\_cto [Figure 4, 5]
+### plot\_geo\_cto
 
 {plot_geo_cto}
 
-### plot\_cto\_rmse\_ecs [Figure 10b, c, d]
+### plot\_cto\_rmse\_ecs
 
 {plot_cto_rmse_ecs}
 
-### calc\_cto
-
-{calc_cto}
-
-### plot\_cto [Figure 9]
+### plot\_cto
 
 {plot_cto}
 
@@ -367,21 +379,9 @@ should be run from the main repository directory with `bin/<command>
 
 {calc_cto_ecs}
 
-### plot\_cto\_ecs [Figure 10a]
+### plot\_cto\_ecs
 
 {plot_cto_ecs}
-
-### plot\_tf\_scheme [Figure 2]
-
-{plot_tf_scheme}
-
-### calc\_cto\_hist
-
-{calc_cto_hist}
-
-### plot\_cto\_hist [Figure 8]
-
-{plot_cto_hist}
 
 ## Auxiliary commands
 

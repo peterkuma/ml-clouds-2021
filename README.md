@@ -21,6 +21,8 @@ equally well):
 - Python 3.7.3
 - Cython 0.29.2
 - aria2 1.34.0
+- GNU parallel 20161222
+- cdo 1.9.10
 
 and Python packages:
 
@@ -36,13 +38,13 @@ and Python packages:
 - pandas 1.3.0
 
 Space requirements for processing all of the CMIP6 and CMIP6 models, ERA5 and
-MERRA-2 reanalyses are up to 6 TB.
+MERRA-2 reanalyses are about 6 TB.
 
 On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
 
 ```sh
-apt install python3 cython3 aria2
+apt install python3 cython3 aria2 parallel cdo
 ```
 
 We recommend installing the Python packages in a virtual environment (venv):
@@ -65,23 +67,19 @@ and the paper figures they produce.
 
 ```
 prepare_samples
-  plot_idd_stations [Figure 1a]
+  plot_idd_stations [Figure 2a]
   tf
-    plot_sample [Figure 1b, c]
-    plot_training_history [Figure 3]
+    plot_sample [Figure 2b, c]
+    plot_training_history [Figure S1]
     merge_samples
       calc_dtau_pct
-        plot_dtau_pct [Figure 6]
+        plot_dtau_pct [Figure 5]
       calc_geo_cto
-        plot_geo_cto [Figure 4, 5]
-        plot_cto_rmse_ecs [Figure 10b, c, d]
-          calc_cto_hist
-          plot_cto_hist [Figure 8]
-      calc_cto
-        plot_cto [Figure 9]
+        plot_geo_cto [Figure 3, 4, S2, S3]
+        plot_cto_rmse_ecs [Figure 9b, c, d, S4, S5, S6]
+        plot_cto [Figure 6, 7, 8]
         calc_cto_ecs
-          plot_cto_ecs [Figure 10a]
-plot_tf_scheme [Figure 2]
+          plot_cto_ecs [Figure 9a]
 ```
 
 ## Input datasets
@@ -125,6 +123,14 @@ in `input/cmip5/<experiment>/<frequency/` and
 is either `historical` (for both `historical` and `hist-1950`) or
 `abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
+After downloading, the data should be resambled to 2.5° resolution with [cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
+
+```sh
+# To be run in the directory with the CMIP NetCDF files.
+mkdir 2.5deg
+parallel cdo -remapcon,r144x96 {} 2.5deg/{} ::: *.nc
+```
+
 ### GISS Surface Temperature Analysis (GISTEMP)
 
 The GISTEMP dataset is in `data/gistemp` available as the original file
@@ -145,11 +151,17 @@ from the [Copernicus website](https://cds.climate.copernicus.eu/#!/search?text=E
 They have to be converted to daily mean files with cdo and stored in
 `input/era5`.
 
+The data should be resampled to 2.5° resolution in the same way as the CMIP
+data (see above).
+
 ### MERRA-2
 
 The M2T1NXRAD MERRA-2 product can be downloaded from [NASA EarthData](https://disc.gsfc.nasa.gov/datasets?project=MERRA-2).
 Daily means can be downloaded with the GES DISC Subsetter. They have to
 be stored in `input/merra-2`.
+
+The data should be resampled to 2.5° resolution in the same way as the CMIP
+data (see above).
 
 ### Global mean near-surface temperature
 
@@ -163,43 +175,52 @@ The input directory should contain the necessary input files. Apart from the
 datasets already contained in this repository, the files need to be downloaded
 from the sources as described above. NorESM is optional. If NorESM data is not
 available, it should removed from the `input/models_*` files. Space
-requirements for the input directory are up to 4 TB. Below is description of
+requirements for the input directory are about 5 TB. Below is description of
 the structure of the input directory:
 
 ```
 ceres: CERES SYN1deg daily mean NetCDF files.
 noresm:
   historical
-    day
+    day: Daily mean files.
       <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+	  2.5deg: The same as above, but resampled to 2.5°.
   abrupt-4xCO2
-    day
+    day: Daily mean files.
       <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
+	  2.5deg: The same as above, but resampled to 2.5°.
+  abrupt-4xCO2
 cmip5
   abrupt-4xCO2
     day: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-      by-model: Directory created by create_by_model.
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
     mon: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (tas).
 cmip6
   abrupt-4xCO2
     day: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-      by-model: Directory created by create_by_model.
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
     mon: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (tas).
   hist-1950
     day: Daily mean CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
   historical
     day: Daily mean CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-      by-model: Directory created by create_by_model.
-      by-model: Directory created by create_by_model.
+	  2.5deg: The same as above, but resampled to 2.5°.
+        by-model: Directory created by create_by_model.
 ecs
   ecs.csv: ECS, TCR and CLD values for CMIP5 and CMIP6 models.
 era5: Daily mean ERA5 NetCDF files with all variables in each file: tisr, tsr, tsrc, ttr, ttrc.
+  2.5deg: The same as above, but resampled to 2.5°.
 idd
   buoy: IDD buoy NetCDF files.
   synop: IDD synop NetCDF files.
 landmask
   ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
 merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
+  2.5deg: The same as above, but resampled to 2.5°.
 models_*: Lists of models available in the historical and abrupt-4xCO experiments.
 tas.tar.xz: Near-surface air temperature (compressed archive).
 tas: Near-surface air temperature (to be extracted from tas.tar.xz).
@@ -268,11 +289,11 @@ samples_tf
 
 The `input` directory should be populated with the required input files.
 The CMIP input files should be indexed with `create_by_model` after they
-are downloaded. Space requirements for the data directory are up to 2 TB.
+are downloaded. Space requirements for the data directory are about 1 TB.
 
 ```sh
 # Optional configuration:
-export JOBS=12 # Number of concurrent jobs
+export JOBS=24 # Number of concurrent jobs
 export INPUT=input # Input directory
 export DATA=data # Data directory
 export PLOT=plot # Plot directory
@@ -294,13 +315,8 @@ export PLOT=plot # Plot directory
 ./run plot_geo_cto_historical
 ./run plot_geo_cto_abrupt-4xCO2
 ./run plot_cto_rmse_ecs
-./run calc_cto_historical
-./run calc_cto_abrupt-4xCO2
 ./run plot_cto_historical
 ./run plot_cto_abrupt-4xCO2
-./run plot_tf_scheme
-./run calc_cto_hist
-./run plot_cto_hist
 ```
 
 ## Main commands
@@ -317,7 +333,8 @@ should be run from the main repository directory with `bin/<command>
 ```
 Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea> <start> <end> <output> [seed: <value>] [keep_stations: <value>]
+Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea>
+       <start> <end> <output> [options]
 
 Arguments:
 
@@ -334,14 +351,20 @@ Arguments:
 
 Options:
 
-- seed: Random seed.
-- keep_stations: Keep station records in samples ("true" or "false").
-Default: "false".
+- seed: <value>: Random seed.
+- keep_stations: <value>: Keep station records in samples ("true" or "false").
+  Default: "false".
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- night: <value>: Include infrared channel only. One of: true or false.
+  Default: false.
+- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
+  region bounded by given latitude and longitude. Default: none.
 
 Examples:
 
-prepare_samples ceres input/ceres data/idd/synop input/idd/buoy data/landmask/ne_110m_land.nc both 2009-01-01 2009-12-31 data/samples/ceres_training/2009
-prepare_samples cmip input/cmip6/historical/daily/by-model/AWI-ESM-1-1-LR none none none 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
+prepare_samples ceres input/ceres input/idd/synop input/idd/buoy input/landmask/ne_110m_land.nc both 2009-01-01 2009-12-31 data/samples/ceres_training/2009
+prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none none both 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
 ```
 
 
@@ -351,16 +374,26 @@ prepare_samples cmip input/cmip6/historical/daily/by-model/AWI-ESM-1-1-LR none n
 ```
 Train or apply a TensorFlow CNN.
 
-Usage: tf train <input> <output> <output_history>
-       tf apply <model> <input> <y1> <y2> <output>
+Usage: tf train <input> <input_val> <output> <output_history> [options]
+       tf apply <model> <input> <y1> <y2> <output> [options]
 
 Depends on: prepare_samples
 
 Arguments (train):
 
 - input: Input directory with samples - the output of prepare_samples (NetCDF).
+- input_val: Input directory with validation samples (NetCDF).
 - output: Output model (HDF5).
 - output_history: History output (NetCDF).
+
+Options (train):
+
+- night: <value>: Train for nighttime only. One of: true or false.
+  Default: false.
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- inmemory: <value>: Enable in-memory training. One of: true or false.
+  Default: true.
 
 Arguments (apply):
 
@@ -370,15 +403,20 @@ Arguments (apply):
 - y2: End year.
 - output: Output samples directory (NetCDF).
 
+Options (apply):
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+
 Examples:
 
-bin/tf train data/samples/ceres_training data/ann/ceres.h5 data/ann/history.nc
+bin/tf train data/samples/ceres_training/training data/samples/ceres_training/validation data/ann/ceres.h5 data/ann/history.nc
 bin/tf apply data/ann/ceres.h5 data/samples/ceres 2003 2020 data/samples_tf/ceres
 bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 data/samples_tf/historical/AWI-ESM-1-1-LR
 ```
 
 
-### plot\_idd\_stations [Figure 1a]
+### plot\_idd\_stations
 
 
 ```
@@ -402,7 +440,7 @@ bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00
 ```
 
 
-### plot\_sample [Figure 1b, c]
+### plot\_sample
 
 
 ```
@@ -422,7 +460,7 @@ bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot
 ```
 
 
-### plot\_training\_history [Figure 3]
+### plot\_training\_history
 
 
 ```
@@ -472,7 +510,7 @@ bin/merge_samples data/samples/historical/AWI-ESM-1-1-LR/2003{,.nc}
 ```
 Calculate cloud optical depth - cloud top press histogram.
 
-Usage: calc_dtau_pct <samples> <ceres> <output>
+Usage: calc_dtau_pct <samples> <ceres> <output> [options]
 
 Depends on: merge_samples
 
@@ -482,13 +520,18 @@ Arguments:
 - ceres: Directory with CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
 
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+
 Examples:
 
 bin/calc_dtau_pct data/samples_tf/ceres input/ceres data/dtau_pct/dtau_pct.nc
 ```
 
 
-### plot\_dtau\_pct [Figure 6]
+### plot\_dtau\_pct
 
 
 ```
@@ -515,30 +558,29 @@ bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
 ```
 Calculate geographical distribution of cloud type occurrence distribution.
 
-Usage: calc_geo_cto <input> <tas> <output>
-
-Depends on: merge_samples gistemp_to_nc
+Usage: calc_geo_cto <input> [<input_night>] <tas> <output>
 
 Arguments:
 
-- input: Input file or directory - the output of merge_samples (NetCDF).
-- tas: Input directory with tas - the output of gistemp_to_nc (NetCDF).
+- input: Input file or directory (NetCDF).
+- input_night: Input directory daily files - nightime samples (NetCDF).
+- tas: Input file with tas - the output of gistemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
 
 Examples:
 
-bin/calc_geo_cto data/samples_tf/ceres data/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
-bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR data/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/all/AWI-ESM-1-1-LR.nc
+bin/calc_geo_cto data/samples_tf/ceres input/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
+bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR input/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/all/AWI-ESM-1-1-LR.nc
 ```
 
 
-### plot\_geo\_cto [Figure 4, 5]
+### plot\_geo\_cto
 
 
 ```
 Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output>
+Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output> [options]
 
 Depends on: calc_geo_cto
 
@@ -550,14 +592,22 @@ Arguments:
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
 
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- normalized: <value>: Plot normaized CERES. One of: true, false, only.
+  Default: false.
+- with_ceres: <value>: Plot CERES. One of: true, false. Default: true.
+
 Examples:
 
-bin/plot_geo_cto 0 true data/geo_cto/historical/part_1 data/ecs/ecs.csv plot/geo_cto_historical_1.pdf
-bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 data/ecs/ecs.csv plot/geo_cto_historical_2.pdf
+bin/plot_geo_cto 0 true data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.pdf
+bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.pdf
 ```
 
 
-### plot\_cto\_rmse\_ecs [Figure 10b, c, d]
+### plot\_cto\_rmse\_ecs
 
 
 ```
@@ -588,30 +638,7 @@ bin/plot_cto_rmse_ecs ecs data/cto/historical/all data/ecs/ecs.csv plot/cto_rmse
 ```
 
 
-### calc\_cto
-
-
-```
-Calculate global mean cloud type occurrence.
-
-Usage: calc_cto <input> <tas> <output>
-
-Depends on: merge_samples gittemp_to_nc
-
-Arguments:
-
-- input: Input directory - the output of merge_samples (NetCDF).
-- tas: Input directory with tas - the output of gittemp_to_nc (NetCDF).
-- output: Output file (NetCDF).
-
-Examples:
-
-bin/calc_cto data/samples_tf/historical data/tas/historical data/cto/historical/cto.nc
-bin/calc_cto data/samples_tf/abrupt-4xCO2 data/tas/abrupt-4xCO2 data/cto/abrupt-4xCO2/cto.nc
-```
-
-
-### plot\_cto [Figure 9]
+### plot\_cto
 
 
 ```
@@ -628,7 +655,7 @@ Arguments:
 - degree: One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
 - absrel: One of "absolute" (absolute value), "relative" (relative to CERES).
 - regression: Plot regression. One of: true or false.
-- input: Input file - the output of calc_cto (NetCDF).
+- input: Input directoy - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
 - title: Plot title.
@@ -639,8 +666,8 @@ Options:
 
 Examples:
 
-bin/plot_cto ecs 0 relative false data/cto/historical/cto.nc data/ecs/ecs.csv plot/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
-bin/plot_cto ecs 1-tas absolute false data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv plot/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
+bin/plot_cto ecs 0 relative false data/geo_cto/historical/ input/ecs/ecs.csv plot/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+bin/plot_cto ecs 1-tas absolute false data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv plot/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (first 100 years)'
 ```
 
 
@@ -656,17 +683,17 @@ Depends on: calc_cto
 
 Arguments:
 
-- input: Input file - the output of calc_cto (NetCDF).
+- input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS, TCR and CLD input (CSV).
-- output: Output files (NetCDF).
+- output: Output file (NetCDF).
 
 Examples:
 
-bin/calc_cto_ecs data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
+bin/calc_cto_ecs data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
 ```
 
 
-### plot\_cto\_ecs [Figure 10a]
+### plot\_cto\_ecs
 
 
 ```
@@ -680,63 +707,12 @@ Arguments:
 
 - varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
   feedback).
-- input: Input file - the output of calc_cto (NetCDF).
-- summary: Input file - the output of calc_cto_ecs (NetCDF).
+- input: Input file - the output of calc_cto_ecs (NetCDF).
 - output: Output plot (PDF).
 
 Examples:
 
-bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2/cto.nc data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
-```
-
-
-### plot\_tf\_scheme [Figure 2]
-
-
-```
-Plot a TensorFlow model scheme.
-
-Usage: plot_tf_scheme <output>
-
-Arguments:
-
-- output: Output file (PNG).
-
-Examples:
-
-plot_tf_scheme plot/tf_scheme.pdf
-```
-
-
-### calc\_cto\_hist
-
-
-```
-Calculate cloud type occurrence histograms.
-
-Usage: calc_cto_hist <input> <output>
-
-Depends on: prepare_samples | tf | calc_geo_cto
-
-Arguments:
-
-- input: Input directory with samples or geographical distribution of cloud type occurrence - the output of prepare_samples, tf apply or calc_geo_cto (NetCDF).
-- output: Output file (NetCDF).
-```
-
-
-### plot\_cto\_hist [Figure 8]
-
-
-```
-Plot cloud type occurrence histograms.
-
-Usage: plot_cto_hist [<input> <title>]... <output>
-
-Arguments:
-
-- input: Input file - the output of calc_cto_hist (NetCDF).
-- output: Output file (PDF).
+bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 ```
 
 
