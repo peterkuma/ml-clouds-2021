@@ -295,8 +295,9 @@ are downloaded. Space requirements for the data directory are about 1 TB.
 # Optional configuration:
 export JOBS=24 # Number of concurrent jobs
 export INPUT=input # Input directory
-export DATA=data # Data directory
-export PLOT=plot # Plot directory
+export DATA=data_4 # Data directory (4 cloud types)
+export PLOT=plot_4 # Plot directory (4 cloud types)
+export CLASSES=0 # 0, 1 or 2 for 4, 10 or 27 cloud types
 
 ./run prepare_ceres_training
 ./run train_ann
