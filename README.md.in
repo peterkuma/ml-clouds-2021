@@ -1,4 +1,4 @@
-# Code for the paper "Machine learning of cloud types shows higher climate sensitivity is associated with lower cloud biases"
+# Code for the paper "Machine learning of cloud types in satellite observations and climate models"
 
 Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian J. McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
 
@@ -6,8 +6,8 @@ Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex Schuddeboom<sup>2</
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
 <sup>3</sup>Norwegian Meteorological Institute, Oslo, Norway
 
-This repository contains code for the paper "Machine learning of cloud types
-shows higher climate sensitivity is associated with lower cloud biases".
+This repository contains code for the paper "Machine learning of cloud types in
+satellite observations and climate models"
 
 If you have any questions about the code you can contact the authors or submit
 an Issue on GitHub.
