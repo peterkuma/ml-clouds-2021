@@ -56,10 +56,8 @@ mpl.rc('grid', color='k')
 mpl.rc('grid', alpha=0.2)
 mpl.rc('grid', lw=0.1)
 
-CLOUD_TYPES = ['Hi', 'Mi', 'Cu', 'St']
-
 NBURN = 1000
-NSAMPLES = 100000
+NSAMPLES = 10000
 NCHAINS = 12
 NCORES = 12
 
@@ -159,7 +157,8 @@ def read_geo_cto(dirname):
 		if model0 == 'CERES':
 			continue
 		mse = 0
-		for j, cloud_type in enumerate(CLOUD_TYPES):
+		nclasses = d['cloud_occurrence'].shape[0]
+		for j in range(nclasses):
 			if 'stats_geo' in d:
 				co = d['stats_geo'][0,j,:,:]
 			else:
@@ -171,7 +170,7 @@ def read_geo_cto(dirname):
 			z = (co - co_ceres)*100.
 			weights = np.cos(d['lat']/180.*np.pi)
 			mse += np.mean(np.average(z**2, weights=weights, axis=0))
-		mse /= len(CLOUD_TYPES)
+		mse /= nclasses
 		rmse0 = np.sqrt(mse)
 
 		model += [model0]
@@ -183,6 +182,7 @@ def read_geo_cto(dirname):
 	}
 
 def read_cto(filename):
+	print('<- %s' % filename)
 	d = ds.read(filename)
 	n = len(d['models'])
 
@@ -258,7 +258,10 @@ if __name__ == '__main__':
 	mask = np.isfinite(d['rmse']) & np.isfinite(ecs)
 	c0, c1, sd = bayes(d['rmse'][mask], ecs[mask])
 	sd_m = np.mean(sd)
-	plt.xlim(0, 25)
+	xlim = list(plt.xlim())
+	xlim[0] = np.floor(xlim[0])
+	xlim[1] = np.ceil(xlim[1] + (xlim[1] - xlim[0])*0.3)
+	plt.xlim(xlim)
 	ylim = {
 		'ecs': [1.5, 6],
 		'tcr': [1.2, 3],
@@ -293,7 +296,7 @@ if __name__ == '__main__':
 	if opts.get('legend', True):
 		plt.legend(handles, labels,
 			handler_map={Handle: HandlerCircle()},
-			fontsize=7,
+			fontsize=6.5,
 			loc='upper right',
 		)
 

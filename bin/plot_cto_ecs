@@ -9,13 +9,12 @@ Arguments:
 
 - varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
   feedback).
-- input: Input file - the output of calc_cto (NetCDF).
-- summary: Input file - the output of calc_cto_ecs (NetCDF).
+- input: Input file - the output of calc_cto_ecs (NetCDF).
 - output: Output plot (PDF).
 
 Examples:
 
-bin/plot_cto_ecs ecs data/cto/abrupt-4xCO2/cto.nc data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
+bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 '''
 
 import sys
@@ -58,13 +57,12 @@ MARKERS = ['o', 's', 'D', '^']
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 5:
+	if len(args) != 4:
 		sys.stderr.write(sys.modules[__name__].__doc__)
 		sys.exit(1)
 	varname = args[1]
 	input_ = args[2]
-	summary = args[3]
-	output = args[4]
+	output = args[3]
 
 	if varname not in ('ecs', 'tcr', 'cld'):
 		raise ValueError('Invalid varname "%s"' % varname)
@@ -73,16 +71,15 @@ if __name__ == '__main__':
 
 	print('<- %s' % input_)
 	d = ds.read(input_)
-	d_summary = ds.read(summary)
 
-	var = d_summary[varname]
+	var = d[varname]
 
 	handles = []
 	labels = []
 	res = 0
 	for i, cloud_type in enumerate(['Hi', 'Mi', 'Cu', 'St']):
 		plt.scatter(
-			(d['stats_tas'][:,i])*100,
+			(d['cloud_occurrence_tas'][:,i])*100,
 			var,
 			s=20,
 			color=COLORS[i],
@@ -93,19 +90,20 @@ if __name__ == '__main__':
 		ylow = np.full(len(x), np.nan)
 		yhigh = np.full(len(x), np.nan)
 		s = np.mean([sp.stats.cauchy.ppf(0.84, 0, sd) \
-			for sd in d_summary['sd_'+varname+'_samples'][i] \
+			for sd in d['sd_'+varname+'_samples'][i] \
 			if np.isfinite(sd)])
 		for j in range(len(x)):
-			y[j] = d_summary['c1_'+varname][i]*x[j] + d_summary['c0_'+varname][i]
+			y[j] = d['c1_'+varname][i]*x[j] + d['c0_'+varname][i]
 			ylow[j] = y[j] - s
 			yhigh[j] = y[j] + s
-		plt.fill_between(x, ylow, yhigh, color=COLORS[i], alpha=0.1, edgecolor='none')
+		plt.fill_between(x, ylow, yhigh, color=COLORS[i], alpha=0.1,
+			edgecolor='none')
 		plt.plot(x, y, color=COLORS[i], lw=1.2, label=CLOUD_TYPES[i],
 			linestyle=LINESTYLES[i])
 		labels += [CLOUD_TYPES[i]]
 		handles += [Line2D(range(1), range(1), marker=MARKERS[i], lw=1.2,
 			markersize=4, color=COLORS[i], linestyle=LINESTYLES[i])]
-	plt.xlim(-0.6, 0.4)
+	plt.xlim(-0.7, 0.7)
 	if varname == 'ecs':
 		plt.ylim(1, 6)
 		plt.yticks(np.arange(1, 7, 1))

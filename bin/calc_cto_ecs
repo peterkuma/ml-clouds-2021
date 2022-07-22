@@ -7,13 +7,13 @@ Depends on: calc_cto
 
 Arguments:
 
-- input: Input file - the output of calc_cto (NetCDF).
+- input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS, TCR and CLD input (CSV).
-- output: Output files (NetCDF).
+- output: Output file (NetCDF).
 
 Examples:
 
-bin/calc_cto_ecs data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
+bin/calc_cto_ecs data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
 '''
 
 import sys
@@ -74,6 +74,11 @@ def read_ecs(filename):
 		'cld': np.array(d['CLD']),
 	}
 
+def geomean(x, lat, lon):
+	w = np.cos(lat/180*np.pi)
+	w /= np.sum(w)
+	return np.mean(np.average(x[:,:], weights=w, axis=0), axis=0)
+
 if __name__ == '__main__':
 	if len(sys.argv) != 4:
 		sys.stderr.write(sys.modules[__name__].__doc__)
@@ -82,16 +87,26 @@ if __name__ == '__main__':
 	ecs = sys.argv[2]
 	output = sys.argv[3]
 
-	d = ds.read(input_)
+	print('<- %s' % input_)
+	dd = ds.readdir(input_, ['cloud_occurrence_tas', 'lat', 'lon'])
+	d = ds.merge(dd, 'model')
 	d_ecs = read_ecs(ecs)
+
+	d['models'] = [os.path.basename(fname)[:-3] for fname in d['filename']]
+
+	n, m = d['cloud_occurrence_tas'].shape[0:2]
+	x = np.full((n, m), np.nan, np.float64)
+	for i, model in enumerate(d['models']):
+		for j in range(m):
+			x[i,j] = geomean(d['cloud_occurrence_tas'][i,j],
+				d['lat'][i], d['lon'][i])
+	d['cloud_occurrence_tas'] = x
 
 	vars_ = {}
 	for k in VARS:
-		vars_[k] = [d_ecs[k][d_ecs['model'] == m] for m in d['models']]
+		vars_[k] = [d_ecs[k][d_ecs['model'] == model] for model in d['models']]
 		vars_[k] = np.array([x[0] if len(x) == 1 else np.nan for x in vars_[k]])
 
-
-	m = len(CLOUD_TYPES)
 	c0 = {}
 	c1 = {}
 	p = {}
@@ -109,9 +124,9 @@ if __name__ == '__main__':
 		sd_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
 		var = vars_[k]
 		for i, cloud_type in enumerate(CLOUD_TYPES):
-			mask = np.isfinite(var) & np.isfinite(d['stats_tas'][:,i])
+			mask = np.isfinite(var) & np.isfinite(d['cloud_occurrence_tas'][:,i])
 			c0_samples, c1_samples, sd_samples = \
-				bayes(d['stats_tas'][mask,i]*100, var[mask])
+				bayes(d['cloud_occurrence_tas'][mask,i]*100, var[mask])
 			c0_sample[k][i,:len(c0_samples)] = c0_samples
 			c1_sample[k][i,:len(c1_samples)] = c1_samples
 			sd_sample[k][i,:len(sd_samples)] = sd_samples
@@ -119,6 +134,8 @@ if __name__ == '__main__':
 			c1[k][i] = np.nanmean(c1_sample[k][i,:])
 
 	do = {'.': {}}
+	do['cloud_occurrence_tas'] = d['cloud_occurrence_tas']
+	do['.']['cloud_occurrence_tas'] = {'.dims': ['model', 'cloud_type']}
 	for k in VARS:
 		do.update({
 			k: vars_[k],

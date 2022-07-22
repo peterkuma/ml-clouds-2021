@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Calculate cloud optical depth - cloud top press histogram.
 
-Usage: calc_dtau_pct <samples> <ceres> <output>
+Usage: calc_dtau_pct <samples> <ceres> <output> [options]
 
 Depends on: merge_samples
 
@@ -10,6 +10,11 @@ Arguments:
 - samples: Directory with samples - the output of merge_samples (NetCDF).
 - ceres: Directory with CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
+
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -21,10 +26,9 @@ import os
 import numpy as np
 import ds_format as ds
 import aquarius_time as aq
+import pst
 from glob import glob
 
-CLOUD_TYPES = ['high', 'middle', 'cumuliform', 'stratiform']
-#DTAU = np.arange(0, 100, 0.1)
 DTAU = 10.**np.arange(np.log10(1), np.log10(100), 0.05)
 PCT = np.arange(0, 1000e2, 25e2)
 
@@ -50,15 +54,17 @@ def read_ceres(dirname, time):
 	}
 
 def process(d, dtau, pct, ceres):
-	k = len(CLOUD_TYPES)
-	l, _, _ = d['lat'].shape
+	k = d['stats'].shape[-1]
+	l = d['lat'].shape[0]
+	if k == 8:
+		k = 4
 	n = len(DTAU)
 	m = len(PCT)
 	hist = np.zeros((k, n, m), np.float64)
 	for i in range(l):
 		lat = d['lat'][i,:,:].flatten()
 		lon = d['lon'][i,:,:].flatten()
-		stats = d['stats'][i,:]
+		stats = d['stats'][i,:,:,:]
 		time = d['time'][i]
 		dx = read_ceres(ceres, time)
 		ii = np.searchsorted(dx['lat'], lat)
@@ -72,18 +78,20 @@ def process(d, dtau, pct, ceres):
 		i_dtau[i_dtau >= len(DTAU)] = len(DTAU) - 1
 		i_pct[i_pct >= len(PCT)] = len(PCT) - 1
 		for j in range(k):
-			hist[j,i_dtau,i_pct] += stats[j]
+			hist[j,i_dtau,i_pct] += stats[:,:,j].flatten()
 	return hist
 
 if __name__ == '__main__':
-	if len(sys.argv) != 4:
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 4:
 		sys.stderr.write(sys.modules[__name__].__doc__)
 		sys.exit(1)
-	samples = sys.argv[1]
-	ceres = sys.argv[2]
-	output = sys.argv[3]
+	samples = args[1]
+	ceres = args[2]
+	output = args[3]
+	classes = opts.get('classes', 0)
 
-	k = len(CLOUD_TYPES)
+	k = {0: 4, 1: 10, 2: 27}[classes]
 	n = len(DTAU)
 	m = len(PCT)
 	hist = np.zeros((k, n, m), np.float64)
@@ -96,7 +104,6 @@ if __name__ == '__main__':
 		print('<- %s' % filename)
 		d = ds.read(filename, ['lat', 'lon', 'time', 'stats'])
 		hist += process(d, DTAU, PCT, ceres)
-		break
 
 	for j in range(k):
 		hist[j,:,:] /= np.sum(hist[j,:,:])

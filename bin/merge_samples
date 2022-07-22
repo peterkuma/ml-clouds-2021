@@ -35,16 +35,23 @@ if __name__ == '__main__':
 	nn = sum(d['.']['data']['.size'][0] for d in dd)
 	shape = dd[0]['.']['data']['.size'][1:]
 	shape2 = dd[0]['.']['data']['.size'][2:]
+	if 'stats' in dd[0]['.']:
+		nclasses = dd[0]['.']['stats']['.size'][1]
+	else:
+		nclasses = 4
 	data = np.full([nn] + list(shape), np.nan, np.float64)
 	lon = np.full([nn] + list(shape2), np.nan, np.float64)
 	lat = np.full([nn] + list(shape2), np.nan, np.float64)
 	time = np.full(nn, np.nan, np.float64)
 	mask = np.full(nn, False, bool)
 	has_stats = False
-	stats = np.full([nn, 14], np.nan, np.float64)
-	stats_n = np.full([nn, 14], np.nan, np.float64)
+	stats = np.full([nn, nclasses], np.nan, np.float64)
+	stats_n = np.full([nn, nclasses], np.nan, np.float64)
+	station_clouds = np.full([nn, nclasses] + list(shape2), np.nan, np.int64)
+	station_clouds_n = np.full([nn, nclasses] + list(shape2), np.nan, np.int64)
 
-	dd = ds.readdir(input_, ['data', 'lon', 'lat', 'stats', 'stats_n'])
+	dd = ds.readdir(input_, ['data', 'lon', 'lat', 'stats', 'stats_n',
+		'station_clouds', 'station_clouds_n'])
 	i = 0
 	for d in dd:
 		print('<- %s' % d['filename'])
@@ -53,12 +60,15 @@ if __name__ == '__main__':
 		data[i:(i+n),::] = d['data'][::]
 		lon[i:(i+n),::] = d['lon'][::]
 		lat[i:(i+n),::] = d['lat'][::]
-		time[i:(i+n)] = aq.from_iso(m[1])*np.ones(n)
+		date_iso= '0'*(19 - len(m[1])) + m[1]
+		time[i:(i+n)] = aq.from_iso(date_iso)*np.ones(n)
 		if 'stats' in d:
 			has_stats = True
-			mask[i:(i+n)] = d['stats_n'][:,0] >= 50
-			stats[i:(i+n),:]  = d['stats'][::]
-			stats_n[i:(i+n),:]  = d['stats_n'][::]
+			mask[i:(i+n)] = d['stats_n'][:,0] >= 0
+			stats[i:(i+n),:] = d['stats'][::]
+			stats_n[i:(i+n),:] = d['stats_n'][::]
+			station_clouds[i:(i+n),:,:,:]  = d['station_clouds'][::]
+			station_clouds_n[i:(i+n),:,:,:]  = d['station_clouds_n'][::]
 		else:
 			mask[i:(i+n)] = True
 		i += n
@@ -78,7 +88,11 @@ if __name__ == '__main__':
 	if has_stats:
 		do['stats'] = stats[mask,::]
 		do['stats_n'] = stats_n[mask,::]
+		do['station_clouds'] = station_clouds[mask,::]
+		do['station_clouds_n'] = station_clouds_n[mask,::]
 		do['.']['stats'] = dd[0]['.']['stats']
 		do['.']['stats_n'] = dd[0]['.']['stats_n']
+		do['.']['station_clouds'] = dd[0]['.']['station_clouds']
+		do['.']['station_clouds_n'] = dd[0]['.']['station_clouds_n']
 	print('-> %s' % output)
 	ds.write(output, do)

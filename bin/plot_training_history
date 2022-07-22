@@ -49,61 +49,14 @@ if __name__ == '__main__':
 	x = np.arange(0, len(d['loss']))
 	xticks = np.arange(0, len(d['loss']), 2)
 	plt.subplot(1, 2, 1)
-	plt.text(0, 1.08, '(a)',
-		va='top', ha='left', transform=plt.gca().transAxes, weight='bold',
-		fontsize=11)
-	plt.plot(x, np.sqrt(d['loss'])*100, label='Training set loss function',
+	plt.plot(x, d['loss'], label='Training set loss function',
 		color=COLORS[0], linestyle='solid')
-	plt.plot(x, np.sqrt(d['val_loss'])*100, label='Validation set loss function',
+	plt.plot(x, d['val_loss'], label='Validation set loss function',
 		color=COLORS[1], linestyle='dashed')
 	plt.legend()
-	plt.ylabel('Root mean square error (%)')
-	plt.ylim(9, 15)
+	plt.ylabel('Loss function')
 	plt.xlim(1, len(d['loss']) - 1)
 	plt.xticks(xticks)
 	plt.title('Training phase history', fontsize=11)
 	plt.xlabel('Training iteration number')
-	plt.subplot(1, 2, 2)
-	plt.text(0, 1.08, '(b)',
-		va='top', ha='left', transform=plt.gca().transAxes, weight='bold',
-		fontsize=11)
-	plt.bar(np.arange(5)-0.15, list(d['rmse_rnd']) + [d['rmse_rnd_total']],
-		width=0.3, color=COLORS[1], label='Uninformative predictor',
-		hatch='///', alpha=0.999)
-	plt.bar(np.arange(5)+0.15, list(d['rmse_pred']) + [d['rmse_pred_total']],
-		width=0.3, color=COLORS[0], label='ANN predictor', hatch='---',
-		alpha=0.999)
-	plt.ylim(0, 25)
-	plt.ylabel('Root mean square error (%)')
-	plt.title('Validation results', fontsize=11)
-	for i in range(5):
-		plt.text(
-			(np.arange(5)-0.15)[i],
-			0.5,
-			[
-				'%d' % x
-				for x in np.round(list(d['rmse_rnd']) + [d['rmse_rnd_total']])
-			][i],
-			ha='center',
-			color='white',
-			fontsize=8,
-			weight='bold',
-		)
-	for i in range(5):
-		plt.text(
-			(np.arange(5)+0.15)[i],
-			0.5,
-			[
-				'%d' % x
-				for x in np.round(list(d['rmse_pred']) + [d['rmse_pred_total']])
-			][i],
-			ha='center',
-			color='white',
-			fontsize=8,
-			weight='bold',
-		)
-
-	plt.gca().set_xticklabels(['', 'High', 'Middle', 'Cumuliform', 'Stratiform', 'Total'], rotation=90)
-	plt.legend()
-	plt.subplots_adjust(wspace=0.20)
 	plt.savefig(output, bbox_inches='tight')

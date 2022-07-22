@@ -12,7 +12,7 @@ Arguments:
 - degree: One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
 - absrel: One of "absolute" (absolute value), "relative" (relative to CERES).
 - regression: Plot regression. One of: true or false.
-- input: Input file - the output of calc_cto (NetCDF).
+- input: Input directoy - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
 - title: Plot title.
@@ -23,8 +23,8 @@ Options:
 
 Examples:
 
-bin/plot_cto ecs 0 relative false data/cto/historical/cto.nc data/ecs/ecs.csv plot/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
-bin/plot_cto ecs 1-tas absolute false data/cto/abrupt-4xCO2/cto.nc data/ecs/ecs.csv plot/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (1850-1949) and CERES (2003-2020)'
+bin/plot_cto ecs 0 relative false data/geo_cto/historical/ input/ecs/ecs.csv plot/cto_historical.pdf 'CMIP6 historical (2003-2014) and reanalyses (2003-2020) relative to CERES (2003-2020)'
+bin/plot_cto ecs 1-tas absolute false data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv plot/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (first 100 years)'
 '''
 
 import sys
@@ -62,7 +62,37 @@ LABELS = {
 	'cld': 'Cloud feedback (Wm$^{-2}$K$^{-1}$)',
 }
 
-CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+CLOUD_TYPES0 = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+CLOUD_TYPES1 = ['Ci', 'Cs', 'Cc', 'As', 'Ac', 'Cu', 'Sc', 'St', 'Cu+Sc', 'Cb']
+CLOUD_TYPES2 = [
+	'Cirrus fibratus/uncinus (H1)',
+	'Cirrus spissatus (H2)',
+	'Cirrus spissatus\ncumulonimbogenitus (H3)',
+	'Cirrus fibratus/uncinus (H4)',
+	'Cirrus/cirrostratus (H5)',
+	'Cirrus/cirrostratus (H6)',
+	'Cirrostratus whole sky (H7)',
+	'Cirrostratus\nnot whole sky (H8)',
+	'Cirrocumulus (H9)',
+	'Cumulonimbus\ncapillatus (M1)',
+	'Altostratus\nopacus/nimbostratus (M2)',
+	'Altocumulus\ntranslucidus\nsingle level (M3)',
+	'Altocumulus\ntranslucidus patches (M4)',
+	'Altocumulus\ntranslucidus bands (M5)',
+	'Altocumulus\ncumulogenitus (M6)',
+	'Altocumulus\ntranslucidus/opacus (M7)',
+	'Altocumulus\ncastellanus/floccus (M8)',
+	'Altocumulus\nchaotic sky (M9)',
+	'Cumulus\nhumilis/fractus (L1)',
+	'Cumulus\nmediocris/congestus (L2)',
+	'Cumulonimbus calvus (L3)',
+	'Stratocumulus\ncumulogenitus (L4)',
+	'Stratocumulus (L5)',
+	'Stratus\nnebulosus/fractus (L6)',
+	'Stratus/cumulus fractus (L7)',
+	'Cumulus\nand stratocumulus (L8)',
+	'Cumulonimbus capillatus (L9)',
+]
 
 HATCH = [
 	'///',
@@ -99,6 +129,11 @@ def get_ecs(d_ecs, var, model):
 	except IndexError:
 		return None, None
 
+def geomean(x, lat, lon):
+	w = np.cos(lat/180*np.pi)
+	w /= np.sum(w)
+	return np.mean(np.average(x[:,:], weights=w, axis=0), axis=0)
+
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
 	if len(args) != 9:
@@ -112,6 +147,7 @@ if __name__ == '__main__':
 	ecs = args[6]
 	output = args[7]
 	title = args[8]
+	classes = opts.get('classes', 0)
 
 	if varname not in ('ecs', 'tcr', 'cld'):
 		raise ValueError('Invalid varname "%s"' % varname)
@@ -119,8 +155,14 @@ if __name__ == '__main__':
 	rel_label = ' relative to CERES' if absrel == 'relative' else ''
 	ylabel_pos = None
 
+	cloud_types = {
+		0: CLOUD_TYPES0,
+		1: CLOUD_TYPES1,
+		2: CLOUD_TYPES2,
+	}[classes]
+
 	if degree == 0:
-		key = 'stats'
+		key = 'cloud_occurrence'
 		suptitle = 'Cloud type occurrence'
 		if absrel == 'relative':
 			ylabel = 'Cloud type occurrence relative to CERES (%)'
@@ -132,7 +174,7 @@ if __name__ == '__main__':
 		suptitle = 'Cloud type occurrence trend'
 		ylabel = 'Cloud type occurrence change trend (%/100 yr)'
 	elif degree == '1-tas':
-		key = 'stats_tas'
+		key = 'cloud_occurrence_tas'
 		suptitle = 'Cloud type occurrence change with respect to GMST'
 		ylabel = 'Cloud type occurrence change with respect to GMST (% K$^{-1}$)'
 		ylabel_pos = [-0.055, 0.4]
@@ -142,7 +184,14 @@ if __name__ == '__main__':
 	suptitle += rel_label
 
 	print('<- %s' % input_)
-	d = ds.read(input_)
+	dd = ds.readdir(input_, [
+		'cloud_occurrence',
+		'cloud_occurrence_tas',
+		'lon',
+		'lat',
+	])
+	d = ds.merge(dd, 'model')
+	d['models'] = np.array([os.path.basename(x)[:-3] for x in d['filename']])
 
 	print('<- %s' % ecs)
 	d_ecs = read_ecs(ecs)
@@ -180,6 +229,13 @@ if __name__ == '__main__':
 	else:
 		mask = np.ones(len(d['models']), bool)
 
+	n, m = d[key].shape[0:2]
+	x = np.full((n, m), np.nan, np.float64)
+	for i, model in enumerate(d['models']):
+		for j in range(m):
+			x[i,j] = geomean(d[key][i,j], d['lat'][i], d['lon'][i])
+	d[key] = x
+
 	mask &= np.isfinite(d[key][:,0])
 
 	nrow = 1
@@ -188,31 +244,56 @@ if __name__ == '__main__':
 	else:
 		ncol = 1
 
-	plt.figure(figsize=[12, 4])
+	w = {
+		0: 10,
+		1: 10,
+		2: 12,
+	}[classes]
 
+	plt.figure(figsize=[w + (3.0 if classes == 2 else 0.7), 4 + 2])
 	plt.subplot(nrow, ncol, 1)
 
 	if degree == 0:
 		if absrel == 'relative':
-			plt.ylim([-32, 32])
-			plt.yticks(np.arange(-20, 40, 10))
+			yticks = np.arange(-24, 24, 2)
+			if classes == 0:
+				plt.ylim([-22, 6])
+			elif classes == 1:
+				plt.ylim([-13, 5])
+			else:
+				plt.ylim([-8, 6])
+			ylim = plt.ylim()
+			plt.yticks(yticks[(yticks >= ylim[0]) & (yticks <= ylim[1])][1:])
 		else:
 			plt.ylim([0, 60])
 	elif degree == '1-time':
 		plt.ylim([-3, 3])
 	elif degree == '1-tas':
-		plt.ylim([-0.7, 0.4])
+		if classes == 0:
+			plt.ylim([-0.7, 0.4])
+		elif classes == 1:
+			plt.ylim([-0.5, 0.4])
+		else:
+			plt.ylim([-0.3, 0.3])
 	ylim = plt.gca().get_ylim()
 	plt.xlim(-0.4, np.sum(mask) - 0.6)
 
-	for i, cloud_type in enumerate(CLOUD_TYPES):
+	for i, cloud_type in enumerate(cloud_types):
 		h = d[key][mask,i]
 		x = np.arange(len(h), dtype=np.float64)
-		x[:] += i*0.2 - 0.2*2 + 0.1
+		width = 0.2*4/len(cloud_types)
+		x[:] += i*width - width*len(cloud_types)/2 + width/2
 		if absrel == 'relative':
 			h -= d[key][i_ceres,i]
-		plt.bar(x, h*100., width=0.2, hatch=HATCH[i], alpha=0.999, label=cloud_type,
-			color=COLORS[i])
+		hatch = HATCH[i] if len(cloud_types) <= len(HATCH) else None
+		color = COLORS[i] if len(cloud_types) <= len(COLORS) else None
+		plt.bar(x, h*100.,
+			width=width,
+			hatch=hatch,
+			alpha=0.999,
+			label=cloud_type,
+			color=color,
+		)
 		if (key+'_samples') in d:
 			h_samples = d[key+'_samples'][mask,i,:]
 			if absrel == 'relative':
@@ -235,7 +316,19 @@ if __name__ == '__main__':
 	x = np.arange(len(h), dtype=np.float64)
 	plt.grid(True, zorder=-1)
 	if opts.get('legend', True):
-		plt.legend(loc='upper right')
+		if classes in (0, 1):
+			plt.legend(
+				loc='lower right',
+				labelspacing=0.2,
+				bbox_to_anchor=(1, 0.06),
+			)
+		else:
+			plt.legend(
+				labelspacing=0.2,
+				bbox_to_anchor=(1.005, 1.1),
+				fontsize=8,
+			)
+
 	ytext = ylim[0] + (ylim[1] - ylim[0])*0.05
 	plt.text(x[0] - 0.45, ytext, varname.upper()+' (K):',
 		fontsize=9,
@@ -263,7 +356,7 @@ if __name__ == '__main__':
 		res = 0
 		for i, cloud_type in enumerate(['Hi', 'Mi', 'Cu', 'St']):
 			plt.scatter(
-				(d['stats_tas'][:,i])*100,
+				(d['cloud_occurrence_tas'][:,i])*100,
 				var,
 				s=20,
 				color=COLORS[i]
@@ -293,14 +386,21 @@ if __name__ == '__main__':
 
 		plt.subplots_adjust(wspace=0.15)
 
+	w, h = plt.gcf().get_size_inches()
+	plt.subplots_adjust(
+		left=0.9/w,
+		right=(1 - 2.1/w if classes == 2 else 1 - 0.1/w),
+		top=1 - 0.4/h,
+		bottom=1.6/h,
+	)
+
 	ylim = plt.gca().get_ylim()
 
 	plt.suptitle(
 		(title if title is not None else ''),
 		linespacing=1.4,
-		y=0.93,
 		fontsize=10,
 	)
 
 	print('-> %s' % output)
-	plt.savefig(output, bbox_inches='tight')
+	plt.savefig(output)

@@ -22,7 +22,43 @@ import ds_format as ds
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+LETTERS = string.ascii_lowercase + \
+	''.join([chr(code) for code in range(945,970)])
+
+TITLE_FONTSIZE0 = 11
+TITLE_FONTSIZE1 = 11
+TITLE_FONTSIZE2 = 10
+
+CLOUD_TYPES0 = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+CLOUD_TYPES1 = ['Ci', 'Cs', 'Cc', 'As', 'Ac', 'Cu', 'Sc', 'St', 'Cu+Sc', 'Cb']
+CLOUD_TYPES2 = [
+	'Cirrus\nfibratus/uncinus (H1)',
+	'Cirrus spissatus (H2)',
+	'Cirrus spissatus\ncumulonimbogenitus (H3)',
+	'Cirrus\nfibratus/uncinus (H4)',
+	'Cirrus/cirrostratus (H5)',
+	'Cirrus/cirrostratus (H6)',
+	'Cirrostratus whole sky (H7)',
+	'Cirrostratus\nnot whole sky (H8)',
+	'Cirrocumulus (H9)',
+	'Cumulonimbus\ncapillatus (M1)',
+	'Altostratus\nopacus/nimbostratus (M2)',
+	'Altocumulus\ntranslucidus\nsingle level (M3)',
+	'Altocumulus\ntranslucidus patches (M4)',
+	'Altocumulus\ntranslucidus bands (M5)',
+	'Altocumulus\ncumulogenitus (M6)',
+	'Altocumulus\ntranslucidus/opacus (M7)',
+	'Altocumulus\ncastellanus/floccus (M8)',
+	'Altocumulus\nchaotic sky (M9)',
+	'Cumulus\nhumilis/fractus (L1)',
+	'Cumulus\nmediocris/congestus (L2)',
+	'Cumulonimbus calvus (L3)',
+	'Stratocumulus\ncumulogenitus (L4)',
+	'Stratocumulus (L5)',
+	'Stratus\nnebulosus/fractus (L6)',
+	'Stratus/cumulus fractus (L7)',
+	'Cumulus and\nstratocumulus (L8)',
+	'Cumulonimbus\ncapillatus (L9)', ]
 
 mpl.rc('font', family='Open Sans')
 mpl.rc('axes', linewidth=0.3)
@@ -35,6 +71,46 @@ mpl.rc('legend', edgecolor='none')
 mpl.rc('legend', fancybox=False)
 mpl.rc('legend', fontsize=8)
 
+def plot_isccp():
+	x = np.arange(1, 60, 1)
+	y = np.arange(0, 1000, 1)
+	w = len(x)
+	h = len(y)
+	y, x = np.meshgrid(y, x)
+
+	m = [None]*7
+	m[0] = (y >= 680) & (x < 3.6)
+	m[1] = (y >= 680) & (x >= 3.6)
+	m[2] = (y >= 440) & (y < 680) & (x < 9.4)
+	m[3] = (y >= 440) & (y < 680) & (x >= 9.4)
+	m[4] = ((y < 440) & (y >= 310) & (x < 3.6)) | \
+		((y < 310) & (x < 9.4))
+	m[5] = ((y < 440) & (y >= 310) & (x >= 3.6) & (x < 23)) | \
+		((y < 310) & (x >= 9.4) & (x < 23))
+	m[6] = (y < 440) & (x >= 23)
+
+	m2 = [None]*4
+	m2[0] = m[4] | m[5]
+	m2[1] = m[2]
+	m2[2] = m[0] | m[6]
+	m2[3] = m[1] | m[3]
+
+	z = np.zeros((w, h), np.int64)
+	for i in range(len(m2)):
+		if m2[i] is not None:
+			z[m2[i]] = i
+	tab10 = mpl.cm.get_cmap('tab10')
+	cmap = mpl.colors.ListedColormap([tab10(i) for i in range(4)])
+	im = plt.imshow(z.T, cmap=cmap, extent=(1, 60, 1000, 0), aspect='auto',
+		interpolation='nearest', norm=mpl.colors.Normalize(0, 4))
+	plt.gca().set_xscale('log')
+	plt.gca().invert_yaxis()
+	plt.gca().yaxis.set_ticklabels([])
+	plt.ylim(1000, 0)
+	plt.xlim(1, 60)
+	plt.title('ISCCP classes', fontsize=title_fontsize)
+	return im
+
 if __name__ == '__main__':
 	if len(sys.argv) != 3:
 		sys.stderr.write(sys.modules[__name__].__doc__)
@@ -42,86 +118,95 @@ if __name__ == '__main__':
 	input_ = sys.argv[1]
 	output = sys.argv[2]
 
-	fig = plt.figure(figsize=(10, 4))
-
 	d = ds.read(input_)
-	n = len(CLOUD_TYPES)
+	n = d['hist'].shape[0]
+
+	if n == 4:
+		cloud_types = CLOUD_TYPES0
+		title_fontsize = TITLE_FONTSIZE0
+	elif n == 10:
+		cloud_types = CLOUD_TYPES1
+		title_fontsize = TITLE_FONTSIZE1
+	elif n == 27:
+		cloud_types = CLOUD_TYPES2
+		title_fontsize = TITLE_FONTSIZE2
+	else:
+		raise ValueError('Unknown number of cloud types: %d' % n)
+
 	hist_m = np.mean(d['hist'], axis=0)
 	hist_max = np.max(d['hist'])
 
-	ax = plt.subplot(2, n + 1, 1)
+	width = 9*(n+1)/4 + 1
+	fig = plt.figure(figsize=(width, 2))
+
+	ax = plt.subplot(1, n + 2, 1)
 	cf_ref = plt.contourf(d['dtau'], d['pct']*1e-2, hist_m.T/hist_max*10,
-		levels=np.arange(0, 10.5, 0.5),
+		levels=np.arange(0, 7.5, 0.5),
 	)
 	ax.set_xscale('log')
 	ax.invert_yaxis()
 	plt.title('Mean')
-	plt.text(0.07, 0.5, 'Cloud top pressure (hPa)',
-		ha='right', va='center', rotation=90, transform=plt.gcf().transFigure)
+	plt.ylabel('Cloud top pressure (hPa)')
+	plt.xlabel('Cloud optical depth')
 	plt.ylim(1000, 0)
 	plt.xlim(1, 60)
-	plt.text(0.02, 0.98, '(' + string.ascii_lowercase[0] + ')',
+	plt.text(0.02, 0.98, '(' + LETTERS[0] + ')',
 		transform=plt.gca().transAxes,
-		va='top', ha='left', weight='bold', fontsize=8, color='white')
+		va='top', ha='left', weight='bold', fontsize=10, color='white')
+
+	max_ = 0
+	for i in range(n):
+		z = (d['hist'][i,:,:] - hist_m).T/hist_max*10
+		max_ = max(max_, np.ceil(np.nanmax(np.abs(z))))
 
 	for i in range(n):
-		ax = plt.subplot(2, n + 1, i + 2)
-		cf1 = plt.contourf(d['dtau'], d['pct']*1e-2, 10*np.log10(d['hist'][i,:,:]/hist_m).T,
-		#cf1 = plt.contourf(d['dtau'], d['pct']*1e-2, ((d['hist'][i,:,:] - hist_m)/hist_m).T*100,
-			#locator=mpl.ticker.LogLocator(),
-			#levels=np.arange(-0.4, 0.5, 0.01)*100,
-			levels=np.arange(-1.5, 1.6, 0.1),
+		ax = plt.subplot(1, n + 2, i + 2)
+		x = d['dtau']
+		y = d['pct']*1e-2
+		z = (d['hist'][i,:,:] - hist_m).T/hist_max*10
+		cf2 = plt.contourf(x, y, z,
+			levels=np.arange(-max_, max_+0.1, 0.1),
 			cmap='bwr'
 		)
 		ax.set_xscale('log')
 		ax.invert_yaxis()
-		plt.title(CLOUD_TYPES[i], fontsize=11)
+		plt.title(cloud_types[i], fontsize=title_fontsize)
 		ax.yaxis.set_ticklabels([])
 		plt.ylim(1000, 0)
 		plt.xlim(1, 60)
-		plt.text(0.02, 0.98, '(' + string.ascii_lowercase[i + 1] + ')',
+		plt.text(0.02, 0.98, '(' + LETTERS[i + 1] + ')',
 			transform=plt.gca().transAxes,
-			va='top', ha='left', weight='bold', fontsize=8)
+			va='top', ha='left', weight='bold', fontsize=10)
 
-	for i in range(n):
-		ax = plt.subplot(2, n + 1, (n + 1) + i + 2)
-		cf2 = plt.contourf(d['dtau'], d['pct']*1e-2, (d['hist'][i,:,:] - hist_m).T/hist_max*10,
-			levels=np.arange(-1, 1.1, 0.1),
-			cmap='bwr'
-		)
-		ax.set_xscale('log')
-		ax.invert_yaxis()
-		if i != 0:
-			ax.yaxis.set_ticklabels([])
-		plt.ylim(1000, 0)
-		plt.xlim(1, 60)
-		plt.text(0.02, 0.98, '(' + string.ascii_lowercase[n + i + 1] + ')',
-			transform=plt.gca().transAxes,
-			va='top', ha='left', weight='bold', fontsize=8)
-	plt.text(0.6, 0.03, 'Cloud optical depth',
-		va='top', ha='center', transform=plt.gcf().transFigure)
-
+	ax = plt.subplot(1, n + 2, i + 3)
+	im = plot_isccp()
+	plt.text(0.02, 0.98, '(' + LETTERS[i + 2] + ')',
+		transform=plt.gca().transAxes,
+		va='top', ha='left', weight='bold', fontsize=10)
 	ticks_ref = np.arange(0, 11, 1)
-	#ticks1 = np.arange(-1.2, 1.4, 0.2)*100
-	ticks1 = np.arange(-1.5, 1.6, 0.5)
-	ticks2 = np.arange(-1, 1.2, 0.2)
+	ticks = np.arange(-max_, max_+1, 1)
 
-	cax = fig.add_axes([0.15, 0.1, 0.01, 0.35])
+	pos = ax.get_position()
+	w = pos.x1 - pos.x0
+	h = pos.y1 - pos.y0
+	cax = fig.add_axes([pos.x1 + w*0.1, pos.y0, w*0.1, h])
 	cb = fig.colorbar(cf_ref, cax=cax, orientation='vertical',
 		ticks=ticks_ref)
 	cb.set_label(label='Absolute density (a.u.)', fontsize=8)
 	cb.ax.tick_params(labelsize=7)
 
-	cax = fig.add_axes([0.91, 0.53, 0.01, 0.35])
-	cb = fig.colorbar(cf1, cax=cax, ticks=ticks1)
-	cb.set_label(label='Relative log-density (dB)', fontsize=8)
-	cb.ax.tick_params(labelsize=7)
-
-	cax = fig.add_axes([0.91, 0.11, 0.01, 0.35])
-	cb = fig.colorbar(cf2, cax=cax, ticks=ticks2)
+	cax = fig.add_axes([pos.x1 + w*0.55, pos.y0, w*0.1, h])
+	cb = fig.colorbar(cf2, cax=cax, ticks=ticks)
 	cb.set_label(label='Relative density (a.u.)', fontsize=8)
 	cb.ax.tick_params(labelsize=7)
 
-	plt.subplots_adjust(wspace=0.15)
+	cax = fig.add_axes([pos.x1 + w*1.00, pos.y0, w*0.1, h])
+	cb = fig.colorbar(im, cax=cax)
+	cb.set_label(label='ISCCP class', fontsize=8)
+	cb.set_ticks(np.arange(4) + 0.5)
+	cb.set_ticklabels(['High', 'Middle', 'Cumuliform', 'Stratiform'])
+	cb.ax.tick_params(labelsize=7)
+
+	plt.subplots_adjust(wspace=0.1)
 
 	plt.savefig(output, bbox_inches='tight')

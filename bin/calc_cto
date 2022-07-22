@@ -31,12 +31,8 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
 NBURN = 100
 NSAMPLES = 1000
-#NBURN = 10
-#NSAMPLES = 100
 NCHAINS = 12
-NCORES = 12
-#NCHAINS = 1
-#NCORES = 1
+NCORES = 24
 
 def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 	x_m = np.mean(x)
@@ -90,31 +86,6 @@ def calc_trend(what, d, i, d_tas=None):
 	coef = np.polyfit(x, z, 1)
 	f = 365*100 if what == 'time' else 1
 	return coef[0]*f if d_tas is None else coef[0]
-
-def calc_trend_bayes(what, d, i, d_tas=None):
-	date = aq.to_date(d['time'])
-	if what == 'tas':
-		date_tas = aq.to_date(d_tas['time'])
-	t1, t2 = d['time'][0], d['time'][-1]
-	y1 = aq.to_date(t1)[1][0]
-	y2 = aq.to_date(t2)[1][0]
-	n = y2 - y1 + 1
-	x = np.full(n, np.nan, np.float64)
-	z = np.full(n, np.nan, np.float64)
-	for j, y in enumerate(range(y1, y2 + 1)):
-		mask = (date[1] == y)
-		z[j] = np.mean(d['stats'][:,i][mask])
-		if what == 'time':
-			x[j] = np.mean(d['time'][mask])
-		else:
-			mask_tas = (date_tas[1] == y)
-			x[j] = np.mean(d_tas['tas'][mask_tas])
-	mask = np.isnan(x) | np.isnan(z)
-	x = x[~mask]
-	z = z[~mask]
-	c0_sample, c1_sample, p = bayes(x, z)
-	f = 365*100 if what == 'time' else 1
-	return np.median(c1_sample)*f, c1_sample*f
 
 def read_tas(dirname, dd):
 	dd_tas = []
@@ -171,16 +142,10 @@ if __name__ == '__main__':
 	stats_tas = np.full((n, m), np.nan)
 	stats_tas_samples = np.full((n, m, NSAMPLES*NCHAINS), np.nan)
 
-	for i, cloud_type in enumerate(CLOUD_TYPES):
-		for j, d in enumerate(dd):
-			if dd_tas[j] is not None:
-				stats_tas[j,i], stats_tas_samples[j,i,:] = calc_trend_bayes('tas', d, i, dd_tas[j])
 	do = {
 		'stats': stats,
 		'stats_time': stats_time,
 		'stats_time_samples': stats_time_samples,
-		'stats_tas': stats_tas,
-		'stats_tas_samples': stats_tas_samples,
 		'models': np.array(models),
 		'.': {
 			'stats': {'.dims': ['model', 'cloud_type']},

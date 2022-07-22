@@ -39,13 +39,16 @@ mpl.rc('grid', color='white')
 mpl.rc('grid', alpha=0.4)
 mpl.rc('grid', lw=0.2)
 
-def plot_data(d, n, k, title, xlabel=True, ylabel=True):
-	im = plt.imshow(1e2*d['data'][n,k,:,:], cmap='Greys_r',
+CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+
+def plot_data(x, d, title, cmap='Greys_r', xlabel=True, ylabel=True):
+	im = plt.imshow(1e2*x, cmap=cmap,
 		extent=(-D*1e-3, D*1e-3, -D*1e-3, D*1e-3),
 		vmin=0, vmax=100, origin='lower')
 	plt.title(title)
 	if 'station_x' in d:
-		mask = np.isfinite(d['station_x'][n,:]) & np.isfinite(d['station_y'][n,:])
+		mask = np.isfinite(d['station_x'][n,:]) & \
+			np.isfinite(d['station_y'][n,:])
 		station_x = d['station_x'][n,mask]
 		station_y = d['station_y'][n,mask]
 		station_lon = d['station_lon'][n,mask]
@@ -69,39 +72,36 @@ def plot_data(d, n, k, title, xlabel=True, ylabel=True):
 	plt.yticks(np.arange(-D*1e-3, D*1e-3 + 1000, 1000))
 	return im
 
-def stats_to_label(stats, stats_n):
-	stats2 = np.zeros(4, np.float64)
-	stats2_n = np.zeros(4, np.float64)
-	stats2[0] = np.nansum(stats[1:4]) # Ci, Cs, Cc
-	stats2_n[0] = stats_n[1]
-	stats2[1] = np.nansum(stats[5:7]) # As, Ac
-	stats2_n[1] = stats_n[5]
-	stats2[2] = np.nansum([stats[8], stats[11], stats[12]]) # Cu, Cb
-	stats2_n[2] = stats_n[8]
-	stats2[3] = np.nansum(stats[9:11]) # Sc, St
-	stats2_n[3] = stats_n[9]
-	return np.array([stats2[i]/stats2_n[i] if stats2_n[i] > 0 else 0
-		for i in range(len(stats2))])
-
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 4:
+	if len(args) != 5:
 		sys.stderr.write(sys.modules[__name__].__doc__)
 		sys.exit(1)
-	input_ = args[1]
-	n = args[2]
-	output = args[3]
-	d = ds.read(input_)
-	fig = plt.figure()
-	plt.subplot(1, 2, 1)
-	plot_data(d, n, 0, 'SW')
-	plt.subplot(1, 2, 2)
-	im = plot_data(d, n, 1, 'LW', ylabel=False)
+	input1 = args[1]
+	input2 = args[2]
+	n = args[3]
+	output = args[4]
+	d1 = ds.read(input1)
+	d2 = ds.read(input2)
+	fig = plt.figure(figsize=(18,6))
+	plt.subplot(1, 6, 1)
+	plot_data(d1['data'][n,0], d1, 'SW')
+	plt.subplot(1, 6, 2)
+	im1 = plot_data(d1['data'][n,1], d1, 'LW', ylabel=False)
 	plt.subplots_adjust(wspace=0.2)
-	cax = fig.add_axes([0.93, 0.26, 0.02, 0.47])
-	cb = fig.colorbar(im, cax=cax, ticks=np.arange(0, 110, 10))
-	cb.set_label(label='Normalised reflected TOA radiation (%)', fontsize=8)
-	cb.ax.tick_params(labelsize=7)
+	for i, cloud_type in enumerate(CLOUD_TYPES):
+		plt.subplot(1, 6, 3 + i)
+		im2 = plot_data(d2['stats'][n,:,:,i], d2, cloud_type,
+			cmap='viridis',
+			ylabel=False)
+	cax1 = fig.add_axes([0.92, 0.26, 0.01, 0.45])
+	cb1 = fig.colorbar(im1, cax=cax1, ticks=np.arange(0, 110, 10))
+	cb1.set_label(label='Normalised reflected TOA radiation (%)', fontsize=11)
+	cb1.ax.tick_params(labelsize=7)
+	cax2 = fig.add_axes([0.98, 0.26, 0.01, 0.45])
+	cb1 = fig.colorbar(im2, cax=cax2, ticks=np.arange(0, 110, 10))
+	cb1.set_label(label='Probability of cloud type occurrence (%)', fontsize=11)
+	cb1.ax.tick_params(labelsize=7)
+
+	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight', dpi=300)
-	if 'stats' in d:
-		print(stats_to_label(d['stats'][n,:], d['stats_n'][n,:]))
