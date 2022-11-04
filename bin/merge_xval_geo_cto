@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+'''
+Merge cross validation geographical distribution of cloud type occurrence.
+
+Usage: bin/merge_xval_geo_cto [<input>...] [<area>...] <output>
+
+Arguments:
+
+- input: the output of calc_geo_cto (NetCDF).
+- area: { <lat1> <lat2> <lon1> <lon2> }: Area of input to merge. The number of area arguments must be the same as the number of input arguments.
+- output: Output file (NetCDF).
+'''
+
+import sys
+import numpy as np
+import ds_format as ds
+import pst
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) < 4 or (len(args) - 4) % 2 != 0:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	output = args[-1]
+	args1 = args[1:-1]
+	n = len(args1)//2
+	input_ = args1[0:n]
+	areas = args1[n:]
+
+	dd = []
+	for filename in input_:
+		dd += [ds.read(filename)]
+
+	nclasses, n, nlat, nlon = dd[0]['cloud_occurrence_daily'].shape
+	lat = dd[0]['lat']
+	lon = dd[0]['lon']
+	time = dd[0]['time']
+
+	x = np.full((nclasses, nlat, nlon), np.nan)
+	x_daily = np.full((nclasses, n, nlat, nlon), np.nan)
+
+	for area, d in zip(areas, dd):
+		m1 = (d['lat'] > area[0]) & (d['lat'] <= area[1])
+		m2 = (d['lon'] > area[2]) & (d['lon'] <= area[3])
+		ix = np.ix_(range(nclasses), m1, m2)
+		x[ix] = d['cloud_occurrence'][ix]
+		ix = np.ix_(range(nclasses), range(n), m1, m2)
+		x_daily[ix] = d['cloud_occurrence_daily'][ix]
+
+	ds.write(output, {
+		'cloud_occurrence': x,
+		'cloud_occurrence_daily': x_daily,
+		'lat': lat,
+		'lon': lon,
+		'lat_bnds': d['lat_bnds'],
+		'lon_bnds': d['lon_bnds'],
+		'time': time,
+		'.': dd[0]['.']
+	})
