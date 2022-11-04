@@ -1,0 +1,87 @@
+#!/usr/bin/env python3
+'''Plot a map showing the number of observations in IDD.
+
+Usage: bin/plot_idd_n_obs <input> <output>
+
+Arguments:
+
+- input: Input dataset - the output of calc_idd_geo (NetCDF).
+- output: Output plot (PDF).
+'''
+
+import sys
+import numpy as np
+import ds_format as ds
+import matplotlib as mpl
+from matplotlib import pyplot as plt
+import matplotlib.ticker as mticker
+import cartopy.crs as ccrs
+from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
+
+mpl.rc('font', family='Open Sans')
+mpl.rc('axes', linewidth=0.3)
+mpl.rc('axes', grid=True)
+mpl.rc('lines', linewidth=1.2)
+mpl.rc('xtick.major', width=0.3)
+mpl.rc('ytick.major', width=0.3)
+mpl.rc('legend', framealpha=1)
+mpl.rc('legend', facecolor='#eeeeee')
+mpl.rc('legend', edgecolor='none')
+mpl.rc('legend', fancybox=False)
+mpl.rc('legend', fontsize=8)
+mpl.rc('grid', color='k')
+mpl.rc('grid', alpha=0.2)
+mpl.rc('grid', lw=0.1)
+
+REGIONS = {
+	'NA': [15, 45, -60, -30],
+	'EA': [30, 60, 90, 120],
+	'OC': [-45, -15, 150, 180],
+	'SA': [-30, 0, -75, -45],
+}
+
+if __name__ == '__main__':
+	if len(sys.argv) != 3:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = sys.argv[1]
+	output = sys.argv[2]
+	d = ds.read(input_)
+	plt.figure(figsize=(8, 3))
+	ax = plt.gcf().add_subplot(projection=ccrs.PlateCarree())
+	im = ax.imshow(d['stats_n'][-1],
+		norm=mpl.colors.LogNorm(),
+		origin='lower',
+		extent=(-180, 180, -90, 90),
+	)
+	ax.coastlines(lw=0.5)
+	gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True,
+		linewidth=0.5, color='k', alpha=0.3, linestyle='dashed')
+	gl.xlabels_top = False
+	gl.xlabels_bottom = False
+	gl.ylabels_right = False
+	gl.xlabel_style = {'size': 8}
+	gl.ylabel_style = {'size': 8}
+	gl.xlocator = mticker.FixedLocator(np.arange(-180, 180+15, 15))
+	gl.ylocator = mticker.FixedLocator(np.arange(-90, 90+15, 15))
+	gl.xformatter = LONGITUDE_FORMATTER
+	gl.yformatter = LATITUDE_FORMATTER
+	for k, v in REGIONS.items():
+		plt.gca().add_patch(mpl.patches.Rectangle(
+			[v[2], v[0]],
+			v[3] - v[2],
+			v[1] - v[0],
+			fill=False,
+			lw=0.5,
+			color='red',
+			clip_on=False,
+			zorder=3,
+		))
+		plt.text(0.5*(v[2] + v[3]), 0.5*(v[0] + v[1]), k,
+			color='red',
+			ha='center',
+			va='center',
+		)
+	plt.colorbar(im, pad=0.02, label='Number of observations')
+	plt.title('Number of IDD station observations')
+	plt.savefig(output, bbox_inches='tight')
