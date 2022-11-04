@@ -1,36 +1,35 @@
 #!/usr/bin/env python3
 '''Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output> [options]
+Usage: plot_geo_cto <input> <ecs> <output> [options]
 
 Depends on: calc_geo_cto
 
 Arguments:
 
-- deg: Degree. One of: 0 (absolute value) or 1 (trend).
-- relative: Plot relative to CERES. One of: true or false.
 - input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- degree: Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+- relative: Plot relative to CERES. One of: true or false. Default: true.
 - normalized: <value>: Plot normaized CERES. One of: true, false, only.
   Default: false.
-- with_ceres: <value>: Plot CERES. One of: true, false. Default: true.
+- with_ref: <value>: Plot reference row. One of: true, false. Default: true.
 
 Examples:
 
-bin/plot_geo_cto 0 true data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.pdf
-bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.pdf
+bin/plot_geo_cto data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.pdf
+bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.pdf
 '''
 
 import sys
 import copy
 import os
 import string
+import re
 import numpy as np
 import ds_format as ds
 import matplotlib.pyplot as plt
@@ -53,6 +52,17 @@ mpl.rc('legend', fontsize=8)
 mpl.rc('grid', color='k')
 mpl.rc('grid', alpha=0.2)
 mpl.rc('grid', lw=0.1)
+
+REGIONS = {
+	'NE': [0, 90, 0, 180],
+	'NW': [0, 90, -180, 0],
+	'SE': [-90, 0, 0, 180],
+	'SW': [-90, 0, -180, 0],
+	'NA': [15, 45, -60, -30],
+	'EA': [30, 60, 90, 120],
+	'OC': [-45, -15, 150, 180],
+	'SA': [-30, 0, -75, -45],
+}
 
 CLOUD_TYPES0 = ['High', 'Middle', 'Cumuliform', 'Stratiform']
 CLOUD_TYPES1 = ['Ci', 'Cs', 'Cc', 'As', 'Ac', 'Cu', 'Sc', 'St', 'Cu+Sc', 'Cb']
@@ -86,6 +96,48 @@ CLOUD_TYPES2 = [
 	'Cumulonimbus capillatus (L9)',
 ]
 
+LEVELS_NORM = 100.*np.arange(0, 1.025, 0.025)
+NTICKS_NORM = 11
+
+LEVELS_ABS = {
+	0: {
+		4: 100.*np.arange(0, 1.025, 0.025),
+		10: 100.*np.arange(0, 1.025, 0.025),
+		27: 100.*np.arange(0, 0.825, 0.025),
+	},
+	1: {
+		4: 100.*np.arange(-0.10, 0.105, 0.005),
+		10: 100.*np.arange(-0.05, 0.055, 0.005),
+		27: 100.*np.arange(-0.03, 0.031, 0.001),
+	},
+}
+NTICKS_ABS = {
+	0: { 4: 11, 10: 11, 27: 11 },
+	1: { 4: 11, 10: 11, 27: 11 },
+}
+
+LEVELS_REL = {
+	0: {
+		4: 100.*np.arange(-0.6, 0.625, 0.025),
+		10: 100.*np.arange(-0.50, 0.525, 0.025),
+		27: 100.*np.arange(-0.50, 0.525, 0.025),
+	},
+	1: {
+		4: 100.*np.arange(-0.025, 0.026, 0.001),
+		10: 100.*np.arange(-0.025, 0.026, 0.001),
+		27: 100.*np.arange(-0.025, 0.026, 0.001),
+	},
+}
+NTICKS_REL = {
+	0: { 4: 13, 10: 13, 27: 13 },
+	1: { 4: 13, 10: 13, 27: 13 },
+}
+
+REF_LEVELS = 100.*np.arange(0, 1.025, 0.025)
+
+CB_SIZE = 1.6
+CB_SPACE = 0.2
+
 def read_ecs(filename):
 	d = pd.read_csv(filename)
 	return {
@@ -114,7 +166,7 @@ def get_ecs(d_ecs, var, model):
 	except IndexError:
 		return np.nan, False
 
-def plot_label(i, j, color):
+def plot_letter(i, j, color):
 	plt.text(0.01, 0.98, '(%s%d)' % (string.ascii_lowercase[i], j+1),
 		transform=ax.transAxes,
 		va='top',
@@ -124,310 +176,203 @@ def plot_label(i, j, color):
 		color=color,
 	)
 
-def plot_colorbar(y, size, cf, label, ticks=None):
-	w, h = plt.gcf().get_size_inches()
-	cax = fig.add_axes([1 - 0.6/w, y, 0.07/w, size])
-	cb = fig.colorbar(cf, cax=cax, ticks=ticks, orientation='vertical')
-	cb.set_label(label=label, fontsize=8)
-	cb.ax.tick_params(labelsize=8)
-
-def plot_ceres(d, d_ceres, var, j, deg, units, levels):
-	z = d[var][j,:,:]
-	cf = ax.contourf(d['lon'], d['lat'], z*100.,
-		levels=levels,
-		cmap=('viridis' if deg == 0 else 'bwr'),
+def plot_label(label, where, color='k'):
+	x = {
+		'left': 0.02,
+		'center': 0.5,
+		'right': 0.98,
+	}[where]
+	ax.text(x, 0.02, label,
+		transform=ax.transAxes,
+		fontsize=8,
+		ha=where,
+		va='bottom',
+		weight='bold',
+		color=color,
 	)
-	latg, long_ = np.meshgrid(d['lat'], d['lon'])
-	weights = np.cos(latg.T/180.*np.pi)
-	e_mean = np.average(z*100., weights=weights)
-	if name == 'CERES':
-		ax.text(0.5, 0.02, '%d%s' % (e_mean, units),
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='center',
-			va='bottom',
-			weight='bold',
-			color='white',
-		)
-	return cf
 
-def plot_idd(d, d_ceres, var, j, deg, units, levels, relative=True):
-	z = d['cloud_occurrence'][j,:,:] - d_ceres['cloud_occurrence'][j,:,:]
-	im = ax.imshow((z if relative else d['cloud_occurrence'][j,:,:])*100,
-		extent=(-180, 180, -90, 90),
-		cmap=('bwr' if relative else 'viridis'),
-		origin='lower',
-		interpolation='nearest',
-		vmin=levels[0],
-		vmax=levels[-1],
-	)
-	latg, long_ = np.meshgrid(d['lat'], d['lon'])
-	weights = np.cos(latg.T/180.*np.pi)
-	mask = np.isnan(z)
+def plot_box(x):
+	plt.gca().add_patch(mpl.patches.Rectangle(
+		[x[2], x[0]],
+		x[3] - x[2],
+		x[1] - x[0],
+		fill=False,
+		lw=0.5,
+		color='red',
+		clip_on=False,
+		zorder=3,
+	))
+
+def calc_mean_mse(x, lat, lon, ext=None):
+	latg, long_ = np.meshgrid(lat, lon)
+	latg = latg.T
+	long_ = long_.T
+	weights = np.cos(latg/180.*np.pi)
+	mask = np.isnan(x)
 	weights[mask] = 0
+	if ext is not None:
+		mask = (latg  >= ext[0]) & (latg  < ext[1]) & \
+		       (long_ >= ext[2]) & (long_ < ext[3])
+		weights[~mask] = 0
 	weights /= np.sum(weights)
-	e_mean = np.nansum(z*weights*100.)
-	mse = np.nansum(weights*(z*100.)**2)
-	if name == 'IDD':
-		ax.text(0.02, 0.02, '%.0f%%' % e_mean,
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='left',
-			va='bottom',
-			weight='bold',
-		)
-		ax.text(0.98, 0.02, '%.0f%%' % np.sqrt(mse),
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='right',
-			va='bottom',
-			weight='bold',
-		)
-	mse = np.nan
-	return im, mse
+	mean = np.nansum(x*weights)
+	mse = np.nansum(weights*x**2)
+	return mean, mse
 
-def plot_model(d, d_ceres, var, j, deg, units, levels, relative=True):
-	z = d[var][j,:,:]
-	if relative:
-		z -= d_ceres[var][j,:,:]
-	cmap = copy.copy(plt.get_cmap('bwr' if relative or deg > 0 else 'viridis'))
-	cmap.set_under('blue')
-	cmap.set_over('red')
-	cf = ax.contourf(d['lon'], d['lat'], z*100.,
-		levels=levels,
-		cmap=cmap,
-		extend='both',
-	)
-	latg, long_ = np.meshgrid(d['lat'], d['lon'])
-	weights = np.cos(latg.T/180.*np.pi)
-	e_mean = np.average(z*100., weights=weights)
-	mse = np.average((z*100.)**2, weights=weights)
-	if relative:
-		ax.text(0.02, 0.02, '%.0f%%' % e_mean,
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='left',
-			va='bottom',
-			weight='bold',
+def plot_colorbars(colorbars):
+	w, h = plt.gcf().get_size_inches()
+	n = len(colorbars)
+	size = CB_SIZE
+	space = CB_SPACE
+	total_size = size*n + space*(n - 1)
+	x = h/2 + np.arange(n)[::-1]*(size + space) - total_size/2 - 0.2
+	for i, cb in enumerate(colorbars):
+		cax = fig.add_axes([1 - 0.6/w, x[i]/h, 0.07/w, size/h])
+		norm = mpl.colors.Normalize(
+			vmin=cb['levels'][0],
+			vmax=cb['levels'][-1]
 		)
-		ax.text(0.98, 0.02, '%.0f%%' % np.sqrt(mse),
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='right',
-			va='bottom',
-			weight='bold',
+		sm = mpl.cm.ScalarMappable(norm=norm, cmap=cb['cmap'])
+		obj = fig.colorbar(sm,
+			cax=cax,
+			ticks=np.linspace(cb['levels'][0], cb['levels'][-1], cb['nticks']),
+			orientation='vertical',
+			extend=('both' if cb.get('extend') else 'neither'),
 		)
-	elif deg == 1:
-		ax.text(0.5, 0.02, '%.2f' % e_mean,
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='center',
-			va='bottom',
-			weight='bold',
-		)
-	else:
-		mse = np.nan
-		fmt = 'mean %d%s' if deg == 0 else 'mean %.2f%s'
-		ax.text(0.5, -0.02, fmt % (e_mean, units),
-			transform=ax.transAxes,
-			fontsize=8,
-			ha='center',
-			va='top',
-		)
-	return cf, mse
+		obj.set_label(label=cb['label'], fontsize=8)
+		obj.ax.tick_params(labelsize=8)
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 6:
+	if len(args) != 4:
 		sys.stderr.write(sys.modules[__name__].__doc__)
 		sys.exit(1)
-	deg = args[1]
-	relative = args[2]
-	input_ = args[3]
-	ecs = args[4]
-	output = args[5]
-	classes = opts.get('classes', 0)
+	input_ = args[1]
+	ecs = args[2]
+	output = args[3]
+	degree = opts.get('degree', 0)
+	relative = opts.get('relative', True)
 	normalized = opts.get('normalized', False)
-	with_ceres = opts.get('with_ceres', True)
+	with_ref = opts.get('with_ref', True)
 
 	var = {
 		0: 'cloud_occurrence',
 		1: 'cloud_occurrence_tas',
-	}[deg]
-
-	norm_levels = 100.*np.arange(0, 1.025, 0.025)
-
-	abs_levels = {
-		0: {
-			0: 100.*np.arange(0, 1.025, 0.025),
-			1: 100.*np.arange(0, 1.025, 0.025),
-			2: 100.*np.arange(0, 0.825, 0.025),
-		},
-		1: {
-			0: 100.*np.arange(-0.10, 0.105, 0.005),
-			1: 100.*np.arange(-0.05, 0.055, 0.005),
-			2: 100.*np.arange(-0.03, 0.031, 0.001),
-		},
-	}[deg][classes]
-
-	rel_levels = {
-		0: {
-			0: 100.*np.arange(-0.6, 0.625, 0.025),
-			1: 100.*np.arange(-0.50, 0.525, 0.025),
-			2: 100.*np.arange(-0.50, 0.525, 0.025),
-		},
-		1: {
-			0: 100.*np.arange(-0.025, 0.026, 0.001),
-			1: 100.*np.arange(-0.025, 0.026, 0.001),
-			2: 100.*np.arange(-0.025, 0.026, 0.001),
-		},
-	}[deg][classes]
-
-	cb_label = {
-		0: 'Cloud type occurrence error (%)',
-		1: 'Cloud type occurrence trend (% K$^{-1}$)',
-	}[deg]
+	}[degree]
 
 	units = {
 		0: '%',
 		1: '%K$^{-1}$',
-	}[deg]
-
-	cmap = mpl.colors.LinearSegmentedColormap.from_list('cmap', list(reversed(['#D72322', '#EF3B24', '#F04D23', '#F16C23', '#F59434', '#FDC24D', '#FFF582', '#FFFFFF', '#AFDEE1', '#62CAE9', '#2AAFE4', '#198DCD', '#3A5DA9', '#403092', '#343091'])), 512)
+	}[degree]
 
 	print('<- %s' % input_)
-	dd = ds.readdir(input_)
+	dd = ds.readdir(input_, [var, 'lon', 'lat'])
 	print('<- %s' % ecs)
 	d_ecs = read_ecs(ecs)
 
+	nclasses = ds.dim(dd[0], 'cloud_type')
+
+	levels_norm = LEVELS_NORM
+	levels_abs = LEVELS_ABS[degree][nclasses]
+	levels_rel = LEVELS_REL[degree][nclasses]
+	nticks_norm = NTICKS_NORM
+	nticks_abs = NTICKS_ABS[degree][nclasses]
+	nticks_rel = NTICKS_REL[degree][nclasses]
+
+	cb_label = 'Cloud type occurrence'
+	if degree == 1:
+		cb_label += ' trend'
+
 	cloud_types = {
-		0: CLOUD_TYPES0,
-		1: CLOUD_TYPES1,
-		2: CLOUD_TYPES2,
-	}[classes]
-	nclasses = {
-		0: 4,
-		1: 10,
-		2: 27,
-	}[classes]
-	d_ceres = None
-	d_ceres_norm = None
-	d_idd = None
-	d_idd_norm = None
-	d_ceres_isccp = None
-	norm_factor = np.full(nclasses, np.nan, np.float64)
+		4: CLOUD_TYPES0,
+		10: CLOUD_TYPES1,
+		27: CLOUD_TYPES2,
+	}[nclasses]
+
+	d_ref = None
 	for i, d in enumerate(dd):
 		name = os.path.basename(d['filename'])[:-3]
 		d['name'] = name
-		if name == 'CERES':
-			d_ceres = d
-			d_ceres_norm = copy.deepcopy(d)
-			d_ceres_norm['name'] = 'CERES (normalised)'
-			for j in range(d_ceres_norm['cloud_occurrence'].shape[0]):
-				norm_factor[j] = \
-					np.nanmax(d_ceres_norm['cloud_occurrence'][j,:,:])
-				d_ceres_norm['cloud_occurrence'][j,:,:] /= norm_factor[j]
-		if name == 'CERES (ISCCP classes)':
-			d_ceres_isccp = d
+		m = re.match('\d+_xval_(.*)', d['name'])
+		if m is not None:
+			d['name'] = m.groups()[0]
+		d['ecs'], d['ext'] = get_ecs(d_ecs, 'ecs', name)
+		if d['name'] in ('CERES', 'all'):
+			d['order'] = -2
+		elif name == 'IDD':
+			d['order'] = -1
+		elif np.isnan(d['ecs']):
+			d['order'] = np.inf
+		else:
+			d['order'] = d['ecs']
+		if d['name'] in ('CERES', 'all'):
+			d_ref = d
+		if d == d_ref:
+			d['type'] = 'ref'
+		elif name in ('IDD',):
+			d['type'] = 'idd'
+		else:
+			d['type'] = 'other'
 
-	for i, d in enumerate(dd):
-		if d['name'] == 'IDD':
-			d_idd = d
-			d_idd_norm = copy.deepcopy(d)
-			d_idd_norm['name'] = 'IDD (normalised)'
-			for j in range(d_idd_norm['cloud_occurrence'].shape[0]):
-				d_idd_norm['cloud_occurrence'][j,:,:] /= norm_factor[j]
+	dd.sort(key=lambda d: d['order'])
 
-	dd_wo_obs = [d for d in dd \
-		if d is not d_ceres and \
-		   d is not d_ceres_norm and \
-		   d is not d_ceres_isccp and \
-		   d is not d_idd and \
-		   d is not d_idd_norm]
+	normf = np.full(nclasses, np.nan, np.float64)
+	if d_ref is not None:
+		for j in range(nclasses):
+			normf[j] = np.nanmax(d_ref[var][j,:,:])
 
-	for d in dd_wo_obs:
-		d['ecs'], d['ext'] = get_ecs(d_ecs, 'ecs', d['name'])
-	order = np.argsort([d['ecs'] for d in dd_wo_obs])
-	dd_wo_obs = [dd_wo_obs[i] for i in order]
-
-	dd_all = dd_wo_obs
-
-	if d_ceres_isccp is not None:
-		dd_all = [d_ceres_isccp] + dd_all
-	if normalized:
-		if d_idd is not None:
-			dd_all = [d_idd_norm] + dd_all
-		if d_ceres is not None and with_ceres:
-			dd_all = [d_ceres_norm] + dd_all
-	if d_idd is not None and normalized != 'only':
-		dd_all = [d_idd] + dd_all
-	if d_ceres is not None and with_ceres and normalized != 'only':
-		dd_all = [d_ceres] + dd_all
-
-	if d_ceres is None:
+	if d_ref is None:
+		normalized = False
 		relative = False
 
-	nrows = len(dd_all)
-	ncols = len(cloud_types)
-	figsize = (1.5*ncols + 1.8, 0.75*nrows + 0.6)
-	fig = plt.figure(figsize=figsize)
-	cf = None
-	cf_ref = None
-	cf_norm = None
-	cf_idd = None
+	ddx = []
+	for d in dd:
+		if d['type'] == 'ref' and not with_ref:
+			continue
+		dx = {}
+		dx['name'] = d['name']
+		dx['base_name'] = d['name']
+		dx['x'] = d[var]*100
+		ext = None
+		if relative and d['type'] == 'other':
+			ext = REGIONS.get(dx['base_name'])
+			dx['x'] -= d_ref[var]*100
+			dx['mse'] = np.array([
+				calc_mean_mse(dx['x'][i], d['lat'], d['lon'], ext)[1]
+				for i in range(nclasses)
+			])
+			dx['tmse'] = np.mean(dx['mse'])
+		dx['mean'] = np.array([
+			calc_mean_mse(dx['x'][i], d['lat'], d['lon'], ext)[0]
+			for i in range(nclasses)
+		])
+		dx['lat'] = d['lat']
+		dx['lon'] = d['lon']
+		dx['ecs'] = d['ecs']
+		dx['ext'] = d['ext']
+		dx['type'] = d['type']
+		ddx += [dx]
+		if normalized and not (relative and d['type'] == 'other'):
+			dx = {}
+			dx['name'] = d['name'] + ' (normalised)'
+			dx['base_name'] = d['name']
+			dx['x'] = d[var].copy()*100
+			for j in range(nclasses):
+				dx['x'][j] /= normf[j]
+			dx['lat'] = d['lat']
+			dx['lon'] = d['lon']
+			dx['ecs'] = d['ecs']
+			dx['ext'] = d['ext']
+			dx['type'] = d['type']
+			dx['normalized'] = True
+			ddx += [dx]
 
-	for i, d in enumerate(dd_all):
-		name = d['name']
-		total_mse = 0
-		ax1 = None
-		for j, cloud_type in enumerate(cloud_types):
-			ax = fig.add_subplot(nrows, ncols, i*ncols + j + 1,
-				projection=ccrs.PlateCarree())
-			if j == 0: ax1 = ax
-			plot_label(i, j,
-				color=('white' if name in ('CERES', 'CERES (normalised)', \
-					'CERES (ISCCP classes)')  else 'k'),
-			)
-			mse = 0
-			if name in ('CERES', 'CERES (ISCCP classes)'):
-				cf_ref = plot_ceres(d, d_ceres, var, j, deg, units, abs_levels)
-			elif name == 'CERES (normalised)':
-				cf_norm = plot_ceres(d, d_ceres, var, j, deg, units, \
-					norm_levels)
-			elif name == 'IDD':
-				im, mse = plot_idd(d, d_ceres, var, j, deg, units, abs_levels,
-					False)
-			elif name == 'IDD (normalised)':
-				im, mse = plot_idd(d, d_ceres, var, j, deg, units, norm_levels,
-					False)
-			else:
-				levels = rel_levels if relative else abs_levels
-				cf, mse = plot_model(d, d_ceres, var, j, deg, units, levels,
-					relative)
-			total_mse += mse
-			ax.coastlines(lw=0.4)
-			ax.outline_patch.set_linewidth(0.2)
-			if i == 0:
-				ax.text(0.5, 1.05, cloud_type,
-					transform=ax.transAxes,
-					va='bottom',
-					ha='center',
-					fontsize=8,
-				)
-		label = name
-		if 'ecs' in d and np.isfinite(d['ecs']):
-			star = '$^*$' if d['ext'] else ''
-			label += '\nECS %.1f K%s' % (d['ecs'], star)
-		if name not in ('CERES', 'CERES (normalised)', \
-			'CERES (ISCCP classes)', 'IDD', 'IDD (normalised)') and relative:
-			label += '\nTotal RMSE %.1f%%' % \
-				np.sqrt(total_mse/len(cloud_types))
-		ax1.text(-0.02, 0.5, label,
-			transform=ax1.transAxes, va='center', ha='right',
-			fontsize=8,
-		)
+	nrows = len(ddx)
+	ncols = nclasses
 
-	w, h = plt.gcf().get_size_inches()
+	w = 1.5*ncols + 1.8
+	h = 0.75*nrows + 0.6
+	fig = plt.figure(figsize=(w, h))
 	plt.subplots_adjust(
 		hspace=0,
 		wspace=0,
@@ -437,44 +382,105 @@ if __name__ == '__main__':
 		bottom=0.1/h,
 	)
 
-	if np.array_equal(norm_levels, abs_levels):
-		cf_norm = None
+	for i, d in enumerate(ddx):
+		label = d['name']
+		if np.isfinite(d['ecs']):
+			star = '$^*$' if d['ext'] else ''
+			label += '\nECS %.1f K%s' % (d['ecs'], star)
+		total_mse = 0
+		ax1 = None
+		for j, cloud_type in enumerate(cloud_types):
+			ax = fig.add_subplot(nrows, ncols, i*ncols + j + 1,
+				projection=ccrs.PlateCarree())
+			ax.outline_patch.set_linewidth(0.2)
+			if i == 0:
+				ax.text(0.5, 1.05, cloud_type,
+					transform=ax.transAxes,
+					va='bottom',
+					ha='center',
+					fontsize=8,
+				)
+			if j == 0: ax1 = ax
+			color = 'white' \
+				if d['name'].startswith(('CERES', 'all')) or \
+				d['type'] == 'other' and not relative and degree == 0 \
+				else 'k'
+			plot_letter(i, j, color=color)
+			levels = levels_rel if relative and d['type'] == 'other' \
+				else levels_abs
+			cmap = 'bwr' if relative and d['type'] == 'other' or degree == 1 \
+				else 'viridis'
+			extend = 'neighter' \
+				if degree == 0 and not d.get('normalized', False) \
+				else 'both'
 
-	n_colorbars = (cf_ref is not None) + (cf_norm is not None) + \
-		(cf is not None)
-	if n_colorbars == 3:
-		colorbar_pos = [0.625, 0.425, 0.225]
-		colorbar_size = 0.15
-	elif n_colorbars == 2:
-		colorbar_pos = [0.525, 0.275]
-		colorbar_size = 0.2
-	elif n_colorbars == 1:
-		colorbar_pos = [0.4]
-		colorbar_size = 0.2
-	i = 0
-	if cf_ref is not None:
-		plot_colorbar(colorbar_pos[i], colorbar_size, cf_ref,
-			label='Cloud type occurrence (%)',
-			ticks=np.arange(0, 110, 10)
+			if d['type'] == 'idd':
+				obj = ax.imshow(d['x'][j],
+					extent=(-180, 180, -90, 90),
+					cmap=cmap,
+					origin='lower',
+					interpolation='nearest',
+					vmin=levels[0],
+					vmax=levels[-1],
+				)
+			else:
+				obj = ax.contourf(d['lon'], d['lat'], d['x'][j],
+					levels=levels,
+					cmap=cmap,
+					extend=extend,
+				)
+			if d['base_name'] in REGIONS:
+				extent = REGIONS[d['base_name']]
+				plot_box(extent)
+
+			if relative and d['type'] == 'other':
+				if 'mean' in d:
+					plot_label('%.0f%%' % d['mean'][j], 'left', color)
+				if 'mse' in d:
+					plot_label('%.0f%%' % np.sqrt(d['mse'][j]), 'right', color)
+			elif degree == 1:
+				if 'mean' in d:
+					plot_label('%.2f' % d['mean'][j], 'center', color)
+			else:
+				if 'mean' in d:
+					plot_label('%d%s' % (d['mean'][j], units), 'center', color)
+
+			ax.coastlines(lw=0.4)
+
+		if d['type'] == 'other' and relative:
+			if 'tmse' in d:
+				label += '\nTotal RMSE %.1f%%' % np.sqrt(d['tmse'])
+		ax1.text(-0.02, 0.5, label,
+			transform=ax1.transAxes, va='center', ha='right',
+			fontsize=8,
 		)
-		i += 1
-	if cf_norm is not None:
-		plot_colorbar(colorbar_pos[i], colorbar_size, cf_norm,
-			label='Normalised cloud type occurrence (%)',
-			ticks=np.arange(0, 110, 10)
-		)
-		i += 1
-	if cf is not None:
-		levels = rel_levels if relative else abs_levels
-		if relative:
-			ticks = np.arange(levels[0], levels[-1] + 10, 10)
-		else:
-			ticks = np.arange(levels[0], levels[-1] + 1, 2)
-		plot_colorbar(colorbar_pos[i], colorbar_size, cf,
-			label=cb_label,
-			ticks=ticks,
-		)
-		i += 1
+
+	colorbars = []
+	if with_ref:
+		colorbars += [{
+			'cmap': ('viridis' if degree == 0 else 'bwr'),
+			'label': '%s (%s)' % (cb_label, units),
+			'levels': levels_abs,
+			'nticks': nticks_abs,
+			'extend': ('neither' if degree == 0 else 'both'),
+		}]
+	if normalized:
+		colorbars += [{
+			'cmap': 'viridis',
+			'label': 'Normalised %s (%s)' % (cb_label.lower(), units),
+			'levels': levels_norm,
+			'nticks': nticks_norm,
+			'extend': 'both',
+		}]
+	if relative:
+		colorbars += [{
+			'cmap': 'bwr',
+			'label': '%s error (%s)' % (cb_label, units),
+			'levels': levels_rel,
+			'nticks': nticks_rel,
+			'extend': 'both',
+		}]
+	plot_colorbars(colorbars)
 
 	print('-> %s' % output)
 	plt.savefig(output,
