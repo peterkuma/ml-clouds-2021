@@ -87,12 +87,12 @@ prepare_samples
       ↳ calc_cloud_props
         ↳ plot_cloud_props [Figure 10]
       ↳ plot_station_corr [Figure S3]
-	  ↳ merge_xval_geo_cto
-        ↳ plot_validation [Figure 4]
-        ↳ calc_val_stats
-          ↳ plot_roc [Figure 5]
-calc_idd_geo
-↳ plot_idd_n_obs [Figure S2]
+      ↳ calc_idd_geo
+        ↳ plot_idd_n_obs [Figure S2]
+        ↳ merge_xval_geo_cto
+          ↳ plot_validation [Figure 4]
+          ↳ calc_val_stats
+            ↳ plot_roc [Figure 5]
 ```
 
 ## Input datasets
@@ -373,6 +373,30 @@ prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none non
 ```
 
 
+### plot\_idd\_stations
+
+
+```
+Plot IDD stations on a map.
+
+Usage: plot_idd_stations <input> <sample> <n> <output> <title>
+
+Depends on: tf
+
+Arguments:
+
+- input: IDD input directory (NetCDF).
+- sample: CERES sample - the output of tf apply (NetCDF).
+- n: Sample number.
+- output: Output plot (PDF).
+- title: Plot title.
+
+Examples:
+
+bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.pdf '2010-01-01'
+```
+
+
 ### tf
 
 
@@ -420,30 +444,6 @@ Examples:
 bin/tf train data/samples/ceres_training/training data/samples/ceres_training/validation data/ann/ceres.h5 data/ann/history.nc
 bin/tf apply data/ann/ceres.h5 data/samples/ceres 2003 2020 data/samples_tf/ceres
 bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 data/samples_tf/historical/AWI-ESM-1-1-LR
-```
-
-
-### plot\_idd\_stations
-
-
-```
-Plot IDD stations on a map.
-
-Usage: plot_idd_stations <input> <sample> <n> <output> <title>
-
-Depends on: tf
-
-Arguments:
-
-- input: IDD input directory (NetCDF).
-- sample: CERES sample - the output of tf apply (NetCDF).
-- n: Sample number.
-- output: Output plot (PDF).
-- title: Plot title.
-
-Examples:
-
-bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.pdf '2010-01-01'
 ```
 
 
@@ -718,6 +718,207 @@ Arguments:
 Examples:
 
 bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
+```
+
+
+### calc\_cloud\_props
+
+
+```
+Calculate statistics of cloud properties by cloud type.
+
+Usage: calc_cloud_props <type> <cto> <input> <output> [options]
+
+Depends on: merge_samples
+
+Arguments:
+
+- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm" (NorESM), "merra2" (MERRA-2).
+- cto: Cloud type occurrence - the output of calc_geo_cto (NetCDF).
+- input: CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
+- output: Output file (NetCDF).
+
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+
+Examples:
+
+bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6/historical/day/by-model/UKESM1-0-LL/ data/cloud_props/UKESM1-0-LL.nc
+```
+
+
+### plot\_cloud\_props
+
+
+```
+
+Usage: plot_cloud_prop <var> <input> <ecs> <output> [options]
+
+Arguments:
+
+- var: Variable. One of: "clt", "cod", "pct".
+- input: Input directory - the output of calc_cloud_props (NetCDF).
+- ecs: ECS file (CSV).
+- output: Output plot (PDF).
+
+Options:
+
+- legend: <value>: Plot legend (true or false). Default: true.
+
+Examples:
+
+bin/plot_cloud_props clt data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_clt.pdf
+bin/plot_cloud_props cod data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_cod.pdf
+bin/plot_cloud_props pct data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_pct.pdf
+```
+
+
+### plot\_station\_corr
+
+
+```
+
+Plot spatial and temporal correlation of stations.
+
+Usage: bin/plot_station_corr <type> <input1> <input2> <output>
+
+Arguments:
+
+- type: One of: "time" (time correlation), "space" (space correlation).
+- input1: Input file - the output of calc_idd_geo (NetCDF).
+- input2: Input file - the output of calc_geo_cto (NetCDF).
+- output: Output plot (PDF).
+```
+
+
+### merge\_xval\_geo\_cto
+
+
+```
+
+Merge cross validation geographical distribution of cloud type occurrence.
+
+Usage: bin/merge_xval_geo_cto [<input>...] [<area>...] <output>
+
+Arguments:
+
+- input: the output of calc_geo_cto (NetCDF).
+- area: { <lat1> <lat2> <lon1> <lon2> }: Area of input to merge. The number of area arguments must be the same as the number of input arguments.
+- output: Output file (NetCDF).
+```
+
+
+### plot\_validation
+
+
+```
+
+Calculate cross-validation statistics.
+
+Usage: bin/plot_validation <idd_val> <idd_train> <input>... <output> [options]
+
+Arguments:
+
+- idd_val: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
+- idd_train: Training IDD dataset - the output of calc_idd_geo for training years (NetCDF).
+- input: CERES dataset - the output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
+- output: Output plot (PDF).
+
+Options:
+
+--normalized: Plot normalized plots.
+
+Examples:
+
+bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historical/all/CERES.nc data/xval/geo_cto/CERES_sectors.nc plot/validation.pdf
+```
+
+
+### calc\_val\_stats
+
+
+```
+
+Calculate cross-validation statistics.
+
+Usage: bin/calc_val_stats <input> <idd> <output> [options]
+
+Arguments:
+
+- input: Validation CERES/ANN dataset - the output of calc_geo_cto for validation years (NetCDF).
+- idd: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
+- output: Output file (NetCDF).
+
+Options:
+
+- area: { <lat1> <lat2> <lon1> <lon2> }: Area to validate on.
+- train_idd: <value>: Training IDD input - the output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
+
+Examples:
+
+bin/calc_val_stats data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/val_stats/NE.nc area: { 0 90 -180 0 }
+```
+
+
+### plot\_roc
+
+
+```
+
+Plot ROC validation curves.
+
+Usage: bin/plot_roc <input> <output> <title>
+
+Arguments:
+
+- input: Input data - the output of calc_val_stats (NetCDF).
+- output: Output plot (PDF)
+- title: Plot title.
+```
+
+
+### calc\_idd\_geo
+
+
+```
+Calculate geographical distribution of cloud types from IDD data.
+
+Usage: calc_idd_geo <synop> <buoy> <from> <to> <output>
+
+Arguments:
+
+- synop: Input synop directory (NetCDF).
+- buoy: Input buoy directory (NetCDF).
+- from: From date (ISO).
+- to: To date (ISO).
+- output: Output file (NetCDF).
+
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+
+Examples:
+
+bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc classes: 1
+```
+
+
+### plot\_idd\_n\_obs
+
+
+```
+Plot a map showing the number of observations in IDD.
+
+Usage: bin/plot_idd_n_obs <input> <output>
+
+Arguments:
+
+- input: Input dataset - the output of calc_idd_geo (NetCDF).
+- output: Output plot (PDF).
 ```
 
 

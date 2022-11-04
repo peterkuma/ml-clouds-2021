@@ -87,12 +87,12 @@ prepare_samples
       ↳ calc_cloud_props
         ↳ plot_cloud_props [Figure 10]
       ↳ plot_station_corr [Figure S3]
-	  ↳ merge_xval_geo_cto
-        ↳ plot_validation [Figure 4]
-        ↳ calc_val_stats
-          ↳ plot_roc [Figure 5]
-calc_idd_geo
-↳ plot_idd_n_obs [Figure S2]
+      ↳ calc_idd_geo
+        ↳ plot_idd_n_obs [Figure S2]
+        ↳ merge_xval_geo_cto
+          ↳ plot_validation [Figure 4]
+          ↳ calc_val_stats
+            ↳ plot_roc [Figure 5]
 ```
 
 ## Input datasets
@@ -345,13 +345,13 @@ should be run from the main repository directory with `bin/<command>
 
 {prepare_samples}
 
-### tf
-
-{tf}
-
 ### plot\_idd\_stations
 
 {plot_idd_stations}
+
+### tf
+
+{tf}
 
 ### plot\_sample
 
@@ -396,6 +396,42 @@ should be run from the main repository directory with `bin/<command>
 ### plot\_cto\_ecs
 
 {plot_cto_ecs}
+
+### calc\_cloud\_props
+
+{calc_cloud_props}
+
+### plot\_cloud\_props
+
+{plot_cloud_props}
+
+### plot\_station\_corr
+
+{plot_station_corr}
+
+### merge\_xval\_geo\_cto
+
+{merge_xval_geo_cto}
+
+### plot\_validation
+
+{plot_validation}
+
+### calc\_val\_stats
+
+{calc_val_stats}
+
+### plot\_roc
+
+{plot_roc}
+
+### calc\_idd\_geo
+
+{calc_idd_geo}
+
+### plot\_idd\_n\_obs
+
+{plot_idd_n_obs}
 
 ## Auxiliary commands
 
