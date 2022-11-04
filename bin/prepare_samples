@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 '''Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea>
-       <start> <end> <output> [options]
+Usage: prepare_samples <type> <input> <synop> <buoy> <start> <end> <output> [options]
 
 Arguments:
 
@@ -11,8 +10,6 @@ Arguments:
 - input: Input directory with input files (NetCDF).
 - synop: Input directory with IDD synoptic fies or "none" (NetCDF).
 - buoy: Input directory with IDD buoy files or "none" (NetCDF).
-- landmask: Land-sea mask file or "none" (NetCDF).
-- landsea: Land or sea only. One of: "both", "land", "sea".
 - start: Start time (ISO).
 - end: End time (ISO).
 - output: Output directory.
@@ -20,19 +17,13 @@ Arguments:
 Options:
 
 - seed: <value>: Random seed.
-- keep_stations: <value>: Keep station records in samples ("true" or "false").
-  Default: "false".
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- night: <value>: Include infrared channel only. One of: true or false.
-  Default: false.
-- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
-  region bounded by given latitude and longitude. Default: none.
+- keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
+- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with IDD stations in a region bounded by given latitude and longitude. Default: none.
 
 Examples:
 
-prepare_samples ceres input/ceres input/idd/synop input/idd/buoy input/landmask/ne_110m_land.nc both 2009-01-01 2009-12-31 data/samples/ceres_training/2009
-prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none none both 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
+prepare_samples ceres input/ceres input/idd/synop input/idd/buoy 2009-01-01 2009-12-31 data/samples/ceres/2009
+prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
 '''
 
 import sys
@@ -57,7 +48,9 @@ np.seterr(divide='ignore', invalid='ignore')
 
 D = 2000000 # Half-size of the domain (m).
 MAX_STATIONS = 10000
-NSAMPLES = 20
+NSAMPLES = 100
+
+NCLASSES = 27
 
 META = {
 	'data': {
@@ -278,39 +271,7 @@ def merge_idd(d1, d2):
 			d[var] = d2[var]
 	return d
 
-def calc_stats0(cloud_l, cloud_m, cloud_h):
-	stats = np.zeros(4, np.int64)
-	stats_n = np.zeros(4, np.int64)
-	stats[0] = np.nansum((cloud_h >= 1) & (cloud_h <= 9)) # High
-	stats_n[0] = np.sum(np.isfinite(cloud_h))
-	stats[1] = np.nansum((cloud_m >= 1) & (cloud_m <= 9)) # Middle
-	stats_n[1] = np.sum(np.isfinite(cloud_m))
-	stats[2] = np.nansum(((cloud_l >= 1) & (cloud_l <= 3)) | (cloud_l == 8) | \
-		(cloud_l == 9)) # Cumuliform
-	stats_n[2] = np.sum(np.isfinite(cloud_l))
-	stats[3] = np.nansum((cloud_l >= 4) & (cloud_l <= 7)) # Stratiform
-	stats_n[3] = np.sum(np.isfinite(cloud_l))
-	return stats, stats_n
-
-def calc_stats1(cloud_l, cloud_m, cloud_h):
-	stats = np.zeros(10, np.int64)
-	stats_n = np.zeros(10, np.int64)
-	stats[0] = np.nansum((cloud_h >= 1) & (cloud_h <= 6)) # Ci
-	stats[1] = np.nansum((cloud_h >= 7) & (cloud_h <= 8)) # Cs
-	stats[2] = np.nansum(cloud_h == 9) # Cc
-	stats_n[0:3] = np.sum(np.isfinite(cloud_h))
-	stats[3] = np.nansum((cloud_m >= 1) & (cloud_m <= 2)) # As
-	stats[4] = np.nansum((cloud_m >= 3) & (cloud_m <= 9)) # Ac
-	stats_n[3:5] = np.sum(np.isfinite(cloud_m))
-	stats[5] = np.nansum((cloud_l >= 1) & (cloud_l <= 3)) # Cu
-	stats[6] = np.nansum((cloud_l >= 4) & (cloud_l <= 5)) # Sc
-	stats[7] = np.nansum((cloud_l >= 6) & (cloud_l <= 7)) # St
-	stats[8] = np.nansum(cloud_l == 8) # Cu + Sc
-	stats[9] = np.nansum(cloud_l == 9) # Cb
-	stats_n[5:10] = np.sum(np.isfinite(cloud_l))
-	return stats, stats_n
-
-def calc_stats2(cloud_l, cloud_m, cloud_h):
+def calc_stats(cloud_l, cloud_m, cloud_h):
 	stats = np.zeros(27, np.int64)
 	stats_n = np.zeros(27, np.int64)
 	for i, var in enumerate([cloud_h, cloud_m, cloud_l]):
@@ -319,7 +280,7 @@ def calc_stats2(cloud_l, cloud_m, cloud_h):
 		stats_n[(i*9):((i+1)*9)] = np.sum(np.isfinite(var))
 	return stats, stats_n
 
-def lookup_idd(d, lat0, lon0, alpha0, x, y, classes=0):
+def lookup_idd(d, lat0, lon0, alpha0, x, y):
 	do = {}
 	p1 = pyproj.Proj(proj='longlat', datum='WGS84')
 	p2 = pyproj.Proj(proj='aeqd', lat_0=lat0, lon_0=lon0, datum='WGS84')
@@ -342,25 +303,19 @@ def lookup_idd(d, lat0, lon0, alpha0, x, y, classes=0):
 	cloud_m = d['cloud_m'][mask]
 	cloud_h = d['cloud_h'][mask]
 
-	nclasses = {0: 4, 1: 10, 2: 27}[classes]
-	func = {
-		0: calc_stats0,
-		1: calc_stats1,
-		2: calc_stats2,
-	}[classes]
-
 	n = len(x)
 	m = len(y)
 	l = np.sum(mask)
-	do['station_clouds'] = np.zeros((nclasses, n, m), np.int64)
-	do['station_clouds_n'] = np.zeros((nclasses, n, m), np.int64)
+	do['station_clouds'] = np.zeros((NCLASSES, n, m), np.int64)
+	do['station_clouds_n'] = np.zeros((NCLASSES, n, m), np.int64)
 	for k in range(l):
-		stats, stats_n = func(cloud_l[k], cloud_m[k], cloud_h[k])
+		stats, stats_n = calc_stats(cloud_l[k], cloud_m[k], cloud_h[k])
 		j = np.searchsorted(x, do['station_x'][k])
 		i = np.searchsorted(y, do['station_y'][k])
 		do['station_clouds'][:,i,j] += stats
 		do['station_clouds_n'][:,i,j] += stats_n
-	do['stats'], do['stats_n'] = func(cloud_l, cloud_m, cloud_h)
+
+	do['stats'], do['stats_n'] = calc_stats(cloud_l, cloud_m, cloud_h)
 	return do
 
 def read_ceres(dirname, start, end):
@@ -370,6 +325,8 @@ def read_ceres(dirname, start, end):
 			continue
 		filename = os.path.join(dirname, file_)
 		m = re.match('.*\.(\d{8})\.nc', filename)
+		if m is None:
+			continue
 		t = aq.from_datetime(dt.datetime.strptime(m.groups()[0], '%Y%m%d'))
 		if not ((t >= start) & (t <= end)):
 			continue
@@ -618,28 +575,22 @@ def read_era5(dirname, start, end):
 
 if __name__ == '__main__':
 	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 10:
+	if len(args) != 8:
 		sys.stderr.write(sys.modules[__name__].__doc__)
 		sys.exit(1)
 	type_ = args[1]
 	input_dir = args[2]
 	synop_dir = args[3]
 	buoy_dir = args[4]
-	landmask_file = args[5]
-	landsea = args[6]
-	start = aq.from_iso(args[7])
-	end = aq.from_iso(args[8])
-	output = args[9]
+	start = aq.from_iso(args[5])
+	end = aq.from_iso(args[6])
+	output = args[7]
 	seed = opts.get('seed')
 	keep_stations = opts.get('keep_stations', False)
-	classes = opts.get('classes', 0)
-	night = opts.get('night', False)
 	exclude = opts.get('exclude')
 
 	if seed is not None:
 		np.random.seed(seed)
-
-	landmask = ds.read(landmask_file) if landmask_file is not None else None
 
 	read = {
 		'ceres': read_ceres,
@@ -663,9 +614,12 @@ if __name__ == '__main__':
 					exclude=exclude)
 		except Exception as e:
 			logging.warning(e)
-			continue
 		if idd_synop is not None and idd_buoy is not None:
 			idd = merge_idd(idd_synop, idd_buoy)
+		elif idd_synop is not None:
+			idd = idd_synop
+		elif idd_buoy is not None:
+			idd = idd_buoy
 		d2 = d
 		d2['cre_sw_rel'] = (d2['rsutcs'] - d2['rsut'])/d2['rsdt']
 		d2['cre_sw_rel'][d2['rsdt'] < 50] = np.nan
@@ -682,19 +636,11 @@ if __name__ == '__main__':
 			dx = take_sample(d2['lat'], d2['lon'], data)
 			dx['time'] = d2['time']
 
-			if night:
-				dx['data'][0,:,:] = 0
-
-			if np.any(np.isnan(dx['data'])) > 0:
-				continue
-
 			if idd is not None:
 				res = lookup_idd(idd, dx['lat0'], dx['lon0'], dx['alpha0'],
-					dx['x'].flatten(), dx['y'].flatten(), classes)
+					dx['x'].flatten(), dx['y'].flatten())
 				dx.update(res)
 				dx['station_number'] = np.arange(len(dx['station_lon']))
-				if np.sum(dx['stats']) == 0:
-					continue
 			if not keep_stations:
 				for k in [
 					'station_type',
@@ -727,7 +673,7 @@ if __name__ == '__main__':
 			n += 1
 
 		if len(dd) > 0:
-			dout = ds.merge(dd, 'sample', True)
+			dout = ds.merge(dd, 'sample', 'time')
 			name = '%s.nc' % aq.to_iso(d['time'])
 			output_filename = os.path.join(output, name)
 			print('-> %s' % output_filename)
