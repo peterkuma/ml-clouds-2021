@@ -10,6 +10,10 @@ Arguments:
 - tas: Input file with tas - the output of gistemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
 
+Options:
+
+- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+
 Examples:
 
 bin/calc_geo_cto data/samples_tf/ceres input/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
@@ -24,23 +28,20 @@ import aquarius_time as aq
 import scipy.stats
 import pst
 
-LAT_BNDS = np.arange(-90., 95., 5.)
-LON_BNDS = np.arange(-180., 185., 5.)
-
-def calc_stats_geo(d, k):
-	nsamples = d['stats'].shape[0]
-	nlat = len(LAT_BNDS) - 1
-	nlon = len(LON_BNDS) - 1
+def calc_geo_cto(stats, lat, lon, lat_bnds, lon_bnds):
+	nsamples = stats.shape[0]
+	nlat = len(lat_bnds) - 1
+	nlon = len(lon_bnds) - 1
 	out = np.zeros((nlat, nlon), np.float64)
 	n = np.zeros((nlat, nlon), np.int64)
 	for l in range(nsamples):
-		lat = d['lat'][l,:,:].flatten()
-		lon = d['lon'][l,:,:].flatten()
-		ii = np.searchsorted(LAT_BNDS, lat, side='right') - 1
-		jj = np.searchsorted(LON_BNDS, lon, side='right') - 1
-		out[ii,jj] += d['stats'][l,:,:,k].flatten()
+		lat1 = lat[l,:,:].flatten()
+		lon1 = lon[l,:,:].flatten()
+		ii = np.searchsorted(lat_bnds, lat1, side='right') - 1
+		jj = np.searchsorted(lon_bnds, lon1, side='right') - 1
+		out[ii,jj] += stats[l,:,:].flatten()
 		n[ii,jj] += 1
-	return out/n, n
+	return out, n
 
 def merge_stats_geo(a, an, b, bn):
 	c = np.full(a.shape, np.nan, np.float64)
@@ -83,6 +84,13 @@ if __name__ == '__main__':
 		input_night = None
 	tas = args[-2]
 	output = args[-1]
+	resolution = opts.get('resolution', 5)
+
+	if 180 % resolution != 0:
+		raise ValueError('180 must be divisible by resolution')
+
+	lon_bnds = np.arange(-180., 180. + resolution, resolution)
+	lat_bnds = np.arange(-90., 90. + resolution, resolution)
 
 	d_tas = read_tas(tas) if tas is not None else None
 
@@ -94,54 +102,70 @@ if __name__ == '__main__':
 
 	d = ds.read(files[0])
 
-	n = len(files)
-	m = d['stats'].shape[3]
-	lon = 0.5*(LON_BNDS[1:] + LON_BNDS[:-1])
-	lat = 0.5*(LAT_BNDS[1:] + LAT_BNDS[:-1])
+	nclasses = d['stats'].shape[3]
+	lon = 0.5*(lon_bnds[1:] + lon_bnds[:-1])
+	lat = 0.5*(lat_bnds[1:] + lat_bnds[:-1])
 	nlat = len(lat)
 	nlon = len(lon)
-	time = np.full(n, np.nan, np.float64)
-	year = np.full(n, np.nan, np.float64)
-	stats_geo = np.full((n, m, nlat, nlon), np.nan, np.float64)
-	time = np.full(n, np.nan, np.float64)
-	stats_geo1 = np.full((m, nlat, nlon), np.nan, np.float64)
+	time = []
+	year = []
+	x = [[] for i in range(nclasses)]
+	x_n = [[] for i in range(nclasses)]
 
-	for j, filename in enumerate(files):
+	for filename in files:
 		file_ = os.path.basename(filename)
 		print('<- %s' % filename)
 		d = ds.read(filename)
 		if input_night is not None:
 			d_night = ds.read(os.path.join(input_night, file_))
-		if tas is not None:
-			year[j] = int(os.path.basename(filename)[:-3])
-		for i in range(m):
-			stats_geo_day, stats_geo_day_n = calc_stats_geo(d, i)
-			if input_night is not None:
-				stats_geo_night, stats_geo_night_n = calc_stats_geo(d_night, i)
-				stats_geo[j,i,:,:] = merge_stats_geo(
-					stats_geo_day, stats_geo_day_n,
-					stats_geo_night, stats_geo_night_n,
+		days = np.array(sorted(set(d['time'])))
+		for i in range(nclasses):
+			for day in days:
+				mask = d['time'] == day
+				x_day, x_day_n = calc_geo_cto(
+					d['stats'][mask,:,:,i],
+					d['lat'][mask,::],
+					d['lon'][mask,::],
+					lat_bnds,
+					lon_bnds,
 				)
-			else:
-				stats_geo[j,i,:,:] = stats_geo_day
-		time[j] = np.mean(d['time'])
+				x[i] += [x_day]
+				x_n[i] += [x_day_n]
+		time += [days]
 
-	if tas is not None:
-		x = np.array([d_tas['tas'][d_tas['year'] == year[l]][0] for l in range(n)])
-		for i in range(m):
-			for j in range(nlat):
-				for k in range(nlon):
-					y = stats_geo[:,i,j,k]
-					res = scipy.stats.linregress(x, y)
-					stats_geo1[i,j,k] = res.slope
+	for i in range(nclasses):
+		x[i] = np.stack(x[i])
+		x_n[i] = np.stack(x_n[i])
+
+	x = np.stack(x)
+	x_n = np.stack(x_n)
+	time = np.hstack(time)
+	year = aq.to_date(time)[1]
+
+	years = np.array(sorted(set(year)))
+	x_yearly = []
+	for y in years:
+		mask = year == y
+		x_yearly += [np.nanmean(x[:,mask,:,:], axis=1)]
+	x_yearly = np.moveaxis(np.stack(x_yearly), 0, 1)
+
+	x_tas = np.full((nclasses, nlat, nlon), np.nan)
+	if tas is not None and len(years) > 1:
+		xx = np.array([d_tas['tas'][d_tas['year'] == y][0] for y in years])
+		for k in range(nclasses):
+			for i in range(nlat):
+				for j in range(nlon):
+					yy = x_yearly[k,:,i,j]
+					res = scipy.stats.linregress(xx, yy)
+					x_tas[k,i,j] = res.slope
 
 	do = {
-		'cloud_occurrence': np.nanmean(stats_geo, axis=0),
-		'cloud_occurrence_daily': np.moveaxis(stats_geo, 0, 1),
-		'cloud_occurrence_tas': stats_geo1,
+		'cloud_occurrence': np.nansum(x, axis=1)/np.nansum(x_n, axis=1),
+		'cloud_occurrence_daily': x/x_n,
+		'cloud_occurrence_tas': x_tas,
 		'time': time,
-		'lat_bnds': LAT_BNDS,
-		'lon_bnds': LON_BNDS,
+		'lat_bnds': lat_bnds,
+		'lon_bnds': lon_bnds,
 		'lat': lat,
 		'lon': lon,
 		'.': {
