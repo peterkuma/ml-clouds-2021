@@ -6,8 +6,8 @@ Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex Schuddeboom<sup>2</
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
 <sup>3</sup>Norwegian Meteorological Institute, Oslo, Norway
 
-This repository contains code for the paper "Machine learning of cloud types in
-satellite observations and climate models".
+This repository contains code for the paper
+[Machine learning of cloud types in satellite observations and climate models](https://doi.org/10.5281/zenodo.6184907).
 
 If you have any questions about the code you can contact the authors or submit
 an Issue on GitHub.
