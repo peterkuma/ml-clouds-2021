@@ -29,6 +29,8 @@ import pandas as pd
 import pymc3 as pm
 import pst
 import scipy as sp
+import string
+import statsmodels.stats.weightstats
 
 mpl.rc('font', family='Open Sans')
 mpl.rc('axes', linewidth=0.3)
@@ -67,7 +69,7 @@ if __name__ == '__main__':
 	if varname not in ('ecs', 'tcr', 'cld'):
 		raise ValueError('Invalid varname "%s"' % varname)
 
-	plt.figure(figsize=[6, 5])
+	plt.figure(figsize=[15, 5])
 
 	print('<- %s' % input_)
 	d = ds.read(input_)
@@ -77,44 +79,74 @@ if __name__ == '__main__':
 	handles = []
 	labels = []
 	res = 0
-	for i, cloud_type in enumerate(['Hi', 'Mi', 'Cu', 'St']):
+	for i, cloud_type in enumerate(['High', 'Middle', 'Cumuliform', 'Stratiform']):
+		plt.subplot(1, 4, i + 1)
 		plt.scatter(
 			(d['cloud_occurrence_tas'][:,i])*100,
 			var,
 			s=20,
-			color=COLORS[i],
-			marker=MARKERS[i],
+			color='k',
+			marker='o',
 		)
 		x = np.linspace(-2, 2, 200)
 		y = np.full(len(x), np.nan)
 		ylow = np.full(len(x), np.nan)
 		yhigh = np.full(len(x), np.nan)
-		s = np.mean([sp.stats.cauchy.ppf(0.84, 0, sd) \
-			for sd in d['sd_'+varname+'_samples'][i] \
-			if np.isfinite(sd)])
 		for j in range(len(x)):
 			y[j] = d['c1_'+varname][i]*x[j] + d['c0_'+varname][i]
-			ylow[j] = y[j] - s
-			yhigh[j] = y[j] + s
-		plt.fill_between(x, ylow, yhigh, color=COLORS[i], alpha=0.1,
+		plt.fill_between(x, ylow, yhigh, color='k', alpha=0.1,
 			edgecolor='none')
-		plt.plot(x, y, color=COLORS[i], lw=1.2, label=CLOUD_TYPES[i],
-			linestyle=LINESTYLES[i])
-		labels += [CLOUD_TYPES[i]]
-		handles += [Line2D(range(1), range(1), marker=MARKERS[i], lw=1.2,
-			markersize=4, color=COLORS[i], linestyle=LINESTYLES[i])]
-	plt.xlim(-0.7, 0.7)
-	if varname == 'ecs':
-		plt.ylim(1, 6)
-		plt.yticks(np.arange(1, 7, 1))
-	elif varname == 'tcr':
-		plt.ylim(1, 3)
-	elif varname == 'cld':
-		plt.ylim(-0.2, 0.9)
-	plt.xlabel('Cloud type occurrence change (% K$^{-1}$)')
-	plt.ylabel(LABELS[varname])
-	plt.legend(handles, labels, loc='lower center', fontsize=7,
-		handlelength=4, bbox_to_anchor=(0.62, 0))
-	plt.gca().set_aspect(1.0/plt.gca().get_data_ratio(), adjustable='box')
+		res = sp.stats.linregress((d['cloud_occurrence_tas'][:,i])*100, var)
+		plt.plot(x, y, lw=1, color='k', linestyle='dashed')
+		bf = d['bf_' + varname][i]
+		ph0 = 1/(1 + bf)
+		c1 = d['c1_ecs_samples'][i,:]
+		rho = np.corrcoef((d['cloud_occurrence_tas'][:,i])*100, var)[0,1]
+		a1, a2 = np.nanpercentile(c1, [2.5, 97.5])
+		xpos = 0.025 if rho < 0 else 1 - 0.38 - 0.022*((a1 < 0) + (a2 < 0))
+		if rho > 0:
+			sign = '<'
+			pa0 = np.nansum(c1 < 0)/np.sum(np.isfinite(c1))
+		else:
+			sign = '>'
+			pa0 = np.nansum(c1 > 0)/np.sum(np.isfinite(c1))
+		order = np.argsort(var)
+		n = int(np.round(len(order)/2))
+		x1 = d['cloud_occurrence_tas'][:,i][order[:n]]
+		y1 = var[order[:n]]
+		x2 = d['cloud_occurrence_tas'][:,i][order[n:]]
+		y2 = var[order[n:]]
+		_, pz = statsmodels.stats.weightstats.ztest(x1, x2)
+		plt.text(xpos, 0.04,
+			'P(M$_0$) = %.0e\nR$^2$ = %.2f\n$\\rho$ = %.2f\n$\\alpha_{95}$ = (%.2f, %.2f)\nP($\\alpha$ %s 0) = %.0e\np$_z$ = %.0e' % \
+			(ph0, res.rvalue**2, rho, a1, a2, sign, pa0, pz),
+			transform=plt.gca().transAxes,
+			bbox=dict(facecolor='#eeeeee', edgecolor='none'),
+			fontsize=9,
+		)
+		plt.xlim(-0.6, 0.4)
+		plt.axvline(0, color='k', linestyle='solid', lw=0.5)
+		if varname == 'ecs':
+			plt.ylim(1, 6)
+			plt.yticks(np.arange(1, 7, 1))
+		elif varname == 'tcr':
+			plt.ylim(1, 3)
+		elif varname == 'cld':
+			plt.ylim(-0.2, 0.9)
+		if i == 0:
+			plt.ylabel(LABELS[varname])
+		else:
+			plt.gca().yaxis.set_ticklabels([])
+		plt.gca().set_aspect(1.0/plt.gca().get_data_ratio(), adjustable='box')
+		plt.title(cloud_type)
+		letter = string.ascii_letters[i]
+		plt.text(0, 1.05, '(%s)' % letter,
+			va='center', ha='left', weight='bold',
+			transform=plt.gca().transAxes)
+	plt.text(0.5, 0.13, 'Cloud type occurrence change (% K$^{-1}$)',
+		ha='center',
+		transform=plt.gcf().transFigure
+	)
+	plt.subplots_adjust(wspace=0.1)
 	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight')
