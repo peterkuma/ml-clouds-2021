@@ -38,6 +38,8 @@ SUB = {
 
 def process_url(url, start, end):
 	m = re.match(REGEXP, url)
+	if m is None:
+		return url
 	g = m.groupdict()
 	if g['d1'] is None: g['d1'] = '01'
 	if g['d2'] is None: g['d2'] = '01'
@@ -52,14 +54,18 @@ def process_url(url, start, end):
 	return None
 
 def trans_member(x):
-	m1 = re.match(r'^r(\d\d?)i(\d\d?)p(\d\d?)f(\d\d?)$', x)
-	m2 = re.match(r'^r(\d\d?)i(\d\d?)p(\d\d?)$', x)
+	m1 = re.match(r'^r(\d\d?\d?)i(\d\d?\d?)p(\d\d?\d?)f(\d\d?\d?)$', x)
+	m2 = re.match(r'^r(\d\d?\d?)i(\d\d?\d?)p(\d\d?\d?)$', x)
+	m3 = re.match(r'^run(\d\d?\d?)$', x)
 	if m1 is not None:
 		m = m1
 		y = int(m[1])*1000000 + int(m[2])*10000 + int(m[3])*100 + int(m[4])
 	elif m2 is not None:
 		m = m2
 		y = int(m[1])*10000 + int(m[2])*100 + int(m[3])
+	elif m3 is not None:
+		m = m3
+		y = int(m[1])
 	else:
 		raise ValueError('Invalid member id "%s"' % x)
 	return y
