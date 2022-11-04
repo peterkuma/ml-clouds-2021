@@ -1,0 +1,261 @@
+#!/usr/bin/env python3
+'''Calculate geographical distribution of cloud types from IDD data.
+
+Usage: calc_idd_geo <synop> <buoy> <from> <to> <output>
+
+Arguments:
+
+- synop: Input synop directory (NetCDF).
+- buoy: Input buoy directory (NetCDF).
+- from: From date (ISO).
+- to: To date (ISO).
+- output: Output file (NetCDF).
+
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+
+Examples:
+
+bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc classes: 1
+'''
+
+import sys
+import os
+import logging
+from glob import glob
+import numpy as np
+import ds_format as ds
+import aquarius_time as aq
+import pst
+
+def get_nclasses(classes):
+	return {
+		0: 4,
+		1: 10,
+		2: 27,
+	}[classes]
+
+def read_idd(dirname, t):
+	date = aq.to_date(t)
+	date_s = '%02d%02d%02d' % (date[1][0], date[2][0], date[3][0])
+	path = os.path.join(dirname, '*%s*' % date_s)
+	filenames = glob(path)
+	if len(filenames) == 0:
+		raise IOError('No IDD for date %s found in "%s"' % (date_s, dirname))
+	dd = []
+	for filename in sorted(filenames):
+		print('<- %s' % filename)
+		d = ds.read(filename, [
+			'cloudLow',
+			'cloudMiddle',
+			'cloudHigh',
+			'Lat',
+			'Lon',
+		])
+		for var in ds.get_vars(d):
+			d[var] = d[var].astype(np.float64).filled(np.nan)
+		dd += [d]
+	d = ds.merge(dd, 'recNum')
+	return {
+		'lon': d['Lon'],
+		'lat': d['Lat'],
+		'cloud_l': d['cloudLow'],
+		'cloud_m': d['cloudMiddle'],
+		'cloud_h': d['cloudHigh'],
+	}
+
+def calc_stats0(cloud_l, cloud_m, cloud_h):
+	n = len(cloud_l)
+	stats = np.zeros((n, 4), np.int64)
+	stats_n = np.zeros((n, 4), np.int64)
+	stats[:,0] = (cloud_h >= 1) & (cloud_h <= 9) # High
+	stats_n[:,0] = np.isfinite(cloud_h)
+	stats[:,1] = (cloud_m >= 1) & (cloud_m <= 9) # Middle
+	stats_n[:,1] = np.isfinite(cloud_m)
+	stats[:,2] = ((cloud_l >= 1) & (cloud_l <= 3)) | (cloud_l == 8) | \
+		(cloud_l == 9) # Cumuliform
+	stats_n[:,2] = np.isfinite(cloud_l)
+	stats[:,3] = (cloud_l >= 4) & (cloud_l <= 7) # Stratiform
+	stats_n[:,3] = np.isfinite(cloud_l)
+	return stats, stats_n
+
+def calc_stats1(cloud_l, cloud_m, cloud_h):
+	n = len(cloud_l)
+	stats = np.zeros((n, 10), np.int64)
+	stats_n = np.zeros((n, 10), np.int64)
+	stats[:,0] = (cloud_h >= 1) & (cloud_h <= 6) # Ci
+	stats[:,1] = (cloud_h >= 7) & (cloud_h <= 8) # Cs
+	stats[:,2] = cloud_h == 9 # Cc
+	for i in range(0, 3):
+		stats_n[:,i] = np.isfinite(cloud_h)
+	stats[:,3] = (cloud_m >= 1) & (cloud_m <= 2) # As
+	stats[:,4] = (cloud_m >= 3) & (cloud_m <= 9) # Ac
+	for i in range(3, 5):
+		stats_n[:,i] = np.isfinite(cloud_m)
+	stats[:,5] = (cloud_l >= 1) & (cloud_l <= 3) # Cu
+	stats[:,6] = (cloud_l >= 4) & (cloud_l <= 5) # Sc
+	stats[:,7] = (cloud_l >= 6) & (cloud_l <= 7) # St
+	stats[:,8] = cloud_l == 8 # Cu + Sc
+	stats[:,9] = cloud_l == 9 # Cb
+	for i in range(5, 10):
+		stats_n[:,i] = np.isfinite(cloud_l)
+	return stats, stats_n
+
+def calc_stats2(cloud_l, cloud_m, cloud_h):
+	n = len(cloud_l)
+	stats = np.zeros((n, 27), np.int64)
+	stats_n = np.zeros((n, 27), np.int64)
+	for i, var in enumerate([cloud_h, cloud_m, cloud_l]):
+		for j in range(9):
+			stats[:,i*9 + j] = var == j + 1
+			stats_n[:,i*9 +j] = np.isfinite(var)
+	return stats, stats_n
+
+def postprocess(d, classes):
+	func = {
+		0: calc_stats0,
+		1: calc_stats1,
+		2: calc_stats2,
+	}[classes]
+	stats, stats_n = func(d['cloud_l'], d['cloud_m'], d['cloud_h'])
+	d['stats'] = stats
+	d['stats_n'] = stats_n
+
+def update_stats(stats, stats_n, d, lat_bnds, lon_bnds):
+	n = len(d['lon'])
+	for k in range(n):
+		lon = d['lon'][k]
+		lat = d['lat'][k]
+		if np.isnan(lat) or np.isnan(lon):
+			continue
+		i = np.searchsorted(lat_bnds, lat, side='right') - 1
+		j = np.searchsorted(lon_bnds, lon, side='right') - 1
+		if i >= stats.shape[0] or j >= stats.shape[1]:
+			continue
+		stats[i,j,:] += np.where(np.isfinite(d['stats'][k,:]), d['stats'][k,:], 0)
+		stats_n[i,j,:] += d['stats_n'][k,:]
+
+def tmean(stats, stats_n):
+	stats_frac = np.where(stats_n >= 1, stats/stats_n, np.nan)
+	stats_mean = np.nanmean(stats_frac, axis=0)
+	mask = np.mean(np.isfinite(stats_frac), axis=0) >= 0.8
+	stats_mean[~mask] = np.nan
+	return stats_mean
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 6:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	synop = args[1]
+	buoy = args[2]
+	from_ = aq.from_iso(args[3])
+	to = aq.from_iso(args[4])
+	output = args[5]
+	classes = opts.get('classes', 0)
+	resolution = opts.get('resolution', 5)
+
+	if 180 % resolution != 0:
+		raise ValueError('180 must be divisible by resolution')
+
+	lon_bnds = np.arange(-180., 180. + resolution, resolution)
+	lat_bnds = np.arange(-90., 90. + resolution, resolution)
+
+	time = np.arange(from_, to + 1)
+	nclasses = get_nclasses(classes)
+	n = len(time)
+	nlat = len(lat_bnds) - 1
+	nlon = len(lon_bnds) - 1
+	lon = 0.5*(lon_bnds[1:] + lon_bnds[:-1])
+	lat = 0.5*(lat_bnds[1:] + lat_bnds[:-1])
+	stats = np.zeros((n, nlat, nlon, nclasses), np.int64)
+	stats_n = np.zeros((n, nlat, nlon, nclasses), np.int64)
+	for i, t in enumerate(time):
+		d_synop = None
+		d_buoy = None
+		try:
+			if synop is not None: d_synop = read_idd(synop, t)
+			if buoy is not None: d_buoy = read_idd(buoy, t)
+		except Exception as e: logging.warning(e)
+		if d_buoy is not None:
+			postprocess(d_buoy, classes)
+			update_stats(stats[i,:,:,:], stats_n[i,:,:,:], d_buoy,
+				lat_bnds, lon_bnds)
+		if d_synop is not None:
+			postprocess(d_synop, classes)
+			update_stats(stats[i,:,:,:], stats_n[i,:,:,:], d_synop,
+				lat_bnds, lon_bnds)
+	stats_mean = tmean(stats, stats_n)
+	do = {
+		'time': time,
+		'lat': lat,
+		'lon': lon,
+		'lat_bnds': lat_bnds,
+		'lon_bnds': lon_bnds,
+		'cloud_occurrence': np.rollaxis(stats_mean, 2),
+		'cloud_occurrence_daily': np.rollaxis(stats/stats_n, 3),
+		'stats': np.sum(np.rollaxis(stats, 3), axis=1),
+		'stats_n': np.sum(np.rollaxis(stats_n, 3), axis=1),
+		'stats_daily': np.rollaxis(stats, 3),
+		'stats_n_daily': np.rollaxis(stats_n, 3),
+		'.': {
+			'time': {
+				'.dims': ['time'],
+				'standard_name': 'time',
+			},
+			'lat': {
+				'.dims': ['lat'],
+				'standard_name': 'latitude',
+				'units': 'degrees_north',
+			},
+			'lon': {
+				'.dims': ['lon'],
+				'standard_name': 'longitude',
+				'units': 'degrees_east',
+			},
+			'lat_bnds': {
+				'.dims': ['lat_bnds'],
+				'standard_name': 'latitude',
+				'units': 'degrees_north',
+			},
+			'lon_bnds': {
+				'.dims': ['lon_bnds'],
+				'standard_name': 'longitude',
+				'units': 'degrees_east',
+			},
+			'cloud_occurrence': {
+				'.dims': ['cloud_type', 'lat', 'lon'],
+				'long_name': 'cloud occurrence',
+				'units': '1',
+			},
+			'cloud_occurrence_daily': {
+				'.dims': ['cloud_type', 'time', 'lat', 'lon'],
+				'long_name': 'daily cloud occurrence',
+				'units': '1',
+			},
+			'stats': {
+				'.dims': ['cloud_type', 'lat', 'lon'],
+				'long_name': 'number of positive observations',
+				'units': '1',
+			},
+			'stats_n': {
+				'.dims': ['cloud_type', 'lat', 'lon'],
+				'long_name': 'number of observations',
+				'units': '1',
+			},
+			'stats_daily': {
+				'.dims': ['cloud_type', 'time', 'lat', 'lon'],
+				'long_name': 'daily number of positive observations',
+				'units': '1',
+			},
+			'stats_n_daily': {
+				'.dims': ['cloud_type', 'time', 'lat', 'lon'],
+				'long_name': 'daily number of observations',
+				'units': '1',
+			},
+		}
+	}
+	ds.write(output, do)
