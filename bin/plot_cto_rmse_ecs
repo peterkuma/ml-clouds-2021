@@ -2,13 +2,12 @@
 '''Plot scatter plot of RMSE of the geographical distribution of cloud type
 occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
-Usage: plot_cto_rmse_ecs <var> <input> <ecs> <output> [legend: <legend>]
+Usage: plot_cto_rmse_ecs <input> <ecs> <output> [legend: <legend>]
 
 Depends on: calc_geo_cto | calc_cto
 
 Arguments:
 
-- var: One of: "ecs" (ECS), "tcr" (TCR), "cld" (CLD).
 - input: Input directory - the output of calc_geo_cto or calc_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
@@ -19,10 +18,7 @@ Options:
 
 Examples:
 
-bin/plot_cto_rmse_ecs ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
-bin/plot_cto_rmse_ecs tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr.pdf
-bin/plot_cto_rmse_ecs cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld.pdf
-bin/plot_cto_rmse_ecs ecs data/cto/historical/all data/ecs/ecs.csv plot/cto_rmse_ecs_historical.pdf
+bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
 '''
 
 import sys
@@ -40,6 +36,7 @@ import pandas as pd
 import pymc3 as pm
 import pst
 import scipy as sp
+import statsmodels.stats.weightstats
 
 mpl.rc('font', family='Open Sans')
 mpl.rc('axes', linewidth=0.3)
@@ -58,8 +55,8 @@ mpl.rc('grid', lw=0.1)
 
 NBURN = 1000
 NSAMPLES = 10000
-NCHAINS = 12
-NCORES = 12
+NCHAINS = 24
+NCORES = 24
 
 class Handle:
     def __init__(self, text, color):
@@ -119,7 +116,8 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 		return \
 			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
 			c1*y_sd/x_sd, \
-			sd*y_sd
+			sd*y_sd, \
+			(np.mean(model_sel)/(1-np.mean(model_sel)))
 
 def read_ecs(filename, var):
 	var_u = var.upper()
@@ -205,28 +203,11 @@ def read_cto(filename):
 		'rmse': np.array(rmse),
 	}
 
-if __name__ == '__main__':
-	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
-	if len(args) != 5:
-		sys.stderr.write(sys.modules[__name__].__doc__)
-		sys.exit(1)
-	var = args[1]
-	input_ = args[2]
-	ecs = args[3]
-	output = args[4]
-
+def plot(d, ecs, var):
 	print('<- %s' % ecs)
 	d_ecs = read_ecs(ecs, var)
 
-	print('<- %s' % input_)
-	if os.path.isdir(input_):
-		d = read_geo_cto(input_)
-	else:
-		d = read_cto(input_)
-
 	n = len(d['model'])
-
-	fig = plt.figure(figsize=(6, 5))
 
 	ecs = []
 	cmap = plt.get_cmap('tab20')
@@ -256,7 +237,30 @@ if __name__ == '__main__':
 	ecs = np.array(ecs)
 
 	mask = np.isfinite(d['rmse']) & np.isfinite(ecs)
-	c0, c1, sd = bayes(d['rmse'][mask], ecs[mask])
+	c0, c1, sd, bf = bayes(d['rmse'][mask], ecs[mask])
+	res = sp.stats.linregress(d['rmse'][mask], ecs[mask])
+	ph0 = 1/(1 + bf)
+	rho = np.corrcoef(d['rmse'][mask], ecs[mask])[0,1]
+	a1, a2 = np.nanpercentile(c1, [2.5, 97.5])
+	if rho > 0:
+		sign = '<'
+		pa0 = np.nansum(c1 < 0)/np.sum(np.isfinite(c1))
+	else:
+		sign = '>'
+		pa0 = np.nansum(c1 > 0)/np.sum(np.isfinite(c1))
+	order = np.argsort(ecs[mask])
+	n = int(np.round(len(order)/2))
+	x1 = d['rmse'][mask][order[:n]]
+	y1 = ecs[mask][order[:n]]
+	x2 = d['rmse'][mask][order[n:]]
+	y2 = ecs[mask][order[n:]]
+	_, pz = statsmodels.stats.weightstats.ztest(x1, x2)
+	plt.text(1 - 0.36, 1 - 0.29,
+		'P(H$_0$) = %.0e\nR$^2$ = %.2f\n$\\rho$ = %.2f\n$\\alpha_{95}$ = (%.2f, %.2f)\nP($\\alpha$ %s 0) = %.0e\np$_z$ = %.0e' % \
+		(ph0, res.rvalue**2, rho, a1, a2, sign, pa0, pz),
+		transform=plt.gca().transAxes,
+		bbox=dict(facecolor='#eeeeee', edgecolor='none'),
+	)
 	sd_m = np.mean(sd)
 	xlim = list(plt.xlim())
 	xlim[0] = np.floor(xlim[0])
@@ -292,12 +296,38 @@ if __name__ == '__main__':
 		'cld': 'Cloud feedback',
 	}[var]
 	plt.ylabel('%s (%s)' % (label, units))
+	pos = plt.gca().get_position()
+	return handles, labels, pos
 
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = args[1]
+	ecs = args[2]
+	output = args[3]
+
+	print('<- %s' % input_)
+	if os.path.isdir(input_):
+		d = read_geo_cto(input_)
+	else:
+		d = read_cto(input_)
+
+	fig = plt.figure(figsize=(10, 10))
+	x = None
+	y = None
+	for i, var in enumerate(['ecs', 'tcr', 'cld']):
+		plt.subplot(2, 2, i + 1)
+		handles, labels, pos = plot(d, ecs, var)
+		if i == 1: x = pos.x0
+		if i == 2: y = pos.y0 + pos.height
 	if opts.get('legend', True):
 		plt.legend(handles, labels,
 			handler_map={Handle: HandlerCircle()},
-			fontsize=6.5,
-			loc='upper right',
+			bbox_transform=fig.transFigure,
+			bbox_to_anchor=[x, y],
+			loc='upper left',
 		)
-
+	plt.subplots_adjust(wspace=0.15, hspace=0.15)
 	plt.savefig(output, bbox_inches='tight')
