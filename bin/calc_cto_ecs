@@ -28,8 +28,8 @@ CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
 VARS = ['ecs']
 NBURN = 1000
 NSAMPLES = 100000
-NCHAINS = 12
-NCORES = 12
+NCHAINS = 24
+NCORES = 24
 
 def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 	x_m = np.mean(x)
@@ -59,11 +59,11 @@ def bayes(x, y, nsamples=NSAMPLES, nburn=NBURN, nchains=NCHAINS, ncores=NCORES):
 		c0 = c0[mask]
 		c1 = c1[mask]
 		sd = sd[mask]
-		print('BF = %f' % (np.mean(model_sel)/(1-np.mean(model_sel))))
 		return \
 			c0*y_sd + y_m - c1*y_sd/x_sd*x_m, \
 			c1*y_sd/x_sd, \
-			sd*y_sd
+			sd*y_sd, \
+			(np.mean(model_sel)/(1-np.mean(model_sel)))
 
 def read_ecs(filename):
 	d = pd.read_csv(filename)
@@ -114,9 +114,11 @@ if __name__ == '__main__':
 	c1_sample = {}
 	err_sample = {}
 	sd_sample = {}
+	bf = {}
 	for k in VARS:
 		c0[k] = np.full(m, np.nan)
 		c1[k] = np.full(m, np.nan)
+		bf[k] = np.full(m, np.nan)
 		p[k] = np.full(m, np.nan)
 		c0_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
 		c1_sample[k] = np.full((m, NSAMPLES*NCHAINS), np.nan)
@@ -125,13 +127,14 @@ if __name__ == '__main__':
 		var = vars_[k]
 		for i, cloud_type in enumerate(CLOUD_TYPES):
 			mask = np.isfinite(var) & np.isfinite(d['cloud_occurrence_tas'][:,i])
-			c0_samples, c1_samples, sd_samples = \
+			c0_samples, c1_samples, sd_samples, bf1 = \
 				bayes(d['cloud_occurrence_tas'][mask,i]*100, var[mask])
 			c0_sample[k][i,:len(c0_samples)] = c0_samples
 			c1_sample[k][i,:len(c1_samples)] = c1_samples
 			sd_sample[k][i,:len(sd_samples)] = sd_samples
 			c0[k][i] = np.nanmean(c0_sample[k][i,:])
 			c1[k][i] = np.nanmean(c1_sample[k][i,:])
+			bf[k][i] = bf1
 
 	do = {'.': {}}
 	do['cloud_occurrence_tas'] = d['cloud_occurrence_tas']
@@ -139,15 +142,19 @@ if __name__ == '__main__':
 	for k in VARS:
 		do.update({
 			k: vars_[k],
+			('bf_'+k): bf[k],
 			('c0_'+k): c0[k],
 			('c1_'+k): c1[k],
 			('sd_'+k+'_samples'): sd_sample[k],
+			('c1_'+k+'_samples'): c1_sample[k],
 		})
 		do['.'].update({
 			k: {'.dims': ['model']},
+			('bf_'+k): {'.dims': ['cloud_type']},
 			('c0_'+k): {'.dims': ['cloud_type']},
 			('c1_'+k): {'.dims': ['cloud_type']},
 			('sd_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
+			('c1_'+k+'_samples'): {'.dims': ['cloud_type', 'sample']},
 		})
 	print('-> %s' % output)
 	ds.write(output, do)
