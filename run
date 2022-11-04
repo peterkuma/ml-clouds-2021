@@ -340,10 +340,8 @@ plot_validation)
 	;;
 
 plot_roc)
-	for region in $REGIONS; do
-		region_upper=${region^^}
-		bin/plot_roc "$DATA"/val_stats/"$region_upper".nc "$PLOT"/roc_"$region_upper".pdf "$region_upper"
-	done
+	bin/plot_roc "$DATA"/val_stats/all.nc "$PLOT"/roc_all.pdf regions
+	bin/plot_roc "$DATA"/val_stats/regions.nc "$PLOT"/roc_regions.pdf regions
 	;;
 
 *)
