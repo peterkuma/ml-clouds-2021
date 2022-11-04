@@ -7,6 +7,30 @@ DATA="${DATA:-data}"
 PLOT="${PLOT:-plot}"
 CLASSES="${CLASSES:-0}"
 
+ALL_YEARS="$(echo 2004 2005 2007 {2009..2020})"
+TRAIN_YEARS="$(echo 2004 2005 {2009..2011} {2013..2016} {2018..2020})"
+VAL_YEARS="2007 2012 2017"
+CERES_YEARS="$(echo {2003..2020})"
+CERES_YEARS_FIRST="$(echo $CERES_YEARS | awk '{ print $1 }')"
+CERES_YEARS_LAST="$(echo $CERES_YEARS | awk '{ print $NF }')"
+MODEL_YEARS="$(echo {2003..2014})"
+MODEL_YEARS_FIRST="$(echo $MODEL_YEARS | awk '{ print $1 }')"
+MODEL_YEARS_LAST="$(echo $MODEL_YEARS | awk '{ print $NF }')"
+ABRUPT_YEARS="$(echo {1850..1949})"
+ABRUPT_YEARS_FIRST="$(echo $ABRUPT_YEARS | awk '{ print $1 }')"
+ABRUPT_YEARS_LAST="$(echo $ABRUPT_YEARS | awk '{ print $NF }')"
+
+REGIONS="na ea oc sa nw ne se sw"
+declare -A EXTENT
+EXTENT[nw]="{ 0 90 -180 0 }"
+EXTENT[ne]="{ 0 90 0 180 }"
+EXTENT[sw]="{ -90 0 -180 0 }"
+EXTENT[se]="{ -90 0 0 180 }"
+EXTENT[ea]="{ 30 60 90 120 }"
+EXTENT[na]="{ 15 45 -60 -30 }"
+EXTENT[oc]="{ -45 -15 150 180 }"
+EXTENT[sa]="{ -30 0 -75 -45 }"
+
 prepare_model () {
 	local exp="$1"
 	local model="$2"
@@ -26,26 +50,38 @@ prepare_model () {
 }
 
 case "$1" in
-prepare_ceres_training)
-	mkdir -p "$DATA"/samples/ceres_training/{2004,2005,2007} "$DATA"/samples/ceres_training/{2009..2020}
-	parallel -j$JOBS bin/prepare_samples ceres "$INPUT"/ceres/2.5deg "$INPUT"/idd/synop "$INPUT"/idd/buoy "$INPUT"/landmask/ne_110m_land.nc both {}-01-01 {}-12-31 "$DATA"/samples/ceres_training/{} classes: "$CLASSES" ::: 2004 2005 2007 {2009..2020}
-	parallel -j1 bin/merge_samples "$DATA"/samples/ceres_training/{} "$DATA"/samples/ceres_training/{}.nc ::: 2004 2005 2007 {2009..2020}
-	mkdir -p "$DATA"/samples/ceres_training/{training,validation}
-	for y in {2004..2006} {2008..2011} {2013..2016} {2018..2020}; do
-		for f in "$DATA"/samples/ceres_training/"$y"/*; do
-			ln -fs "../$y/$(basename "$f")" "$DATA"/samples/ceres_training/training/"$(basename "$f")"
+prepare_ceres)
+	dir="$DATA"/samples/ceres/
+	for y in $CERES_YEARS; do
+		mkdir -p "$dir/$y"
+	done
+	parallel -j$JOBS bin/prepare_samples ceres "$INPUT"/ceres/2.5deg "$INPUT"/idd/synop "$INPUT"/idd/buoy {}-01-01 {}-12-31 "$dir"/{} ::: $CERES_YEARS
+	parallel -j1 bin/merge_samples "$dir"/{} "$dir"/{}.nc ::: $CERES_YEARS
+	mkdir -p "$dir"/{training,validation}
+	for y in $TRAIN_YEARS; do
+		for f in "$dir"/"$y"/*; do
+			ln -fs "../$y/$(basename "$f")" "$dir"/training/"$(basename "$f")"
 		done
 	done
-	for y in 2007 2012 2017; do
-		for f in "$DATA"/samples/ceres_training/"$y"/*; do
-			ln -fs "../$y/$(basename "$f")" "$DATA"/samples/ceres_training/validation/"$(basename "$f")"
+	for y in $VAL_YEARS; do
+		for f in "$dir/$y"/*; do
+			ln -fs "../$y/$(basename "$f")" "$dir"/validation/"$(basename "$f")"
 		done
 	done
 	;;
 
 train_ann)
 	mkdir -p "$DATA"/ann
-	bin/tf train "$DATA"/samples/ceres_training/{training,validation} "$DATA"/ann/{ceres.h5,history.nc} classes: "$CLASSES" inmemory: true
+	bin/tf train "$DATA"/samples/ceres/{training,validation} "$DATA"/ann/ceres.h5 "$DATA"/ann/history.nc classes: "$CLASSES"
+	;;
+
+train_ann_xval)
+	for region in $REGIONS; do
+		extent="${EXTENT[$region]}"
+		dir="$DATA/xval/$region"
+		mkdir -p "$dir"/ann
+		bin/tf train "$DATA"/samples/ceres/{training,validation} "$dir"/ann/ceres.h5 "$dir"/ann/history.nc classes: "$CLASSES" exclude: $extent
+	done
 	;;
 
 plot_training_history)
@@ -65,34 +101,23 @@ plot_idd_stations)
 	bin/plot_sample "$DATA"/idd_sample/samples{,_tf}/2010/2010-01-01T00:00:00.nc 16 "$PLOT"/sample.pdf
 	;;
 
-prepare_ceres)
-	mkdir -p "$DATA"/samples/ceres/{2003..2020}
-	parallel -j$JOBS bin/prepare_samples ceres "$INPUT"/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres/{} ::: {2003..2020}
-	parallel -j1 bin/merge_samples "$DATA"/samples/ceres/{} "$DATA"/samples/ceres/{}.nc ::: {2003..2020}
-	;;
-
-prepare_ceres_dense)
-	mkdir -p "$DATA"/samples/ceres_dense
-	bin/prepare_samples ceres "$INPUT"/ceres none none none none {}-01-01 {}-12-31 "$DATA"/samples/ceres_dense/
-	;;
-
 prepare_historical)
 	exp=historical
-	y1=2003
-	y2=2014
+	y1=$MODEL_YEARS_FIRST
+	y2=$MODEL_YEARS_LAST
 	for model in $(cat "$INPUT"/models_$exp); do
 		prepare_model $exp $model cmip "$INPUT"/cmip6/$exp/day/2.5deg/by-model/$model $y1 $y2
 	done
 	prepare_model $exp EC-Earth3P cmip "$INPUT"/cmip6/hist-1950/day/2.5deg/by-model/EC-Earth3P $y1 $y2
-	prepare_model $exp MERRA-2 merra2 "$INPUT"/merra-2/2.5deg $y1 $y2
+	prepare_model $exp MERRA-2 merra2 "$INPUT"/merra2/2.5deg $y1 $y2
 	prepare_model $exp ERA5 era5 "$INPUT"/era5/2.5deg $y1 $y2
 	prepare_model $exp NorESM2-LM noresm "$INPUT"/noresm2/$exp/day/2.5deg $y1 $y2
 	;;
 
 prepare_abrupt-4xCO2)
 	exp=abrupt-4xCO2
-	y1=1850
-	y2=1949
+	y1=$ABRUPT_YEARS_FIRST
+	y2=$ABRUPT_YEARS_LAST
 	for model in $(cat "$INPUT"/models_$exp); do
 		if [ "$model" = "GFDL-CM4" ]; then
 			echo "$model"
@@ -110,13 +135,23 @@ prepare_abrupt-4xCO2)
 
 label_ceres)
 	mkdir -p "$DATA"/samples_tf/historical/CERES
-	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres 2003 2020 "$DATA"/samples_tf/historical/CERES classes: "$CLASSES"
+	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres $CERES_YEARS_FIRST $CERES_YEARS_LAST "$DATA"/samples_tf/historical/CERES classes: "$CLASSES"
+	;;
+
+label_ceres_xval)
+	for region in $REGIONS; do
+		dir="$DATA/xval/$region/"
+		mkdir -p "$dir"/samples_tf/historical/CERES
+		for y in $VAL_YEARS; do
+			bin/tf apply "$dir"/ann/ceres.h5 "$DATA"/samples/ceres $y $y "$dir"/samples_tf/historical/CERES classes: "$CLASSES"
+		done
+	done
 	;;
 
 label_historical)
 	exp=historical
-	y1=2003
-	y2=2014
+	y1=$MODEL_YEARS_FIRST
+	y2=$MODEL_YEARS_LAST
 	for model in $(cat "$INPUT"/models_$exp); do
 		if [ ! -e "$DATA"/samples/$exp/$model -o -e "$DATA"/samples_tf/$exp/$model ]; then
 			continue
@@ -184,6 +219,26 @@ calc_geo_cto_historical)
 	done
 	;;
 
+calc_geo_cto_xval)
+	mkdir -p "$DATA"/xval/geo_cto/all
+	for region in $REGIONS; do
+		region_upper=${region^^}
+		dir="$DATA/xval/$region/"
+		mkdir -p "$dir"/geo_cto/historical/all
+		if [ ! -e "$dir"/geo_cto/historical/all/CERES.nc ]; then
+			bin/calc_geo_cto "$dir"/samples_tf/historical/CERES "$INPUT"/tas/historical/CERES.nc "$dir"/geo_cto/historical/all/CERES.nc
+		fi
+	done
+	bin/merge_xval_geo_cto "$DATA"/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc { 15 45 -60 -30 } { 30 60 90 120 } { -45 -15 150 180 } { -30 0 -75 -45 } "$DATA"/xval/geo_cto/regions.nc
+	ln -sf ../../../geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/all/0_xval_all.nc
+	i=1
+	for region in nw ne se sw; do
+		region_upper=${region^^}
+		ln -sf ../../"$region"/geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/all/"$i"_xval_"$region_upper".nc
+		i=$(($i+1))
+	done
+	;;
+
 calc_geo_cto_abrupt-4xCO2)
 	mkdir -p "$DATA"/geo_cto/abrupt-4xCO2/all
 	for model in $(cat "$INPUT"/models_abrupt-4xCO2); do
@@ -213,28 +268,42 @@ calc_geo_cto_ceres_dense)
 	;;
 
 plot_geo_cto_historical)
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_1.pdf classes: "$CLASSES" normalized: false
-	bin/plot_geo_cto 0 true "$DATA"/geo_cto/historical/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_2.pdf classes: "$CLASSES" normalized: false with_ceres: false
+	bin/plot_geo_cto "$DATA"/geo_cto/historical/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_1.pdf
+	bin/plot_geo_cto "$DATA"/geo_cto/historical/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_historical_2.pdf with_ref: false
 	;;
 
 plot_geo_cto_abrupt-4xCO2)
-	bin/plot_geo_cto 1 false "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_1.pdf classes: "$CLASSES"
-	bin/plot_geo_cto 1 false "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_2.pdf classes: "$CLASSES"
+	bin/plot_geo_cto "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_1.pdf degree: 1
+	bin/plot_geo_cto "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_abrupt-4xCO2_2.pdf degree: 1
+	;;
+
+plot_geo_cto_xval)
+	bin/plot_geo_cto "$DATA"/xval/geo_cto/all "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_xval.pdf relative: false
+	bin/plot_geo_cto "$DATA"/xval/geo_cto/all "$INPUT"/ecs/ecs.csv "$PLOT"/geo_cto_xval_rel.pdf
 	;;
 
 plot_cto_rmse_ecs)
-	bin/plot_cto_rmse_ecs ecs "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse_ecs.pdf
-	for var in tcr cld; do
-		bin/plot_cto_rmse_ecs $var "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse_${var}.pdf legend: false
-	done
+	bin/plot_cto_rmse_ecs "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_rmse.pdf
 	;;
 
 plot_cto_historical)
-	bin/plot_cto ecs 0 relative false "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical.pdf 'CMIP6 historical and reanalyses (2003-2014) relative to CERES (2003-2020)' classes: "$CLASSES"
+	label="CMIP6 historical and reanalyses (${MODEL_YEARS_FIRST}-${MODEL_YEARS_LAST}) relative to CERES (${CERES_YEARS_FIRST}-${CERES_YEARS_LAST})"
+	if [ "$CLASSES" = 2 ]; then
+		bin/plot_cto_3 ecs 0 relative false "$DATA"/geo_cto/historical/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical_1.pdf "$label" classes: "$CLASSES"
+		bin/plot_cto_3 ecs 0 relative false "$DATA"/geo_cto/historical/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical_2.pdf "$label" classes: "$CLASSES"
+	else
+		bin/plot_cto_3 ecs 0 relative false "$DATA"/geo_cto/historical/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical.pdf "$label" classes: "$CLASSES"
+	fi
 	;;
 
 plot_cto_abrupt-4xCO2)
-	bin/plot_cto ecs 1-tas absolute false "$DATA"/geo_cto/abrupt-4xCO2/all/ "$INPUT"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2.pdf 'CMIP abrupt-4xCO2 (first 100 years) and CERES (2003-2020)' legend: false classes: "$CLASSES"
+	label="CMIP abrupt-4xCO2 (first 100 years)"
+	if [ "$CLASSES" = 2 ]; then
+		bin/plot_cto_3 ecs 1-tas absolute false "$DATA"/geo_cto/abrupt-4xCO2/part_1 "$INPUT"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2_1.pdf "$label" legend: false classes: "$CLASSES"
+		bin/plot_cto_3 ecs 1-tas absolute false "$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2_2.pdf "$label" legend: false classes: "$CLASSES"
+	else
+		bin/plot_cto_3 ecs 1-tas absolute false "$DATA"/geo_cto/abrupt-4xCO2/all "$INPUT"/ecs/ecs.csv "$PLOT"/cto_abrupt-4xCO2.pdf "$label" legend: false classes: "$CLASSES"
+	fi
 	;;
 
 calc_cto_ecs)
@@ -249,15 +318,32 @@ plot_tf_scheme)
 	bin/plot_tf_scheme "$PLOT"/tf_scheme.pdf
 	;;
 
-calc_cto_hist)
-	mkdir -p "$DATA"/cto_hist
-	bin/calc_cto_hist "$DATA"/samples/ceres_training/ "$DATA"/cto_hist/training.nc
-	bin/calc_cto_hist "$DATA"/samples_tf/historical/CERES/ "$DATA"/cto_hist/tf.nc
-	bin/calc_cto_hist "$DATA"/geo_cto/ceres_dense/ "$DATA"/cto_hist/geo.nc
+calc_idd_geo)
+	mkdir -p "$DATA"/idd_geo/{,validation,training}
+	parallel bin/calc_idd_geo "$INPUT"/idd/{synop,buoy} {}-01-01 {}-12-31 "$DATA"/idd_geo/validation/{}.nc classes: "$CLASSES" ::: $VAL_YEARS
+	parallel bin/calc_idd_geo "$INPUT"/idd/{synop,buoy} {}-01-01 {}-12-31 "$DATA"/idd_geo/training/{}.nc classes: "$CLASSES" ::: $TRAIN_YEARS
+	ds merge time "$DATA"/idd_geo/validation/*.nc "$DATA"/idd_geo/validation.nc
+	ds merge time "$DATA"/idd_geo/training/*.nc "$DATA"/idd_geo/training.nc
 	;;
 
-plot_cto_hist)
-	bin/plot_cto_hist "$DATA"/cto_hist/training.nc "Training samples" "$DATA"/cto_hist/tf.nc "ANN samples" "$DATA"/cto_hist/geo.nc "Geographical distribution" "$PLOT"/cto_hist.pdf
+calc_val_stats)
+	mkdir -p "$DATA"/val_stats
+	for region in $REGIONS; do
+		region_upper=${region^^}
+		extent="${EXTENT[$region]}"
+		bin/calc_val_stats "$DATA"/xval/"$region"/geo_cto/historical/all/CERES.nc "$DATA"/idd_geo/IDD.nc "$DATA"/val_stats/"$region_upper".nc area: $extent train_idd: "$DATA"/idd_geo/training.nc
+	done
+	;;
+
+plot_validation)
+	bin/plot_validation "$DATA"/idd_geo/{validation,training}.nc "$DATA"/geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.pdf
+	;;
+
+plot_roc)
+	for region in $REGIONS; do
+		region_upper=${region^^}
+		bin/plot_roc "$DATA"/val_stats/"$region_upper".nc "$PLOT"/roc_"$region_upper".pdf "$region_upper"
+	done
 	;;
 
 *)
