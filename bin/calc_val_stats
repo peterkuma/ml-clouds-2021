@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+'''
+Calculate cross-validation statistics.
+
+Usage: bin/calc_val_stats <input> <idd> <output> [options]
+
+Arguments:
+
+- input: Validation CERES/ANN dataset - the output of calc_geo_cto for validation years (NetCDF).
+- idd: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
+- output: Output file (NetCDF).
+
+Options:
+
+- area: { <lat1> <lat2> <lon1> <lon2> }: Area to validate on.
+- train_idd: <value>: Training IDD input - the output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
+
+Examples:
+
+bin/calc_val_stats data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/val_stats/NE.nc area: { 0 90 -180 0 }
+'''
+
+import os
+import numpy as np
+from glob import glob
+import sys
+import pst
+import ds_format as ds
+import aquarius_time as aq
+from matplotlib import pyplot as plt
+import matplotlib as mpl
+
+mpl.rc('font', family='Open Sans')
+mpl.rc('axes', linewidth=0.3)
+mpl.rc('axes', grid=True)
+mpl.rc('lines', linewidth=1.2)
+mpl.rc('xtick.major', width=0.3)
+mpl.rc('ytick.major', width=0.3)
+mpl.rc('legend', framealpha=1)
+mpl.rc('legend', facecolor='#eeeeee')
+mpl.rc('legend', edgecolor='none')
+mpl.rc('legend', fancybox=False)
+mpl.rc('legend', fontsize=8)
+mpl.rc('grid', color='k')
+mpl.rc('grid', alpha=0.2)
+mpl.rc('grid', lw=0.1)
+
+np.seterr(divide='ignore', invalid='ignore')
+
+THRESHOLDS = np.arange(0, 1 + 0.05, 0.05)[::-1]
+
+def calc_stats(x, y, z, geo=False, threshold=None):
+	if x.ndim == 1:
+		n, m = y.shape[2:4]
+		axis = 0 if geo else (0, 1, 2)
+		shape = (len(x), n, m) if geo else (len(x))
+		tp = np.zeros(shape)
+		fp = np.zeros(shape)
+		tn = np.zeros(shape)
+		fn = np.zeros(shape)
+		for i, x0 in enumerate(x):
+			if threshold is None:
+				x1 = x0
+				x2 = 1 - x0
+			else:
+				x1 = x0 >= threshold
+				x2 = x0 < threshold
+			tp[i] = np.nansum(x1*y[i,::], axis=axis)
+			fp[i] = np.nansum(x1*(z[i,::] - y[i,::]), axis=axis)
+			tn[i] = np.nansum(x2*(z[i,::] - y[i,::]), axis=axis)
+			fn[i] = np.nansum(x2*y[i,::], axis=axis)
+	else:
+		axis = 1 if geo else (1, 2, 3)
+		if threshold is None:
+			x1 = x
+			x2 = 1 - x
+		else:
+			x1 = x >= threshold
+			x2 = x < threshold
+		tp = np.nansum(x1*y, axis=axis)
+		fp = np.nansum(x1*(z - y), axis=axis)
+		tn = np.nansum(x2*(z - y), axis=axis)
+		fn = np.nansum(x2*y, axis=axis)
+	tpr = (tp/(tp + fn))
+	fpr = (fp/(tp + fn))
+	tnr = (tn/(tn + fp))
+	fnr = (fn/(tn + fp))
+	acc = (tp + tn)/(tp + tn + fp + fn)
+	return np.array([tpr, fpr, tnr, fnr, acc])
+
+def calc_roc(x, y, z, geo=False):
+	n = len(THRESHOLDS)
+	if geo:
+		nclasses, _, nlat, nlon = z.shape
+		shape = (n, nclasses, nlat, nlon)
+	else:
+		nclasses = z.shape[0]
+		shape = (n, nclasses)
+	a = np.full(shape, np.nan)
+	b = np.full(shape, np.nan)
+	a[0,::] = 0
+	b[0,::] = 0
+	a[-1,::] = 1
+	b[-1,::] = 1
+	for i, threshold in enumerate(THRESHOLDS[1:-1]):
+		stats = calc_stats(x, y, z, geo=geo, threshold=threshold)
+		a[i+1,::] = 1 - stats[2,::]
+		b[i+1,::] = stats[0,::]
+	auc = np.sum(0.5*(b[1:] + b[:-1])*np.diff(a, axis=0), axis=0)
+	return a, b, auc
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = args[1]
+	idd = args[2]
+	output = args[3]
+	area = opts.get('area')
+	train_idd = opts.get('train_idd')
+
+	print('<- %s' % input_)
+	d = ds.read(input_)
+	print('<- %s' % idd)
+	d_idd = ds.read(idd)
+
+	if train_idd is not None:
+		print('<- %s' % train_idd)
+		d_train_idd = ds.read(train_idd)
+	else:
+		d_train_idd = None
+
+	sel = [t in d_idd['time'] for t in d['time']]
+	ds.select(d, {'time': sel})
+
+	npred = 1
+	nclasses = ds.dim(d, 'cloud_type')
+	nthresholds = len(THRESHOLDS)
+	nlat, nlon = d['cloud_occurrence_daily'].shape[2:4]
+
+	x = d['cloud_occurrence_daily']
+	xd = d['cloud_occurrence_daily']
+	a = d_idd['stats'].astype(float)
+	b = d_idd['stats_n'].astype(float)
+	ad = d_idd['stats_daily'].astype(float)
+	bd = d_idd['stats_n_daily'].astype(float)
+	u = np.nansum(a, axis=(1,2))/np.nansum(b, axis=(1,2))
+
+	if d_train_idd is not None:
+		at = d_train_idd['stats'].astype(float)
+		bt = d_train_idd['stats_n'].astype(float)
+		adt = d_train_idd['stats_daily'].astype(float)
+		bdt = d_train_idd['stats_n_daily'].astype(float)
+		ut = np.nansum(at, axis=(1,2))/np.nansum(bt, axis=(1,2))
+		print(ut)
+	else:
+		at = None
+		bt = None
+		adt = None
+		bdt = None
+		ut = None
+
+	if area is not None:
+		for y in (xd, ad, bd, adt, bdt, x, a, b, at, bt):
+			if y is None: continue
+			mask = np.ones(y.shape, bool)
+			if mask.ndim == 4:
+				mask[:,:,(d['lat'] < area[0]),:] = False
+				mask[:,:,(d['lat'] >= area[1]),:] = False
+				mask[:,:,:,(d['lon'] < area[2])] = False
+				mask[:,:,:,(d['lon'] >= area[3])] = False
+			else:
+				mask[:,(d['lat'] < area[0]),:] = False
+				mask[:,(d['lat'] >= area[1]),:] = False
+				mask[:,:,(d['lon'] < area[2])] = False
+				mask[:,:,(d['lon'] >= area[3])] = False
+			y[~mask] = np.nan
+
+	mask2dx = np.sum(bd > 0, axis=1) >= 365*0.8
+	mask2d = np.ones(bd.shape, bool)
+	for i in range(mask2d.shape[1]):
+		mask2d[:,i,:,:] = mask2dx
+	mask2d &= bd >= 20
+	#mask2d = bd >= 10
+	zd = ad/bd
+	#zd[~mask2d] = np.nan
+
+	mask2 = b >= 10
+	z = a/b
+	#z[~mask2] = np.nan
+
+	#plt.figure(figsize=(15,5))
+	#plt.subplot(1, 3, 1)
+	#k = 0
+	#vmin = min(np.nanmin(z[k]), np.nanmin(x[k]), np.nanmin(u[k]))
+	#vmax = max(np.nanmax(z[k]), np.nanmax(x[k]), np.nanmax(u[k]))
+	#plt.imshow(z[k], origin='lower', vmin=vmin, vmax=vmax)
+	#plt.subplot(1, 3, 2)
+	#plt.imshow(x[k], origin='lower', vmin=vmin, vmax=vmax)
+	#plt.subplot(1, 3, 3)
+	#plt.imshow(np.isfinite(z[k])*u[k], origin='lower', vmin=vmin, vmax=vmax)
+	#plt.savefig('fig.pdf', bbox_inches='tight')
+
+	latg, long_ = np.meshgrid(d['lat'], d['lon'])
+	latg, long_ = latg.T, long_.T
+	w = []
+	for j in range(nclasses):
+		w0 = np.cos(latg/180*np.pi)
+		w0[np.isnan(z[j])] = np.nan
+		w0 /= np.nansum(w0)
+		w += [w0]
+
+	#print(['%.3f' % np.sqrt(np.nanmean((zd[j] - ut[j])**2)) for j in range(nclasses)])
+	#print(['%.3f' % np.sqrt(np.nanmean((zd[j] - xd[j,::])**2)) for j in range(nclasses)])
+	#print(['%.3f' % np.sqrt(np.nansum((z[j] - u[j])**2)) for j in range(nclasses)])
+	#print(['%.3f' % np.sqrt(np.nansum((z[j] - x[j,::])**2)) for j in range(nclasses)])
+	#print(['%.4f' % np.nanstd(zd[j] - ut[j]) for j in range(nclasses)])
+	#print(['%.4f' % np.nanstd(zd[j] - xd[j]) for j in range(nclasses)])
+	#print(['%.3f' % np.nanmean(np.abs(z[j] - u[j])) for j in range(nclasses)])
+	#print(['%.3f' % np.nanmean(np.abs(z[j] - x[j,::])) for j in range(nclasses)])
+	#sys.exit(0)
+
+	roc_x = np.full((npred, nthresholds, nclasses), np.nan)
+	roc_y = np.full((npred, nthresholds, nclasses), np.nan)
+	auc = np.full((npred, nclasses), np.nan)
+	sens = np.full((npred, nclasses), np.nan)
+	spec = np.full((npred, nclasses), np.nan)
+	auc_geo = np.full((npred, nclasses, nlat, nlon), np.nan)
+	sens_geo = np.full((npred, nclasses, nlat, nlon), np.nan)
+	spec_geo = np.full((npred, nclasses, nlat, nlon), np.nan)
+	acc = np.full((npred, nclasses), np.nan)
+	rmse = np.full((npred, nclasses), np.nan)
+	mean = np.full((npred, nclasses), np.nan)
+	sd = np.full((npred, nclasses), np.nan)
+	n = np.full((npred, nclasses), np.nan, int)
+	n2 = np.full((npred, nclasses), np.nan, int)
+
+	#ad[~mask2d] = np.nan
+	#bd[~mask2d] = np.nan
+
+	#pred_names = ['constant', 'ann', 'perfect']
+	#pred = [u if ut is None else ut, xd, ad/bd]
+	pred_names = ['ann']
+	pred = [xd]
+
+	for i, x0 in enumerate(pred):
+		print(pred_names[i])
+		res = calc_roc(x0, ad, bd, geo=True)
+		auc_geo[i,::] = res[2]
+		#sens_geo[i,::] = res[0]
+		res = calc_roc(x0, ad, bd)
+		roc_x[i,:,:] = res[0]
+		roc_y[i,:,:] = res[1]
+		auc[i,:] = res[2]
+		res = calc_stats(x0, ad, bd)
+		sens[i,:] = res[0]
+		spec[i,:] = res[2]
+		acc[i,:] = res[-1]
+		if x0.ndim == 1:
+			n[i,:] = np.sum(np.isfinite(ad) & np.isfinite(bd), axis=(1,2,3))
+		else:
+			n[i,:] = np.sum(np.isfinite(x0) & np.isfinite(ad) & np.isfinite(bd),
+				axis=(1,2,3))
+		if x0.ndim == 1:
+			err = np.array([x0[j] - ad[j,::]/bd[j,::] for j in range(nclasses)])
+		else:
+			err = x0 - ad/bd
+
+		#plt.subplot(3, 2, 1)
+		#k = 3
+		#plt.imshow(np.nanmean(err[k], axis=0), origin='lower', cmap='bwr', vmin=-0.8, vmax=0.8)
+		#plt.text(0.5, 0.15, '%.3f' % np.sqrt(np.nanmean(np.nanmean(err[k], axis=0)**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
+		#plt.text(0.5, 0, '%.3f' % np.sqrt(np.nanmean(err[k]**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
+		#plt.subplot(3, 2, 2)
+		#plt.imshow(np.nanmean((ad/bd)[k]) - np.nanmean((ad/bd)[k], axis=0), origin='lower', cmap='bwr', vmin=-0.8, vmax=0.8)
+		#plt.text(0.5, 0.15, '%.3f' % np.sqrt(np.nanmean((np.nanmean((ad/bd)[k]) - np.nanmean((ad/bd)[k], axis=0))**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
+		#plt.text(0.5, 0, '%.3f' % np.sqrt(np.nanmean((np.nanmean((ad/bd)[k]) - (ad/bd)[k])**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
+		#plt.subplot(3, 2, 3)
+		#plt.imshow(np.nanmean(x0[k], axis=0), origin='lower', vmin=0, vmax=1)
+		#plt.subplot(3, 2, 4)
+		#plt.imshow(np.zeros(ad.shape[2:]) + np.nanmean((ad/bd)[k]), origin='lower', vmin=0, vmax=1)
+		#plt.subplot(3, 2, 5)
+		#plt.imshow(np.nanmean((ad/bd)[k], axis=0), origin='lower', vmin=0, vmax=1)
+		#plt.savefig(output)
+		#sys.exit(0)
+
+		#err[~mask2] = np.nan
+		err2 = np.nanmean(err, axis=1)
+		mean[i,:] = np.nanmean(err, axis=(1,2,3))
+		sd[i,:] = np.nanstd(err, axis=(1,2,3))
+		rmse[i,:] = np.sqrt(np.nanmean(err**2, axis=(1,2,3)))
+		n2[i,:] = np.sum(np.isfinite(err), axis=(1,2,3))
+
+	print('-> %s' % output)
+	ds.write(output, {
+		'pred': pred_names,
+		'threshold': THRESHOLDS,
+		'sens': sens,
+		'spec': spec,
+		'acc': acc,
+		'roc_x': roc_x,
+		'roc_y': roc_y,
+		'auc': auc,
+		'auc_geo': auc_geo,
+		'sens_geo': sens_geo,
+		'spec_geo': spec_geo,
+		'n': n,
+		'mean': mean,
+		'sd': sd,
+		'rmse': rmse,
+		'n2': n2,
+		'lat': d['lat'],
+		'lon': d['lon'],
+		#'lat_bnds': d['lat_bnds'],
+		#'lon_bnds': d['lon_bnds'],
+		'.': {
+			'.': ({'area': area} if area is not None else {}),
+			'threshold': {'.dims': ['threshold']},
+			'pred': {'.dims': ['pred']},
+			'roc_x': {'.dims': ['pred', 'threshold', 'cloud_type']},
+			'roc_y': {'.dims': ['pred', 'threshold', 'cloud_type']},
+			'lat': {'.dims': ['lat']},
+			'lon': {'.dims': ['lon']},
+			'area': {'.dims': ['area']},
+		} | {
+			k: {'.dims': ['pred', 'cloud_type']}
+			for k in ('sens', 'spec', 'acc', 'auc', 'mean', 'sd', 'rmse', 'n', 'n2')
+		} | {
+			k+'_geo': {'.dims': ['pred', 'cloud_type', 'lat', 'lon']}
+			for k in ('sens', 'spec', 'auc')
+		}
+	})
