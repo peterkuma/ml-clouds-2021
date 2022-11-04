@@ -7,7 +7,7 @@ Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex Schuddeboom<sup>2</
 <sup>3</sup>Norwegian Meteorological Institute, Oslo, Norway
 
 This repository contains code for the paper "Machine learning of cloud types in
-satellite observations and climate models"
+satellite observations and climate models".
 
 If you have any questions about the code you can contact the authors or submit
 an Issue on GitHub.
@@ -67,19 +67,19 @@ and the paper figures they produce.
 
 ```
 prepare_samples
-  plot_idd_stations [Figure 2a]
+  plot_idd_stations [Figure 1a]
   tf
-    plot_sample [Figure 2b, c]
+    plot_sample [Figure 1b, c]
     plot_training_history [Figure S1]
     merge_samples
       calc_dtau_pct
-        plot_dtau_pct [Figure 5]
+        plot_dtau_pct [Figure 8]
       calc_geo_cto
-        plot_geo_cto [Figure 3, 4, S2, S3]
-        plot_cto_rmse_ecs [Figure 9b, c, d, S4, S5, S6]
-        plot_cto [Figure 6, 7, 8]
+        plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
+        plot_cto_rmse_ecs [Figure 12, S9–11]
+        plot_cto [Figure 8, S4–6]
         calc_cto_ecs
-          plot_cto_ecs [Figure 9a]
+          plot_cto_ecs [Figure 11]
 ```
 
 ## Input datasets
@@ -327,8 +327,7 @@ should be run from the main repository directory with `bin/<command>
 ```
 Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <landmask> <landsea>
-       <start> <end> <output> [options]
+Usage: prepare_samples <type> <input> <synop> <buoy> <start> <end> <output> [options]
 
 Arguments:
 
@@ -337,8 +336,6 @@ Arguments:
 - input: Input directory with input files (NetCDF).
 - synop: Input directory with IDD synoptic fies or "none" (NetCDF).
 - buoy: Input directory with IDD buoy files or "none" (NetCDF).
-- landmask: Land-sea mask file or "none" (NetCDF).
-- landsea: Land or sea only. One of: "both", "land", "sea".
 - start: Start time (ISO).
 - end: End time (ISO).
 - output: Output directory.
@@ -346,19 +343,13 @@ Arguments:
 Options:
 
 - seed: <value>: Random seed.
-- keep_stations: <value>: Keep station records in samples ("true" or "false").
-  Default: "false".
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- night: <value>: Include infrared channel only. One of: true or false.
-  Default: false.
-- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
-  region bounded by given latitude and longitude. Default: none.
+- keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
+- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with IDD stations in a region bounded by given latitude and longitude. Default: none.
 
 Examples:
 
-prepare_samples ceres input/ceres input/idd/synop input/idd/buoy input/landmask/ne_110m_land.nc both 2009-01-01 2009-12-31 data/samples/ceres_training/2009
-prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none none both 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
+prepare_samples ceres input/ceres input/idd/synop input/idd/buoy 2009-01-01 2009-12-31 data/samples/ceres/2009
+prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
 ```
 
 
@@ -384,10 +375,12 @@ Options (train):
 
 - night: <value>: Train for nighttime only. One of: true or false.
   Default: false.
+- exclude_night: <value>. Exclude nighttime samples. One of: true or false.
+  Default: true.
 - classes: <value>: Classification. One of: 0 (4 cloud types),
   1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- inmemory: <value>: Enable in-memory training. One of: true or false.
-  Default: true.
+- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
+  region bounded by given latitude and longitude. Default: none.
 
 Arguments (apply):
 
@@ -561,6 +554,10 @@ Arguments:
 - tas: Input file with tas - the output of gistemp_to_nc (NetCDF).
 - output: Output file (NetCDF).
 
+Options:
+
+- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+
 Examples:
 
 bin/calc_geo_cto data/samples_tf/ceres input/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
@@ -574,30 +571,28 @@ bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR input/tas/historical/
 ```
 Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <deg> <relative> <input> <ecs> <output> [options]
+Usage: plot_geo_cto <input> <ecs> <output> [options]
 
 Depends on: calc_geo_cto
 
 Arguments:
 
-- deg: Degree. One of: 0 (absolute value) or 1 (trend).
-- relative: Plot relative to CERES. One of: true or false.
 - input: Input directory - the output of calc_geo_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+- degree: Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+- relative: Plot relative to CERES. One of: true or false. Default: true.
 - normalized: <value>: Plot normaized CERES. One of: true, false, only.
   Default: false.
-- with_ceres: <value>: Plot CERES. One of: true, false. Default: true.
+- with_ref: <value>: Plot reference row. One of: true, false. Default: true.
 
 Examples:
 
-bin/plot_geo_cto 0 true data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.pdf
-bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.pdf
+bin/plot_geo_cto data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.pdf
+bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.pdf
 ```
 
 
@@ -608,13 +603,12 @@ bin/plot_geo_cto 0 true data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/ge
 Plot scatter plot of RMSE of the geographical distribution of cloud type
 occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
-Usage: plot_cto_rmse_ecs <var> <input> <ecs> <output> [legend: <legend>]
+Usage: plot_cto_rmse_ecs <input> <ecs> <output> [legend: <legend>]
 
 Depends on: calc_geo_cto | calc_cto
 
 Arguments:
 
-- var: One of: "ecs" (ECS), "tcr" (TCR), "cld" (CLD).
 - input: Input directory - the output of calc_geo_cto or calc_cto (NetCDF).
 - ecs: ECS file (CSV).
 - output: Output plot (PDF).
@@ -625,10 +619,7 @@ Options:
 
 Examples:
 
-bin/plot_cto_rmse_ecs ecs data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
-bin/plot_cto_rmse_ecs tcr data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_tcr.pdf
-bin/plot_cto_rmse_ecs cld data/geo_cto/historical/all data/ecs/ecs.csv plot/geo_cto_rmse_cld.pdf
-bin/plot_cto_rmse_ecs ecs data/cto/historical/all data/ecs/ecs.csv plot/cto_rmse_ecs_historical.pdf
+bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
 ```
 
 
