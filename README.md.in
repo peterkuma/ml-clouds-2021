@@ -293,9 +293,18 @@ samples_tf
 
 ## How to run
 
-The `input` directory should be populated with the required input files.
-The CMIP input files should be indexed with `create_by_model` after they
-are downloaded. Space requirements for the data directory are about 1 TB.
+The `input` directory should be populated with the required input files before
+running the scripts. The CMIP input files should be indexed with
+`create_by_model` after they are downloaded. Space requirements for the data
+directory are about 1 TB, and up to 60 GB of RAM.
+
+The `run` bash script runs the Python scripts for various tasks. The tasks can
+be run in a sequence as below. Before running the `run` script, configuration
+should be imported from one of `config_4`, `config_10` or `config_27` for
+4, 10 and 27 cloud types, respectively. The output directories for data
+files (NetCDF) and plots (PDF and PNG) are `data_x` and `plot_x`, where x is 4,
+10, or 27, respectively. Some tasks might take a significant amount of time to
+complete (hours to days, depending on the CPU).
 
 ```sh
 # Optional configuration:
