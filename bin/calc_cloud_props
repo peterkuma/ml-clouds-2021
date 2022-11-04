@@ -1,0 +1,272 @@
+#!/usr/bin/env python3
+'''Calculate statistics of cloud properties by cloud type.
+
+Usage: calc_cloud_props <type> <cto> <input> <output> [options]
+
+Depends on: merge_samples
+
+Arguments:
+
+- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm" (NorESM), "merra2" (MERRA-2).
+- cto: Cloud type occurrence - the output of calc_geo_cto (NetCDF).
+- input: CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
+- output: Output file (NetCDF).
+
+Options:
+
+- classes: <value>: Classification. One of: 0 (4 cloud types),
+  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+
+Examples:
+
+bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6/historical/day/by-model/UKESM1-0-LL/ data/cloud_props/UKESM1-0-LL.nc
+'''
+
+import sys
+import os
+import numpy as np
+import ds_format as ds
+import aquarius_time as aq
+import pst
+from glob import glob
+import aquarius_time as aq
+import pst
+from warnings import warn
+
+MERRA2_VAR = {
+	'clt': 'CLDTOT',
+	'cod': 'TAUTOT',
+	'pct': 'CLDPRS',
+	#'clt': 'ISCCPCLDFRC',
+	#'clt': 'MDSCLDFRCTTL',
+	#'cod': 'MDSOPTHCKTTL',
+	#'pct': 'MDSCLDTOPPS',
+}
+
+CMIP_VAR = {
+	'clt': 'clt',
+	'cod': 'cod',
+	'pct': 'pctisccp',
+	#'clt': 'cltisccp',
+}
+
+CERES_VAR = {
+	'clt': 'Adjusted_Input_Meteorological_Variables_adj_cld_amount',
+	'cod': 'Adjusted_Input_Meteorological_Variables_adj_cld_od',
+	'pct': 'Observed_Cloud_Layer_Properties_obs_cld_top_press',
+	#'clt': 'Observed_Cloud_Layer_Properties_obs_cld_amount',
+	#'cod': 'Observed_Cloud_Layer_Properties_obs_cld_od',
+	#'pct': 'Observed_Cloud_Layer_Properties_obs_cld_top_press',
+}
+
+def read_ceres_index(dirname, var):
+	return dirname
+
+def read_ceres(dirname, var, time):
+	date = aq.to_date(time)
+	date_s = '%04d%02d%02d' % (date[1], date[2], date[3])
+	cwd = os.getcwd()
+	os.chdir(dirname)
+	file_ = glob('*'+date_s+'*')[0]
+	os.chdir(cwd)
+	filename = os.path.join(dirname, file_)
+	ceres_var = CERES_VAR[var]
+	print('<- %s' % filename)
+	d = ds.read(filename, [
+		'latitude',
+		'longitude',
+		ceres_var,
+	])
+	do = {
+		'lat': d['latitude'][::-1],
+		'lon': d['longitude'],
+	}
+	do[var] = d[ceres_var][-1,::-1,:]
+	return do
+
+def read_cmip_index(dirname, var):
+	cmip_var = CMIP_VAR[var]
+	dirname2 = os.path.join(dirname, cmip_var)
+	print('<- %s' % dirname2)
+	index = ds.readdir(dirname2, 'time', merge='time', jd=True)
+	return index
+
+def read_cmip(index, var, t):
+	cmip_var = CMIP_VAR[var]
+	k = np.argwhere(index['time'] == t)[0][0]
+	i = index['i'][k]
+	filename = index['filename'][index['n'][k]]
+	#print('<- %s' % filename)
+	d = ds.read(filename, [cmip_var, 'lat', 'lon'], sel={'time': i}, jd=True)
+	do = {}
+	do[var] = d[cmip_var]
+	do['time'] = t
+	do['lat'] = d['lat']
+	do['lon'] = np.where(d['lon'] < 180., d['lon'], d['lon'] - 360.)
+	order = np.argsort(do['lon'])
+	do[var] = do[var][:,order]
+	do['lon'] = do['lon'][order]
+	return do
+
+def read_merra2_index(dirname, var):
+	merra2_var = MERRA2_VAR[var]
+	dirname2 = os.path.join(dirname, merra2_var)
+	print('<- %s' % dirname2)
+	index = ds.readdir(dirname2, 'time', merge='time', jd=True)
+	index['time'] -= 0.5
+	return index
+
+def read_merra2(index, var, t):
+	merra2_var = MERRA2_VAR[var]
+	k = np.argwhere(index['time'] == t)[0][0]
+	i = index['i'][k]
+	filename = index['filename'][index['n'][k]]
+	print('<- %s' % filename)
+	d = ds.read(filename, [merra2_var, MERRA2_VAR['clt'], 'lat', 'lon'], sel={'time': i}, jd=True)
+	ds.rename(d, merra2_var, var)
+	ds.rename(d, MERRA2_VAR['clt'], 'clt')
+	if var == 'cod':
+		d['cod'] *= d['clt']
+	elif var == 'clt':
+		d['clt'] *= 100
+	return d
+
+def read_era5_index(dirname, var):
+	if var not in ['clt']:
+		raise IOError('ERA5 does not provide the variable "%s"' % var)
+	print('<- %s' % dirname)
+	index = ds.readdir(dirname, 'time', merge='time', jd=True)
+	index['time'] = np.floor(index['time'] - 0.5) + 0.5
+	return index
+
+def read_era5(index, var, t):
+	if var not in ['clt']:
+		raise IOError('ERA5 does not provide the variable "%s"' % var)
+	era5_var = {
+		'clt': 'tcc',
+	}[var]
+	k = np.argwhere(index['time'] == t)[0][0]
+	i = index['i'][k]
+	filename = index['filename'][index['n'][k]]
+	print('<- %s' % filename)
+	d = ds.read(filename, [era5_var, 'latitude', 'longitude'],
+		sel={'time': i}, jd=True)
+	do = {}
+	do[var] = d[era5_var]
+	do['time'] = t
+	do['lat'] = d['latitude']
+	do['lon'] = d['longitude']
+	do['lon'] = np.where(do['lon'] < 180., do['lon'], do['lon'] - 360.)
+	order = np.argsort(do['lon'])
+	do[var] = do[var][:,order]
+	do['lon'] = do['lon'][order]
+	if var == 'clt':
+		do['clt'] *= 100
+	return do
+
+def read_noresm_index(dirname, var):
+	if var not in ['clt']:
+		raise IOError('NorESM does not provide the variable "%s"' % var)
+	noresm_var = {
+		'clt': 'CLDTOT',
+	}[var]
+	dirname2 = os.path.join(dirname, noresm_var)
+	print('<- %s' % dirname2)
+	index = ds.readdir(dirname2, 'time', merge='time', jd=True)
+	return index
+
+def read_noresm(index, var, t):
+	if var not in ['clt']:
+		raise IOError('NorESM does not provide the variable "%s"' % var)
+	noresm_var = {
+		'clt': 'CLDTOT',
+	}[var]
+	k = np.argwhere(index['time'] == t)[0][0]
+	i = index['i'][k]
+	filename = index['filename'][index['n'][k]]
+	print('<- %s' % filename)
+	d = ds.read(filename, [noresm_var, 'lat', 'lon'], sel={'time': i}, jd=True)
+	do = {}
+	do[var] = d[noresm_var]
+	do['time'] = t
+	do['lat'] = d['lat']
+	do['lon'] = np.where(d['lon'] < 180., d['lon'], d['lon'] - 360.)
+	order = np.argsort(do['lon'])
+	do[var] = do[var][:,order]
+	do['lon'] = do['lon'][order]
+	if var == 'clt':
+		do['clt'] *= 100
+	return do
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 5:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	type_ = args[1]
+	cto = args[2]
+	input_ = args[3]
+	output = args[4]
+	classes = opts.get('classes', 0)
+
+	nclasses = {0: 4, 1: 10, 2: 27}[classes]
+
+	d_cto = ds.read(cto)
+
+	read = {
+		'ceres': read_ceres,
+		'cmip': read_cmip,
+		'era5': read_era5,
+		'noresm': read_noresm,
+		'merra2': read_merra2,
+	}[type_]
+
+	read_index = {
+		'ceres': read_ceres_index,
+		'cmip': read_cmip_index,
+		'era5': read_era5_index,
+		'noresm': read_noresm_index,
+		'merra2': read_merra2_index,
+	}[type_]
+
+	time = d_cto['time']
+	cto = d_cto['cloud_occurrence_daily']
+	lat_bnds = d_cto['lat_bnds']
+	lon_bnds = d_cto['lon_bnds']
+
+	do = {'.': {}}
+
+	for var in ['clt', 'cod', 'pct']:
+		stats = np.zeros(nclasses)
+		stats_n = np.zeros(nclasses)
+		try: index = read_index(input_, var)
+		except IOError as e:
+			warn(str(e))
+			continue
+		fault = False
+		for k, t in enumerate(time):
+			try: d = read(index, var, t)
+			except Exception as e:
+				warn(str(e))
+				warn('skipping variable "%s"' % var)
+				fault = True
+				break
+			x = d[var]
+			ii = np.searchsorted(lat_bnds, d['lat']) - 1
+			jj = np.searchsorted(lon_bnds, d['lon']) - 1
+			iim, jjm = np.meshgrid(ii, jj)
+			w = np.cos(d['lat']/180*np.pi)
+			wm, _ = np.meshgrid(w, d['lon'])
+			for l in range(nclasses):
+				u = cto[l,k,iim.T,jjm.T]*wm.T
+				stats[l] += np.nansum(u*x)/np.nansum(u)
+				stats_n[l] += 1
+		if fault: continue
+		stats /= stats_n
+		do[var] = stats
+		do['.'][var] = {
+			'.dims': ['cloud_type'],
+		}
+
+	print('-> %s' % output)
+	ds.write(output, do)
