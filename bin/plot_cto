@@ -101,6 +101,8 @@ HATCH = [
 	'...',
 ]
 
+CHAR = ['%s%s' % (l, i) for l in ['H', 'M', 'L'] for i in range(1, 10)]
+
 def read_ecs(filename):
 	d = pd.read_csv(filename)
 	return {
@@ -276,24 +278,65 @@ if __name__ == '__main__':
 		else:
 			plt.ylim([-0.3, 0.3])
 	ylim = plt.gca().get_ylim()
-	plt.xlim(-0.4, np.sum(mask) - 0.6)
+	plt.xlim(-0.44, np.sum(mask) - 0.56)
+
+	H = []
 
 	for i, cloud_type in enumerate(cloud_types):
 		h = d[key][mask,i]
 		x = np.arange(len(h), dtype=np.float64)
-		width = 0.2*4/len(cloud_types)
+		width = 0.22*4/len(cloud_types)
 		x[:] += i*width - width*len(cloud_types)/2 + width/2
 		if absrel == 'relative':
 			h -= d[key][i_ceres,i]
+		h *= 100
 		hatch = HATCH[i] if len(cloud_types) <= len(HATCH) else None
 		color = COLORS[i] if len(cloud_types) <= len(COLORS) else None
-		plt.bar(x, h*100.,
+		plt.bar(x, h,
 			width=width,
 			hatch=hatch,
 			alpha=0.999,
 			label=cloud_type,
 			color=color,
 		)
+		H += [h]
+		for j in range(len(x)):
+			s = np.sign(h[j])
+			level = s*(np.abs(h[j]) + 0.2)
+			rerun = True
+			D = 0.4
+			while rerun:
+				rerun = False
+				for k in range(2, 6):
+					if len(H) >= k:
+						dist = level - H[-k][j]
+						offset = 0
+						if np.abs(dist) < D:
+							if s == 1:
+								if dist > 0:
+									offset = D - dist
+								else:
+									offset = -dist + D
+							else:
+								if dist > 0:
+									offset = -dist - D
+								else:
+									offset = -(D + dist)
+						if np.abs(offset) > 1e-10:
+							rerun = True
+						level += offset
+			plt.text(x[j], level, CHAR[i],
+				fontsize=6,
+				ha='center',
+				va='center',
+				fontfamily='monospace',
+			)
+			plt.plot([x[j], x[j]], [h[j], level],
+				color='k',
+				lw=0.3,
+				linestyle='dotted',
+			)
+			H[-1][j] = level
 		if (key+'_samples') in d:
 			h_samples = d[key+'_samples'][mask,i,:]
 			if absrel == 'relative':
