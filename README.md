@@ -1,6 +1,10 @@
 # Code for the paper "Machine learning of cloud types in satellite observations and climate models"
 
-Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex Schuddeboom<sup>2</sup>, Adrian J. McDonald<sup>2</sup>, Øyvind Seland<sup>3</sup>
+Peter Kuma<sup>1</sup>,
+Frida A.-M. Bender<sup>1</sup>,
+Alex Schuddeboom<sup>2</sup>,
+Adrian J. McDonald<sup>2</sup>,
+Øyvind Seland<sup>3</sup>
 
 <sup>1</sup>Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden\
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
@@ -18,24 +22,24 @@ The code can be run on a Linux distribution with the following software
 (exact versions are listed for reproducibility, but newer version may work
 equally well):
 
-- Python 3.7.3
+- Python 3.9.2
 - Cython 0.29.2
-- aria2 1.34.0
+- aria2 1.35.0
 - GNU parallel 20161222
 - cdo 1.9.10
 
 and Python packages:
 
-- tensorflow 1.14.0
-- scipy 1.7.0
-- numpy 1.21.1
-- matplotlib 3.5.1
-- pymc3 3.11.2
-- pst-format 1.1.1
+- tensorflow 2.8.0
+- scipy 1.7.3
+- numpy 1.22.3
+- matplotlib 3.5.3
+- pymc3 3.11.5
+- pst-format 1.2.0
 - aquarius-time 0.1.1
-- ds-format 1.2.0
-- pyproj 2.6.1
-- pandas 1.3.0
+- ds-format 3.3.0
+- pyproj 3.0.0
+- pandas 1.1.5
 
 Space requirements for processing all of the CMIP6 and CMIP6 models, ERA5 and
 MERRA-2 reanalyses are about 6 TB.
@@ -67,19 +71,28 @@ and the paper figures they produce.
 
 ```
 prepare_samples
-  plot_idd_stations [Figure 1a]
-  tf
-    plot_sample [Figure 1b, c]
-    plot_training_history [Figure S1]
-    merge_samples
-      calc_dtau_pct
-        plot_dtau_pct [Figure 8]
-      calc_geo_cto
-        plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
-        plot_cto_rmse_ecs [Figure 12, S9–11]
-        plot_cto [Figure 8, S4–6]
-        calc_cto_ecs
-          plot_cto_ecs [Figure 11]
+↳ plot_idd_stations [Figure 1a]
+↳ tf
+  ↳ plot_sample [Figure 1b, c]
+  ↳ plot_training_history [Figure S1]
+  ↳ merge_samples
+    ↳ calc_dtau_pct
+      ↳ plot_dtau_pct [Figure 8]
+    ↳ calc_geo_cto
+      ↳ plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
+      ↳ plot_cto_rmse_ecs [Figure 12, S9–11]
+      ↳ plot_cto [Figure 9, S4–6]
+      ↳ calc_cto_ecs
+        ↳ plot_cto_ecs [Figure 11]
+      ↳ calc_cloud_props
+        ↳ plot_cloud_props [Figure 10]
+      ↳ plot_station_corr [Figure S3]
+	  ↳ merge_xval_geo_cto
+        ↳ plot_validation [Figure 4]
+        ↳ calc_val_stats
+          ↳ plot_roc [Figure 5]
+calc_idd_geo
+↳ plot_idd_n_obs [Figure S2]
 ```
 
 ## Input datasets
@@ -287,11 +300,9 @@ are downloaded. Space requirements for the data directory are about 1 TB.
 ```sh
 # Optional configuration:
 export JOBS=24 # Number of concurrent jobs
-export INPUT=input # Input directory
-export DATA=data_4 # Data directory (4 cloud types)
-export PLOT=plot_4 # Plot directory (4 cloud types)
-export CLASSES=0 # 0, 1 or 2 for 4, 10 or 27 cloud types
-
+. config_4 # Configuration for 4 cloud types
+# . config_10 for 10 cloud types.
+# . config_27 for 27 cloud types.
 ./run prepare_ceres_training
 ./run train_ann
 ./run plot_idd_stations

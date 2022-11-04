@@ -71,19 +71,28 @@ and the paper figures they produce.
 
 ```
 prepare_samples
-  plot_idd_stations [Figure 1a]
-  tf
-    plot_sample [Figure 1b, c]
-    plot_training_history [Figure S1]
-    merge_samples
-      calc_dtau_pct
-        plot_dtau_pct [Figure 8]
-      calc_geo_cto
-        plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
-        plot_cto_rmse_ecs [Figure 12, S9–11]
-        plot_cto [Figure 8, S4–6]
-        calc_cto_ecs
-          plot_cto_ecs [Figure 11]
+↳ plot_idd_stations [Figure 1a]
+↳ tf
+  ↳ plot_sample [Figure 1b, c]
+  ↳ plot_training_history [Figure S1]
+  ↳ merge_samples
+    ↳ calc_dtau_pct
+      ↳ plot_dtau_pct [Figure 8]
+    ↳ calc_geo_cto
+      ↳ plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
+      ↳ plot_cto_rmse_ecs [Figure 12, S9–11]
+      ↳ plot_cto [Figure 9, S4–6]
+      ↳ calc_cto_ecs
+        ↳ plot_cto_ecs [Figure 11]
+      ↳ calc_cloud_props
+        ↳ plot_cloud_props [Figure 10]
+      ↳ plot_station_corr [Figure S3]
+	  ↳ merge_xval_geo_cto
+        ↳ plot_validation [Figure 4]
+        ↳ calc_val_stats
+          ↳ plot_roc [Figure 5]
+calc_idd_geo
+↳ plot_idd_n_obs [Figure S2]
 ```
 
 ## Input datasets
