@@ -1,0 +1,166 @@
+#!/usr/bin/env python3
+'''
+Usage: plot_cloud_prop <var> <input> <ecs> <output> [options]
+
+Arguments:
+
+- var: Variable. One of: "clt", "cod", "pct".
+- input: Input directory - the output of calc_cloud_props (NetCDF).
+- ecs: ECS file (CSV).
+- output: Output plot (PDF).
+
+Options:
+
+- legend: <value>: Plot legend (true or false). Default: true.
+
+Examples:
+
+bin/plot_cloud_props clt data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_clt.pdf
+bin/plot_cloud_props cod data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_cod.pdf
+bin/plot_cloud_props pct data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_pct.pdf
+'''
+
+import pst
+import sys
+import os
+import numpy as np
+import ds_format as ds
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import pandas as pd
+
+mpl.rc('font', family='Open Sans')
+mpl.rc('axes', linewidth=0.3)
+mpl.rc('axes', grid=True)
+mpl.rc('lines', linewidth=1.2)
+mpl.rc('xtick.major', width=0.3)
+mpl.rc('ytick.major', width=0.3)
+mpl.rc('legend', framealpha=1)
+mpl.rc('legend', facecolor='#eeeeee')
+mpl.rc('legend', edgecolor='none')
+mpl.rc('legend', fancybox=False)
+mpl.rc('legend', fontsize=8)
+mpl.rc('grid', color='k')
+mpl.rc('grid', alpha=0.2)
+mpl.rc('grid', lw=0.1)
+
+COLORS = ['#0084C8', '#DC0000', '#009100', '#FFC022']
+CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
+HATCH = [
+	'///',
+	'---',
+	'\\\\\\',
+	'...',
+]
+YLABEL = {
+	'clt': 'Cloud fraction anomaly (%)',
+	'cod': 'Cloud optical depth anomaly',
+	'pct': 'Cloud top pressure anomaly (hPa)',
+}
+
+BLACKLIST = [['cod', 'MPI-ESM-1-2-HAM']]
+
+def read_ecs(filename):
+	d = pd.read_csv(filename)
+	return {
+		'model': np.array(d['Model']),
+		'ecs': np.array(d['ECS']),
+		'tcr': np.array(d['TCR']),
+		'cld': np.array(d['CLD']),
+		'ext_ecs': np.array(d['Extended_ECS']),
+		'ext_tcr': np.array(d['Extended_TCR']),
+		'ext_cld': np.array(d['Extended_CLD']),
+		'.': {
+			'model': {'.dims': ['model']},
+			'ecs': {'.dims': ['model']},
+			'tcr': {'.dims': ['model']},
+			'cld': {'.dims': ['model']},
+			'ext_ecs': {'.dims': ['model']},
+			'ext_tcr': {'.dims': ['model']},
+			'ext_cld': {'.dims': ['model']},
+		}
+	}
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 5:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	var = args[1]
+	input_ = args[2]
+	ecs = args[3]
+	output = args[4]
+	legend = opts.get('legend', True)
+
+	dd = ds.readdir(input_)
+	d_ecs = read_ecs(ecs)
+
+	nclasses = 4
+
+	model = np.array([os.path.basename(d['filename'])[:-3]
+		for d in dd if var in d])
+	xecs = np.array([
+		d_ecs['ecs'][d_ecs['model']== m][0]
+		if m in d_ecs['model'] else np.nan
+		for m in model
+	])
+	order = np.argsort(xecs)
+	model = model[order]
+	xecs = xecs[order]
+	i_ceres = np.argwhere(model == 'CERES')[0][0]
+	model2 = np.delete(model, i_ceres)
+
+	for var1, mod in [['cod', 'MPI-ESM-1-2-HAM']]:
+		if var1 == var:
+			try: i_mod = np.argwhere(model == mod)[0][0]
+			except IndexError: continue
+			model2 = np.delete(model2, i_mod)
+
+	n = len(model2)
+
+	pad = [0.5, 0.1, 1.25, 0.1] # left, right, bottom, top
+	w = 0.5*n + pad[0] + pad[1]
+	h = 3 + pad[2] + pad[3]
+
+	mpl.rcParams['figure.subplot.left'] = pad[0]/w
+	mpl.rcParams['figure.subplot.right'] = 1 - pad[1]/w
+	mpl.rcParams['figure.subplot.bottom'] = pad[2]/h
+	mpl.rcParams['figure.subplot.top'] = 1 - pad[3]/h
+
+	plt.figure(figsize=[w, h])
+
+	xmin = np.inf
+	xmax = -np.inf
+	wi = (1/(nclasses + 1))
+	for i, cloud_type in enumerate(CLOUD_TYPES):
+		y = np.array([d[var][i] for d in dd if var in d])
+		y = y[order]
+		if var == 'pct':
+			y[i_ceres] *= 100
+		y_ceres = y[i_ceres]
+		y -= y_ceres
+		y2 = np.delete(y, i_ceres)
+		for var1, mod in BLACKLIST:
+			if var1 == var:
+				try: i_mod = np.argwhere(model == mod)[0][0]
+				except IndexError: continue
+				y2 = np.delete(y2, i_mod)
+		x = np.arange(len(y2))
+		if var == 'pct':
+			y2 /= 100
+		xi = x + i/(nclasses + 1) - 0.5 + wi
+		xmin = min(xmin, np.min(xi))
+		xmax = max(xmax, np.max(xi))
+		plt.bar(xi, y2,
+			width=wi,
+			color=COLORS[i],
+			hatch=HATCH[i],
+			alpha=0.999,
+			label=cloud_type,
+		)
+	plt.gca().set_xticks(x, model2, fontsize=9, rotation=90)
+	plt.xlim(xmin - wi/2, xmax + wi/2)
+	plt.ylabel(YLABEL[var])
+	if legend:
+		plt.legend()
+	plt.savefig(output, bbox_inches='tight')
