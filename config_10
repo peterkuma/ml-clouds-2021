@@ -1,0 +1,4 @@
+export INPUT=input
+export DATA=data_10
+export PLOT=plot_10
+export CLASSES=1
