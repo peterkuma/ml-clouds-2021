@@ -168,7 +168,7 @@ ceres: CERES SYN1deg daily mean files (NetCDF).
 cmip5: CMIP5 data files (NetCDF).
 ↳ abrupt-4xCO2: abrupt-4xCO2 experiment files.
   ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
-	↳ 2.5deg: The same as above, but resampled to 2.5°.
+    ↳ 2.5deg: The same as above, but resampled to 2.5°.
       ↳ by-model: Directory created by create_by_model.
     ↳ mon: Monthly mean files for tas.
 cmip6: CMIP6 data files (NetCDF).
