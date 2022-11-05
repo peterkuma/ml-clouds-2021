@@ -230,7 +230,7 @@ calc_geo_cto_xval)
 		fi
 	done
 	bin/merge_xval_geo_cto "$DATA"/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc { 15 45 -60 -30 } { 30 60 90 120 } { -45 -15 150 180 } { -30 0 -75 -45 } "$DATA"/xval/geo_cto/regions.nc
-	ln -sf ../../../geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/all/0_xval_all.nc
+	ln -sf ../../../geo_cto/historical/validation/CERES.nc "$DATA"/xval/geo_cto/all/0_xval_all.nc
 	i=1
 	for region in nw ne se sw; do
 		region_upper=${region^^}
@@ -314,16 +314,16 @@ plot_cto_ecs)
 	bin/plot_cto_ecs ecs "$DATA"/cto_ecs/cto_ecs.nc "$PLOT"/cto_ecs.pdf
 	;;
 
-plot_tf_scheme)
-	bin/plot_tf_scheme "$PLOT"/tf_scheme.pdf
-	;;
-
 calc_idd_geo)
 	mkdir -p "$DATA"/idd_geo/{,validation,training}
 	parallel bin/calc_idd_geo "$INPUT"/idd/{synop,buoy} {}-01-01 {}-12-31 "$DATA"/idd_geo/validation/{}.nc classes: "$CLASSES" ::: $VAL_YEARS
 	parallel bin/calc_idd_geo "$INPUT"/idd/{synop,buoy} {}-01-01 {}-12-31 "$DATA"/idd_geo/training/{}.nc classes: "$CLASSES" ::: $TRAIN_YEARS
 	ds merge time "$DATA"/idd_geo/validation/*.nc "$DATA"/idd_geo/validation.nc
 	ds merge time "$DATA"/idd_geo/training/*.nc "$DATA"/idd_geo/training.nc
+	;;
+
+plot_validation)
+	bin/plot_validation "$DATA"/idd_geo/{validation,training}.nc "$DATA"/geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.pdf
 	;;
 
 calc_val_stats)
@@ -335,12 +335,8 @@ calc_val_stats)
 	done
 	;;
 
-plot_validation)
-	bin/plot_validation "$DATA"/idd_geo/{validation,training}.nc "$DATA"/geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.pdf
-	;;
-
 plot_roc)
-	bin/plot_roc "$DATA"/val_stats/all.nc "$PLOT"/roc_all.pdf regions
+	bin/plot_roc "$DATA"/val_stats/all.nc "$PLOT"/roc_all.pdf all
 	bin/plot_roc "$DATA"/val_stats/regions.nc "$PLOT"/roc_regions.pdf regions
 	;;
 
