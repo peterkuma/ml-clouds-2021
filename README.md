@@ -64,37 +64,6 @@ To install the Python packages:
 pip3 install -r requirements.txt
 ```
 
-## Overview
-
-Below is an overview of the available commands showing their dependencies
-and the paper figures they produce.
-
-```
-prepare_samples
-↳ plot_idd_stations [Figure 1a]
-↳ tf
-  ↳ plot_sample [Figure 1b, c]
-  ↳ plot_training_history [Figure S1]
-  ↳ merge_samples
-    ↳ calc_dtau_pct
-      ↳ plot_dtau_pct [Figure 8]
-    ↳ calc_geo_cto
-      ↳ plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
-      ↳ plot_cto_rmse_ecs [Figure 12, S9–11]
-      ↳ plot_cto [Figure 9, S4–6]
-      ↳ calc_cto_ecs
-        ↳ plot_cto_ecs [Figure 11]
-      ↳ calc_cloud_props
-        ↳ plot_cloud_props [Figure 10]
-      ↳ plot_station_corr [Figure S3]
-      ↳ calc_idd_geo
-        ↳ plot_idd_n_obs [Figure S2]
-        ↳ merge_xval_geo_cto
-          ↳ plot_validation [Figure 4]
-          ↳ calc_val_stats
-            ↳ plot_roc [Figure 5]
-```
-
 ## Input datasets
 
 ### Historical Unidata Internet Data Distribution (IDD) Global Observational Data
@@ -182,7 +151,9 @@ Global mean near-surface temperature datasets should be stored in `input/tas`.
 They are present in this repository and need to be extracted from the
 archive `input/tas.tar.xz`.
 
-## Input directory
+## Directories
+
+### Input directory
 
 The input directory should contain the necessary input files. Apart from the
 datasets already contained in this repository, the files need to be downloaded
@@ -245,7 +216,7 @@ tas: Near-surface air temperature (to be extracted from tas.tar.xz).
     <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
 ```
 
-## Data directory
+### Data directory
 
 Output from the processing commands is written in the data directory
 (`data_4`, `data_10` and `data_27` for 4, 10 and 27 cloud types).
@@ -333,15 +304,48 @@ export JOBS=24 # Number of concurrent jobs
 ./run plot_cto_abrupt-4xCO2
 ```
 
-## Main commands
+## Commands
 
-Below is a description of the available commands. They can be run either
+### Overview
+
+Below is an overview of the available commands showing their dependencies
+and the paper figures they produce.
+
+```
+prepare_samples
+↳ plot_idd_stations [Figure 1a]
+↳ tf
+  ↳ plot_sample [Figure 1b, c]
+  ↳ plot_training_history [Figure S1]
+  ↳ merge_samples
+    ↳ calc_dtau_pct
+      ↳ plot_dtau_pct [Figure 8]
+    ↳ calc_geo_cto
+      ↳ plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
+      ↳ plot_cto_rmse_ecs [Figure 12, S9–11]
+      ↳ plot_cto [Figure 9, S4–6]
+      ↳ calc_cto_ecs
+        ↳ plot_cto_ecs [Figure 11]
+      ↳ calc_cloud_props
+        ↳ plot_cloud_props [Figure 10]
+      ↳ plot_station_corr [Figure S3]
+      ↳ calc_idd_geo
+        ↳ plot_idd_n_obs [Figure S2]
+        ↳ merge_xval_geo_cto
+          ↳ plot_validation [Figure 4]
+          ↳ calc_val_stats
+            ↳ plot_roc [Figure 5]
+```
+
+### Main commands
+
+Below is a description of the main commands. They can be run either
 individually or through the run command as described above. They should be run
-in the Linux terminal. The commands are located in the `bin` directory as
+in a Linux terminal (bash). The commands are located in the `bin` directory as
 should be run from the main repository directory with `bin/<command>
 [<arguments>...]`.
 
-### prepare\_samples
+#### prepare\_samples
 
 
 ```
@@ -373,7 +377,7 @@ prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none non
 ```
 
 
-### plot\_idd\_stations
+#### plot\_idd\_stations [Figure 1a]
 
 
 ```
@@ -397,7 +401,7 @@ bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00
 ```
 
 
-### tf
+#### tf
 
 
 ```
@@ -447,7 +451,7 @@ bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 
 ```
 
 
-### plot\_sample
+#### plot\_sample [Figure 1b, c]
 
 
 ```
@@ -467,7 +471,7 @@ bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot
 ```
 
 
-### plot\_training\_history
+#### plot\_training\_history [Figure S1]
 
 
 ```
@@ -488,7 +492,7 @@ bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 ```
 
 
-### merge\_samples
+#### merge\_samples
 
 
 ```
@@ -511,7 +515,7 @@ bin/merge_samples data/samples/historical/AWI-ESM-1-1-LR/2003{,.nc}
 ```
 
 
-### calc\_dtau\_pct
+#### calc\_dtau\_pct
 
 
 ```
@@ -538,7 +542,7 @@ bin/calc_dtau_pct data/samples_tf/ceres input/ceres data/dtau_pct/dtau_pct.nc
 ```
 
 
-### plot\_dtau\_pct
+#### plot\_dtau\_pct [Figure 8]
 
 
 ```
@@ -559,7 +563,7 @@ bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
 ```
 
 
-### calc\_geo\_cto
+#### calc\_geo\_cto
 
 
 ```
@@ -585,7 +589,7 @@ bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR input/tas/historical/
 ```
 
 
-### plot\_geo\_cto
+#### plot\_geo\_cto [Figure 3, 6, 7, S7, S8, S12]
 
 
 ```
@@ -616,7 +620,7 @@ bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_h
 ```
 
 
-### plot\_cto\_rmse\_ecs
+#### plot\_cto\_rmse\_ecs [Figure 12, S9–11]
 
 
 ```
@@ -643,7 +647,7 @@ bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto
 ```
 
 
-### plot\_cto
+#### plot\_cto [Figure 9, S4–6]
 
 
 ```
@@ -676,7 +680,7 @@ bin/plot_cto ecs 1-tas absolute false data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.c
 ```
 
 
-### calc\_cto\_ecs
+#### calc\_cto\_ecs
 
 
 ```
@@ -698,7 +702,7 @@ bin/calc_cto_ecs data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv data/cto_ecs/cto_e
 ```
 
 
-### plot\_cto\_ecs
+#### plot\_cto\_ecs [Figure 11]
 
 
 ```
@@ -721,7 +725,7 @@ bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 ```
 
 
-### calc\_cloud\_props
+#### calc\_cloud\_props
 
 
 ```
@@ -749,7 +753,7 @@ bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6
 ```
 
 
-### plot\_cloud\_props
+#### plot\_cloud\_props [Figure 11]
 
 
 ```
@@ -775,7 +779,7 @@ bin/plot_cloud_props pct data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_pc
 ```
 
 
-### plot\_station\_corr
+#### plot\_station\_corr [Figure S3]
 
 
 ```
@@ -793,93 +797,7 @@ Arguments:
 ```
 
 
-### merge\_xval\_geo\_cto
-
-
-```
-
-Merge cross validation geographical distribution of cloud type occurrence.
-
-Usage: bin/merge_xval_geo_cto [<input>...] [<area>...] <output>
-
-Arguments:
-
-- input: the output of calc_geo_cto (NetCDF).
-- area: { <lat1> <lat2> <lon1> <lon2> }: Area of input to merge. The number of area arguments must be the same as the number of input arguments.
-- output: Output file (NetCDF).
-```
-
-
-### plot\_validation
-
-
-```
-
-Calculate cross-validation statistics.
-
-Usage: bin/plot_validation <idd_val> <idd_train> <input>... <output> [options]
-
-Arguments:
-
-- idd_val: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
-- idd_train: Training IDD dataset - the output of calc_idd_geo for training years (NetCDF).
-- input: CERES dataset - the output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
-- output: Output plot (PDF).
-
-Options:
-
---normalized: Plot normalized plots.
-
-Examples:
-
-bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historical/all/CERES.nc data/xval/geo_cto/CERES_sectors.nc plot/validation.pdf
-```
-
-
-### calc\_val\_stats
-
-
-```
-
-Calculate cross-validation statistics.
-
-Usage: bin/calc_val_stats <input> <idd> <output> [options]
-
-Arguments:
-
-- input: Validation CERES/ANN dataset - the output of calc_geo_cto for validation years (NetCDF).
-- idd: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
-- output: Output file (NetCDF).
-
-Options:
-
-- area: { <lat1> <lat2> <lon1> <lon2> }: Area to validate on.
-- train_idd: <value>: Training IDD input - the output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
-
-Examples:
-
-bin/calc_val_stats data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/val_stats/NE.nc area: { 0 90 -180 0 }
-```
-
-
-### plot\_roc
-
-
-```
-
-Plot ROC validation curves.
-
-Usage: bin/plot_roc <input> <output> <title>
-
-Arguments:
-
-- input: Input data - the output of calc_val_stats (NetCDF).
-- output: Output plot (PDF)
-- title: Plot title.
-```
-
-
-### calc\_idd\_geo
+#### calc\_idd\_geo
 
 
 ```
@@ -907,7 +825,7 @@ bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.
 ```
 
 
-### plot\_idd\_n\_obs
+#### plot\_idd\_n\_obs [Figure S2]
 
 
 ```
@@ -922,9 +840,95 @@ Arguments:
 ```
 
 
-## Auxiliary commands
+#### merge\_xval\_geo\_cto
 
-### build\_readme
+
+```
+
+Merge cross validation geographical distribution of cloud type occurrence.
+
+Usage: bin/merge_xval_geo_cto [<input>...] [<area>...] <output>
+
+Arguments:
+
+- input: the output of calc_geo_cto (NetCDF).
+- area: { <lat1> <lat2> <lon1> <lon2> }: Area of input to merge. The number of area arguments must be the same as the number of input arguments.
+- output: Output file (NetCDF).
+```
+
+
+#### plot\_validation [Figure 4]
+
+
+```
+
+Calculate cross-validation statistics.
+
+Usage: bin/plot_validation <idd_val> <idd_train> <input>... <output> [options]
+
+Arguments:
+
+- idd_val: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
+- idd_train: Training IDD dataset - the output of calc_idd_geo for training years (NetCDF).
+- input: CERES dataset - the output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
+- output: Output plot (PDF).
+
+Options:
+
+--normalized: Plot normalized plots.
+
+Examples:
+
+bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historical/all/CERES.nc data/xval/geo_cto/CERES_sectors.nc plot/validation.pdf
+```
+
+
+#### calc\_val\_stats
+
+
+```
+
+Calculate cross-validation statistics.
+
+Usage: bin/calc_val_stats <input> <idd> <output> [options]
+
+Arguments:
+
+- input: Validation CERES/ANN dataset - the output of calc_geo_cto for validation years (NetCDF).
+- idd: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
+- output: Output file (NetCDF).
+
+Options:
+
+- area: { <lat1> <lat2> <lon1> <lon2> }: Area to validate on.
+- train_idd: <value>: Training IDD input - the output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
+
+Examples:
+
+bin/calc_val_stats data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/val_stats/NE.nc area: { 0 90 -180 0 }
+```
+
+
+#### plot\_roc [Figure 5]
+
+
+```
+
+Plot ROC validation curves.
+
+Usage: bin/plot_roc <input> <output> <title>
+
+Arguments:
+
+- input: Input data - the output of calc_val_stats (NetCDF).
+- output: Output plot (PDF)
+- title: Plot title.
+```
+
+
+### Auxiliary commands
+
+#### build\_readme
 
 
 ```
@@ -945,7 +949,7 @@ bin/build_readme README.md.in bin README.md
 ```
 
 
-### download\_cmip
+#### download\_cmip
 
 
 ```
@@ -967,7 +971,7 @@ bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
 ```
 
 
-### create\_by\_model
+#### create\_by\_model
 
 ```
 Create a by-model index of CMIP data. This command should be run in the
@@ -981,7 +985,7 @@ cd data/cmip5/historical/day
 ./create_by_model
 ```
 
-### create\_by\_var
+#### create\_by\_var
 
 ```
 Create a by-var index of CMIP data. This command should be run in the
@@ -995,7 +999,7 @@ cd data/cmip5/historical/day
 ./create_by_var
 ```
 
-### gistemp\_to\_nc
+#### gistemp\_to\_nc
 
 
 ```
