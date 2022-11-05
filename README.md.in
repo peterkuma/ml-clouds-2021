@@ -155,7 +155,7 @@ archive `input/tas.tar.xz`.
 
 ### Input directory
 
-The input directory should contain the necessary input files. Apart from the
+The `input` directory should contain the necessary input files. Apart from the
 datasets already contained in this repository, the files need to be downloaded
 from the sources as described above. NorESM is optional. If NorESM data is not
 available, it should removed from the `input/models_*` files. Space
@@ -163,57 +163,60 @@ requirements for the input directory are about 5 TB. Below is description of
 the structure of the input directory:
 
 ```
-ceres: CERES SYN1deg daily mean NetCDF files.
-noresm:
-  historical
-    day: Daily mean files.
-      <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
-	  2.5deg: The same as above, but resampled to 2.5°.
-  abrupt-4xCO2
-    day: Daily mean files.
-      <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC, SOLIN.
-	  2.5deg: The same as above, but resampled to 2.5°.
-  abrupt-4xCO2
-cmip5
-  abrupt-4xCO2
-    day: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-	  2.5deg: The same as above, but resampled to 2.5°.
-        by-model: Directory created by create_by_model.
-    mon: Daily mean CMIP5 files in the abrupt-4xCO2 experiment (tas).
-cmip6
-  abrupt-4xCO2
-    day: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-	  2.5deg: The same as above, but resampled to 2.5°.
-        by-model: Directory created by create_by_model.
-    mon: Daily mean CMIP6 files in the abrupt-4xCO2 experiment (tas).
-  hist-1950
-    day: Daily mean CMIP6 EC-Earth3P files in the hist-1950 experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-	  2.5deg: The same as above, but resampled to 2.5°.
-        by-model: Directory created by create_by_model.
-  historical
-    day: Daily mean CMIP6 files in the historical experiment (rlut, rlutcs, rsdt, rsut, rsutcs).
-	  2.5deg: The same as above, but resampled to 2.5°.
-        by-model: Directory created by create_by_model.
+ceres: CERES SYN1deg daily mean files (NetCDF).
+↳ 2.5deg: The same as above, but resampled to 2.5°.
+cmip5: CMIP5 data files (NetCDF).
+↳ abrupt-4xCO2: abrupt-4xCO2 experiment files.
+  ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
+	↳ 2.5deg: The same as above, but resampled to 2.5°.
+      ↳ by-model: Directory created by create_by_model.
+    ↳ mon: Monthly mean files for tas.
+cmip6: CMIP6 data files (NetCDF).
+↳ abrupt-4xCO2: abrupt-4xCO2 experiment files.
+  ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg: The same as above, but resampled to 2.5°.
+      ↳ by-model: Directory created by create_by_model.
+  ↳ mon: Daily mean files for tas.
+↳ hist-1950: hist-1950 expriment files for the EC-Earth3P model.
+  ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg: The same as above, but resampled to 2.5°.
+      ↳ by-model: Directory created by create_by_model.
+  ↳ mon: Monthly mean files for tas.
+↳ historical: historical experiment files.
+  ↳ day: Daily mean files ofr rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg: The same as above, but resampled to 2.5°.
+      ↳ by-model: Directory created by create_by_model.
+  ↳ mon: Monthly mean files for tas.
 ecs
-  ecs.csv: ECS, TCR and CLD values for CMIP5 and CMIP6 models.
-era5: Daily mean ERA5 NetCDF files with all variables in each file: tisr, tsr, tsrc, ttr, ttrc.
-  2.5deg: The same as above, but resampled to 2.5°.
+↳ ecs.csv: ECS, TCR and CLD values for the CMIP5 and CMIP6 models.
+era5: Daily mean ERA5 NetCDF files with the following variables in each file: tisr, tsr, tsrc, ttr and ttrc.
+↳ 2.5deg: The same as above, but resampled to 2.5°.
 idd
-  buoy: IDD buoy NetCDF files.
-  synop: IDD synop NetCDF files.
+↳ buoy: IDD buoy files (NetCDF).
+↳ synop: IDD synop files (NetCDF).
 landmask
-  ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
-merra-2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with all variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT, SWTNTCLR.
-  2.5deg: The same as above, but resampled to 2.5°.
-models_*: Lists of models available in the historical and abrupt-4xCO experiments.
-tas.tar.xz: Near-surface air temperature (compressed archive).
+↳ ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
+merra2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with the following variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT and SWTNTCLR.
+↳ 2.5deg: The same as above, but resampled to 2.5°.
+noresm2: NorESM2 files.
+↳ historical
+  ↳ day: Daily mean files.
+    ↳ <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
+    ↳ 2.5deg: The same as above, but resampled to 2.5°.
+      ↳ <variable>: The same as above, but resampled to 2.5°.
+↳ abrupt-4xCO2
+  ↳ day: Daily mean files.
+    ↳ <variable>: Daily mean NorESM NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
+      ↳ 2.5deg: The same as above, but resampled to 2.5°.
 tas: Near-surface air temperature (to be extracted from tas.tar.xz).
-  historical
-    CERES.nc: Near-surface air temperature from observations (GISTEMP).
-    <model>.nc: Near-surface air temperature of a model in the historical experiment.
-  abrupt-4xCO2
-    CERES.nc: Near-surface air temperature from observations (GISTEMP).
-    <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
+↳ historical
+  ↳ CERES.nc: Near-surface air temperature from observations (GISTEMP).
+  ↳ <model>.nc: Near-surface air temperature of a model in the historical experiment.
+↳ abrupt-4xCO2
+  ↳ CERES.nc: Near-surface air temperature from observations (GISTEMP).
+  ↳ <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
+models_*: Files containing a list of models to be processed.
+tas.tar.xz: Near-surface air temperature (compressed archive).
 ```
 
 ### Data directory
