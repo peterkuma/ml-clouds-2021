@@ -302,33 +302,33 @@ export JOBS=24 # Number of concurrent jobs
 . config_4 # Configuration for 4 cloud types
 # . config_10 for 10 cloud types.
 # . config_27 for 27 cloud types.
-./run prepare_ceres_training
-./run train_ann
-./run plot_idd_stations
-./run plot_training_history
-./run prepare_ceres
-./run prepare_historical
-./run prepare_abrupt-4xCO2
-./run label_ceres
-./run label_historical
-./run label_abrupt-4xCO2
-./run calc_dtau_pct
-./run plot_dtau_pct
-./run calc_geo_cto_historical
-./run calc_geo_cto_abrupt-4xCO2
-./run plot_geo_cto_historical
-./run plot_geo_cto_abrupt-4xCO2
-./run plot_cto_rmse_ecs
-./run plot_cto_historical
-./run plot_cto_abrupt-4xCO2
-./run calc_cto_ecs
-./run plot_cto_ecs
-./run calc_geo_cto_xval
-./run plot_geo_cto_xval
-./run calc_idd_geo
-./run plot_validation
-./run calc_val_stats
-./run plot_roc
+./run prepare_ceres # Prepare CERES samples.
+./run train_ann # Train the ANN.
+./run plot_training_history # Plot training history.
+./run plot_idd_stations # Plot IDD stations.
+./run label_ceres # Label CERES samples using the ANN.
+./run prepare_historical # Prepare CMIP6 historical samples.
+./run label_historical # Label CMIP6 historical samples using the ANN.
+./run calc_geo_cto_historical # Calculate geographical distribution of cloud type occurrence from the CMIP6 historical samples.
+./run plot_geo_cto_historical # Plot geographical distribution of cloud type occurrence for the CMIP6 historical experiment.
+./run plot_cto_historical # Plot cloud type occurrence bar chart for the CMIP6 historical experiment.
+./run prepare_abrupt-4xCO2 # Prepare CMIP5 and CMIP6 abrupt-4xCO2 samples.
+./run label_abrupt-4xCO2 # Label CMIP5 and CMIP6 abrupt-4xCO2 samples using the ANN.
+./run calc_geo_cto_abrupt-4xCO2 # Calculate geographical distribution of cloud type occurrence from the CMIP5 and CMIP6 abrupt-4xCO2 samples.
+./run plot_geo_cto_abrupt-4xCO2 # Plot geographical distribution of cloud type occurrence for the CMIP5 and CMIP6 abrupt-4xCO2 experiment.
+./run plot_cto_abrupt-4xCO2 # Plot cloud type occurrence bar chart for the CMIP5 and CMIP6 abrupt-4xCO2 experiment.
+./run plot_cto_rmse_ecs # Plot cloud type occurrence RMSE vs. ECS.
+./run calc_cto_ecs # Calculate cloud type occurrence vs. ECS regression in the CMIP5 and CMIP6 abrupt-4xCO2 experiment.
+./run plot_cto_ecs # Plot cloud type occurrence vs. ECS regression in the CMIP5 and CMIP6 abrupt-4xCO2 experiment.
+./run calc_dtau_pct # Calculate cloud optical depth - cloud top pressure histograms.
+./run plot_dtau_pct # Plot cloud optical depth - cloud top pressure histograms.
+./run train_ann_xval # Train ANNs for cross-validation.
+./run calc_geo_cto_xval # Calculate geographical distribution of cloud type occurrence for cross-validation.
+./run plot_geo_cto_xval # Plot geographical distribution of cloud type occurrence for cross-validation.
+./run calc_idd_geo # Calculate geographical distribution of IDD cloud type occurrence.
+./run plot_validation # Plot validation results.
+./run calc_val_stats # Calculate validation statistics.
+./run plot_roc # Plot ROC.
 ```
 
 ## Commands
