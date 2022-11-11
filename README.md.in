@@ -198,60 +198,60 @@ are not available, it should removed from the `input/models_*` files. Below is
 a description of the structure of the input directory:
 
 ```
-ceres: CERES SYN1deg daily mean files (NetCDF).
-↳ 2.5deg: The same as above, but resampled to 2.5°.
-cmip5: CMIP5 data files (NetCDF).
-↳ abrupt-4xCO2: abrupt-4xCO2 experiment files.
-  ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
-    ↳ 2.5deg: The same as above, but resampled to 2.5°.
-      ↳ by-model: Directory created by create_by_model.
-    ↳ mon: Monthly mean files for tas.
-cmip6: CMIP6 data files (NetCDF).
-↳ abrupt-4xCO2: abrupt-4xCO2 experiment files.
-  ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
-    ↳ 2.5deg: The same as above, but resampled to 2.5°.
-      ↳ by-model: Directory created by create_by_model.
-  ↳ mon: Daily mean files for tas.
-↳ hist-1950: hist-1950 expriment files for the EC-Earth3P model.
-  ↳ day: Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
-    ↳ 2.5deg: The same as above, but resampled to 2.5°.
-      ↳ by-model: Directory created by create_by_model.
-  ↳ mon: Monthly mean files for tas.
-↳ historical: historical experiment files.
-  ↳ day: Daily mean files ofr rlut, rlutcs, rsdt, rsut and rsutcs.
-    ↳ 2.5deg: The same as above, but resampled to 2.5°.
-      ↳ by-model: Directory created by create_by_model.
-  ↳ mon: Monthly mean files for tas.
+ceres               CERES SYN1deg daily mean files (NetCDF).
+↳ 2.5deg            The same as above, but resampled to 2.5°.
+cmip5               CMIP5 data files (NetCDF).
+↳ abrupt-4xCO2      abrupt-4xCO2 experiment files.
+  ↳ day             Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg        The same as above, but resampled to 2.5°.
+      ↳ by-model    Directory created by create_by_model.
+    ↳ mon           Monthly mean files for tas.
+cmip6               CMIP6 data files (NetCDF).
+↳ abrupt-4xCO2      abrupt-4xCO2 experiment files.
+  ↳ day             Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg        The same as above, but resampled to 2.5°.
+      ↳ by-model    Directory created by create_by_model.
+  ↳ mon             Daily mean files for tas.
+↳ hist-1950x        hist-1950 expriment files for the EC-Earth3P model.
+  ↳ day             Daily mean files for rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg        The same as above, but resampled to 2.5°.
+      ↳ by-model    Directory created by create_by_model.
+  ↳ mon             Monthly mean files for tas.
+↳ historical        historical experiment files.
+  ↳ day             Daily mean files ofr rlut, rlutcs, rsdt, rsut and rsutcs.
+    ↳ 2.5deg        The same as above, but resampled to 2.5°.
+      ↳ by-model    Directory created by create_by_model.
+  ↳ mon             Monthly mean files for tas.
 ecs
-↳ ecs.csv: ECS, TCR and CLD values for the CMIP5 and CMIP6 models.
-era5: Daily mean ERA5 NetCDF files with the following variables in each file: tisr, tsr, tsrc, ttr and ttrc.
-↳ 2.5deg: The same as above, but resampled to 2.5°.
+↳ ecs.csv           ECS, TCR and CLD values for the CMIP5 and CMIP6 models.
+era5                Daily mean ERA5 NetCDF files with the following variables in each file: tisr, tsr, tsrc, ttr and ttrc.
+↳ 2.5deg            The same as above, but resampled to 2.5°.
 idd
-↳ buoy: IDD buoy files (NetCDF).
-↳ synop: IDD synop files (NetCDF).
+↳ buoy              IDD buoy files (NetCDF).
+↳ synop             IDD synop files (NetCDF).
 landmask
-↳ ne_110m_land.nc: Land-sea mask derived from Natural Earth data.
-merra2: Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with the following variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT and SWTNTCLR.
-↳ 2.5deg: The same as above, but resampled to 2.5°.
-noresm2: NorESM2 files.
+↳ ne_110m_land.nc   Land-sea mask derived from Natural Earth data.
+merra2              Daily mean MERRA-2 NetCDF files of the M2T1NXRAD product with the following variables in each file: LWTUP, LWTUPCLR, SWTDN, SWTNT and SWTNTCLR.
+↳ 2.5deg            The same as above, but resampled to 2.5°.
+noresm2             NorESM2 files.
 ↳ historical
-  ↳ day: Daily mean files.
-    ↳ <variable>: Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
-    ↳ 2.5deg: The same as above, but resampled to 2.5°.
-      ↳ <variable>: The same as above, but resampled to 2.5°.
+  ↳ day             Daily mean files.
+    ↳ <variable>    Daily mean NorESM NetCDF files in the historical experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
+    ↳ 2.5deg        The same as above, but resampled to 2.5°.
+      ↳ <variable>  The same as above, but resampled to 2.5°.
 ↳ abrupt-4xCO2
-  ↳ day: Daily mean files.
-    ↳ <variable>: Daily mean NorESM2 NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
-      ↳ 2.5deg: The same as above, but resampled to 2.5°.
-tas: Near-surface air temperature (to be extracted from tas.tar.xz).
+  ↳ day             Daily mean files.
+    ↳ <variable>    Daily mean NorESM2 NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
+      ↳ 2.5deg      The same as above, but resampled to 2.5°.
+tas                 Near-surface air temperature (to be extracted from tas.tar.xz).
 ↳ historical
-  ↳ CERES.nc: Near-surface air temperature from observations (GISTEMP).
-  ↳ <model>.nc: Near-surface air temperature of a model in the historical experiment.
+  ↳ CERES.nc        Near-surface air temperature from observations (GISTEMP).
+  ↳ <model>.nc      Near-surface air temperature of a model in the historical experiment.
 ↳ abrupt-4xCO2
-  ↳ CERES.nc: Near-surface air temperature from observations (GISTEMP).
-  ↳ <model>.nc: Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
-models_*: Files containing a list of models to be processed.
-tas.tar.xz: Near-surface air temperature (compressed archive).
+  ↳ CERES.nc        Near-surface air temperature from observations (GISTEMP).
+  ↳ <model>.nc      Near-surface air temperature of a model in the abrupt-4xCO2 experiment.
+models_*            Files containing a list of models to be processed.
+tas.tar.xz          Near-surface air temperature (compressed archive).
 ```
 
 ### Data directory
@@ -263,58 +263,58 @@ Below is a description of its structure (this is created automatically by the
 
 ```
 ann
-↳ ceres.h5: ANN model generated by tf train (HDF5).
-↳ history.nc: ANN model training history file (NetCDF).
+↳ ceres.h5           ANN model generated by tf train (HDF5).
+↳ history.nc         ANN model training history file (NetCDF).
 cto_ecs
-↳ cto_ecs.nc: Cloud type occurrence vs. ECS calculated by calc_cto_ecs (NetCDF).
+↳ cto_ecs.nc         Cloud type occurrence vs. ECS calculated by calc_cto_ecs (NetCDF).
 dtau_pct
-↳ dtau_pct.nc: Histogram calculated by calc_dtau_pct (NetCDF).
-geo_cto: Geographical distribution files for models and CERES calculated by calc_geo_cto.
-↳ abrupt-4xCO2: CMIP5 and CMIP6 abrupt-4xCO2 experiment.
-  ↳ all: All models.
-  ↳ part_1: Models for the first figure.
-  ↳ part_2: Models for the continued figure.
-↳ historical: CMIP6 historical expeirment.
-  ↳ all: All models.
-  ↳ part_1: Models for the first figure.
-  ↳ part_2: Models for the continued figure.
-idd_geo: Geographical distribution files for IDD calculated by calc_idd_cto.
-idd_sample: Sample IDD files for plotting stations.
+↳ dtau_pct.nc        Histogram calculated by calc_dtau_pct (NetCDF).
+geo_cto              Geographical distribution files for models and CERES calculated by calc_geo_cto.
+↳ abrupt-4xCO2       CMIP5 and CMIP6 abrupt-4xCO2 experiment.
+  ↳ all              All models.
+  ↳ part_1           Models for the first figure.
+  ↳ part_2           Models for the continued figure.
+↳ historical         CMIP6 historical expeirment.
+  ↳ all              All models.
+  ↳ part_1           Models for the first figure.
+  ↳ part_2           Models for the continued figure.
+idd_geo              Geographical distribution files for IDD calculated by calc_idd_cto.
+idd_sample           Sample IDD files for plotting stations.
 samples
 ↳ ceres
-  ↳ <year>: CERES samples generated by prepare_samples.
-  ↳ <year>.nc: Merged samples with merge_samples for a given year (NetCDF).
-  ↳ training: Symbolic links to the training years in the parent directory.
-  ↳ validation: Symbolic links to the validation years in the parent directory.
-↳ abrupt-4xCO2: abrupt-4xCO2 CMIP5 and CMIP6 experiment.
+  ↳ <year>           CERES samples generated by prepare_samples.
+  ↳ <year>.nc        Merged samples with merge_samples for a given year (NetCDF).
+  ↳ training         Symbolic links to the training years in the parent directory.
+  ↳ validation       Symbolic links to the validation years in the parent directory.
+↳ abrupt-4xCO2       abrupt-4xCO2 CMIP5 and CMIP6 experiment.
   ↳ <model>
-    ↳ <year>: Samples generated by prepare_samples for a model/year in the abrupt-4xCO2 experiment.
-    ↳ <year>.nc: Merged samples with merge_samples for a given year (NetCDF).
-↳ historical: historical CMIP6 experiment.
+    ↳ <year>         Samples generated by prepare_samples for a model/year in the abrupt-4xCO2 experiment.
+    ↳ <year>.nc      Merged samples with merge_samples for a given year (NetCDF).
+↳ historical         historical CMIP6 experiment.
   ↳ <model>
-    ↳ <year>: Samples generated by prepare_samples for a model/year in the historical experiment.
-    ↳ <year>.nc: Merged samples with merge_samples for a given year (NetCDF).
+    ↳ <year>         Samples generated by prepare_samples for a model/year in the historical experiment.
+    ↳ <year>.nc      Merged samples with merge_samples for a given year (NetCDF).
 samples_tf
 ↳ abrupt-4xCO2
   ↳ <model>
-    ↳ <year>.nc: Samples labeled with tf apply for a model/year in the abrupt-4xCO2 experiment.
+    ↳ <year>.nc      Samples labeled with tf apply for a model/year in the abrupt-4xCO2 experiment.
 ↳ historical
-  ↳ ceres/<year>.nc: CERES samples labeled with tf apply for a year.
+  ↳ ceres/<year>.nc  CERES samples labeled with tf apply for a year.
   ↳ <model>
-    ↳ <year>.nc: Samples labeled with tf apply for a model/year in the historical experiment.
-val_stats: Validation statistics calculated by calc_val_stats.
+    ↳ <year>.nc      Samples labeled with tf apply for a model/year in the historical experiment.
+val_stats            Validation statistics calculated by calc_val_stats.
 ↳ all.nc
 ↳ regions.nc
 xval
-↳ <region>: Results for an ANN trained on station data excluding a region.
-↳ geo_cto: Geographical distribution
-  ↳ all: Input files for the geo_cto_xval plots.
-    ↳ 0_xval_all.nc: Symbolic link to geo_cto/historical/validation/CERES.nc.
-    ↳ 1_xval_NW.nc: Symbolic link to xval/nw/geo_cto/historical/all/CERES.nc.
-    ↳ 2_xval_NE.nc: Symbolic link to xval/ne/geo_cto/historical/all/CERES.nc.
-    ↳ 3_xval_SE.nc: Symbolic link to xval/se/geo_cto/historical/all/CERES.nc.
-    ↳ 4_xval_SW.nc: Symbolic link to xval/sw/geo_cto/historical/all/CERES.nc.
-  ↳ regions.nc: Merged regions (NA, EA, OC and SA) geographical distribution produced by merge_xval_geo_cto.
+↳ <region>           Results for an ANN trained on station data excluding a region.
+↳ geo_cto            Geographical distribution
+  ↳ all              Input files for the geo_cto_xval plots.
+    ↳ 0_xval_all.nc  Symbolic link to geo_cto/historical/validation/CERES.nc.
+    ↳ 1_xval_NW.nc   Symbolic link to xval/nw/geo_cto/historical/all/CERES.nc.
+    ↳ 2_xval_NE.nc   Symbolic link to xval/ne/geo_cto/historical/all/CERES.nc.
+    ↳ 3_xval_SE.nc   Symbolic link to xval/se/geo_cto/historical/all/CERES.nc.
+    ↳ 4_xval_SW.nc   Symbolic link to xval/sw/geo_cto/historical/all/CERES.nc.
+  ↳ regions.nc       Merged regions (NA, EA, OC and SA) geographical distribution produced by merge_xval_geo_cto.
 ```
 
 ## How to run
