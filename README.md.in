@@ -343,14 +343,14 @@ export JOBS=24 # Number of concurrent jobs
 ./run train_ann                  # Train the ANN.
 ./run plot_training_history      # Plot training history [Figure S1].
 ./run plot_idd_stations          # Plot IDD stations [Figure 1a].
-./run predict_ceres                # Label CERES samples using the ANN.
+./run predict_ceres              # Predict CERES samples using the ANN.
 ./run prepare_historical         # Prepare CMIP6 historical samples.
-./run predict_historical           # Label CMIP6 historical samples using the ANN.
+./run predict_historical         # Predict CMIP6 historical samples using the ANN.
 ./run calc_geo_cto_historical    # Calculate geographical distribution of cloud type occurrence from the CMIP6 historical samples.
 ./run plot_geo_cto_historical    # Plot geographical distribution of cloud type occurrence for the CMIP6 historical experiment [Figure 6, 7].
 ./run plot_cto_historical        # Plot cloud type occurrence bar chart for the CMIP6 historical experiment [Figure 9a].
 ./run prepare_abrupt-4xCO2       # Prepare CMIP5 and CMIP6 abrupt-4xCO2 samples.
-./run predict_abrupt-4xCO2         # Label CMIP5 and CMIP6 abrupt-4xCO2 samples using the ANN.
+./run predict_abrupt-4xCO2       # Predict CMIP5 and CMIP6 abrupt-4xCO2 samples using the ANN.
 ./run calc_geo_cto_abrupt-4xCO2  # Calculate geographical distribution of cloud type occurrence from the CMIP5 and CMIP6 abrupt-4xCO2 samples.
 ./run plot_geo_cto_abrupt-4xCO2  # Plot geographical distribution of cloud type occurrence for the CMIP5 and CMIP6 abrupt-4xCO2 experiment [Figure S7, S8].
 ./run plot_cto_abrupt-4xCO2      # Plot cloud type occurrence bar chart for the CMIP5 and CMIP6 abrupt-4xCO2 experiment [Figure 9b].
