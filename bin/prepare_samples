@@ -18,7 +18,6 @@ Options:
 
 - seed: <value>: Random seed.
 - keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
-- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with IDD stations in a region bounded by given latitude and longitude. Default: none.
 
 Examples:
 
@@ -219,7 +218,7 @@ def take_sample(lat, lon, data):
 		'y': y2,
 	}
 
-def read_idd(dirname, type_, t, exclude=None):
+def read_idd(dirname, type_, t):
 	date = aq.to_date(t)
 	date_s = '%02d%02d%02d' % (date[1][0], date[2][0], date[3][0])
 	path = os.path.join(dirname, '*%s*' % date_s)
@@ -240,16 +239,6 @@ def read_idd(dirname, type_, t, exclude=None):
 			d[var] = d[var].astype(np.float64).filled(np.nan)
 		dd += [d]
 	d = ds.merge(dd, 'recNum')
-
-	if exclude:
-		mask = ~(
-			(d['Lat'] > exclude[0]) &
-			(d['Lat'] <= exclude[1]) &
-			(d['Lon'] > exclude[2]) &
-			(d['Lon'] <= exclude[3])
-		)
-		for var in ds.get_vars(d):
-			d[var] = d[var][mask]
 
 	return {
 		'lon': d['Lon'],
@@ -587,7 +576,6 @@ if __name__ == '__main__':
 	output = args[7]
 	seed = opts.get('seed')
 	keep_stations = opts.get('keep_stations', False)
-	exclude = opts.get('exclude')
 
 	if seed is not None:
 		np.random.seed(seed)
@@ -607,11 +595,9 @@ if __name__ == '__main__':
 		idd = None
 		try:
 			if synop_dir is not None:
-				idd_synop = read_idd(synop_dir, 'synop', d['time'],
-					exclude=exclude)
+				idd_synop = read_idd(synop_dir, 'synop', d['time'])
 			if buoy_dir is not None:
-				idd_buoy = read_idd(buoy_dir, 'buoy', d['time'],
-					exclude=exclude)
+				idd_buoy = read_idd(buoy_dir, 'buoy', d['time'])
 		except Exception as e:
 			logging.warning(e)
 		if idd_synop is not None and idd_buoy is not None:

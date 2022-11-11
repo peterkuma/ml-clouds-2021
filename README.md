@@ -432,7 +432,6 @@ Options:
 
 - seed: <value>: Random seed.
 - keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
-- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with IDD stations in a region bounded by given latitude and longitude. Default: none.
 
 Examples:
 
