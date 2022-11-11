@@ -800,7 +800,7 @@ Depends on: merge_samples
 
 Arguments:
 
-- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm" (NorESM), "merra2" (MERRA-2).
+- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).
 - cto: Cloud type occurrence - the output of calc_geo_cto (NetCDF).
 - input: CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).

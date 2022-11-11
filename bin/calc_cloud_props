@@ -7,7 +7,7 @@ Depends on: merge_samples
 
 Arguments:
 
-- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm" (NorESM), "merra2" (MERRA-2).
+- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).
 - cto: Cloud type occurrence - the output of calc_geo_cto (NetCDF).
 - input: CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
 - output: Output file (NetCDF).
@@ -164,7 +164,7 @@ def read_era5(index, var, t):
 		do['clt'] *= 100
 	return do
 
-def read_noresm_index(dirname, var):
+def read_noresm2_index(dirname, var):
 	if var not in ['clt']:
 		raise IOError('NorESM does not provide the variable "%s"' % var)
 	noresm_var = {
@@ -175,7 +175,7 @@ def read_noresm_index(dirname, var):
 	index = ds.readdir(dirname2, 'time', merge='time', jd=True)
 	return index
 
-def read_noresm(index, var, t):
+def read_noresm2(index, var, t):
 	if var not in ['clt']:
 		raise IOError('NorESM does not provide the variable "%s"' % var)
 	noresm_var = {
@@ -217,7 +217,7 @@ if __name__ == '__main__':
 		'ceres': read_ceres,
 		'cmip': read_cmip,
 		'era5': read_era5,
-		'noresm': read_noresm,
+		'noresm2': read_noresm2,
 		'merra2': read_merra2,
 	}[type_]
 
@@ -225,7 +225,7 @@ if __name__ == '__main__':
 		'ceres': read_ceres_index,
 		'cmip': read_cmip_index,
 		'era5': read_era5_index,
-		'noresm': read_noresm_index,
+		'noresm2': read_noresm2_index,
 		'merra2': read_merra2_index,
 	}[type_]
 
