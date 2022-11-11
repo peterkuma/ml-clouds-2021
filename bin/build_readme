@@ -18,6 +18,7 @@ bin/build_readme README.md.in bin README.md
 import sys
 import os
 import ast
+import warnings
 
 if __name__ == '__main__':
 	if len(sys.argv) != 4:
@@ -30,13 +31,16 @@ if __name__ == '__main__':
 	docs = {}
 	for name in os.listdir(bindir):
 		path = os.path.join(bindir,	name)
-		with open(path) as f:
-			try:
-				t = ast.parse(f.read())
-				docs[name] = \
-					'\n```\n' + ast.get_docstring(t, clean=False) + '```\n'
-			except:
-				pass
+		try:
+			with open(path) as f:
+				try:
+					t = ast.parse(f.read())
+					docs[name] = \
+						'\n```\n' + ast.get_docstring(t, clean=False) + '```\n'
+				except Exception as e:
+					warnings.warn('%s: %s' % (path, e))
+		except IOError as e:
+			warnings.warn(e)
 
 	with open(input_) as f:
 		out = f.read().format(**docs)
