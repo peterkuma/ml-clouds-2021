@@ -420,9 +420,9 @@ Usage: prepare_samples <type> <input> <synop> <buoy> <start> <end> <output> [opt
 Arguments:
 
 - type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
-  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm" (NorESM).
+  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
 - input: Input directory with input files (NetCDF).
-- synop: Input directory with IDD synoptic fies or "none" (NetCDF).
+- synop: Input directory with IDD synoptic files or "none" (NetCDF).
 - buoy: Input directory with IDD buoy files or "none" (NetCDF).
 - start: Start time (ISO).
 - end: End time (ISO).

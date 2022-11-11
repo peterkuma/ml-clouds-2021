@@ -6,9 +6,9 @@ Usage: prepare_samples <type> <input> <synop> <buoy> <start> <end> <output> [opt
 Arguments:
 
 - type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
-  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm" (NorESM).
+  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
 - input: Input directory with input files (NetCDF).
-- synop: Input directory with IDD synoptic fies or "none" (NetCDF).
+- synop: Input directory with IDD synoptic files or "none" (NetCDF).
 - buoy: Input directory with IDD buoy files or "none" (NetCDF).
 - start: Start time (ISO).
 - end: End time (ISO).
@@ -354,7 +354,7 @@ def read_ceres(dirname, start, end):
 				d2[var] = d2[var][:,order]
 		yield d2
 
-def read_noresm(dirname, start, end):
+def read_noresm2(dirname, start, end):
 	time_by_var = {}
 	time = None
 	for var in ['FLUT', 'FLUTC', 'FSNTOA', 'FSNTOAC', 'SOLIN']:
@@ -586,7 +586,7 @@ if __name__ == '__main__':
 		'cloud_cci': read_cloud_cci,
 		'era5': read_era5,
 		'merra2': read_merra2,
-		'noresm': read_noresm,
+		'noresm2': read_noresm2,
 	}[type_]
 
 	for d in read(input_dir, start, end):

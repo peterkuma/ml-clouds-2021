@@ -111,7 +111,7 @@ prepare_historical)
 	prepare_model $exp EC-Earth3P cmip "$INPUT"/cmip6/hist-1950/day/2.5deg/by-model/EC-Earth3P $y1 $y2
 	prepare_model $exp MERRA-2 merra2 "$INPUT"/merra2/2.5deg $y1 $y2
 	prepare_model $exp ERA5 era5 "$INPUT"/era5/2.5deg $y1 $y2
-	prepare_model $exp NorESM2-LM noresm "$INPUT"/noresm2/$exp/day/2.5deg $y1 $y2
+	prepare_model $exp NorESM2-LM noresm2 "$INPUT"/noresm2/$exp/day/2.5deg $y1 $y2
 	;;
 
 prepare_abrupt-4xCO2)
@@ -130,7 +130,7 @@ prepare_abrupt-4xCO2)
 		prepare_model $exp $model cmip "$INPUT"/cmip6/$exp/day/2.5deg/by-model/$model $y1_ $y2_
 		prepare_model $exp $model cmip "$INPUT"/cmip5/$exp/day/2.5deg/by-model/$model $y1_ $y2_
 	done
-	prepare_model $exp NorESM2-LM noresm "$INPUT"/noresm2/$exp/day/2.5deg 0001 0140
+	prepare_model $exp NorESM2-LM noresm2 "$INPUT"/noresm2/$exp/day/2.5deg 0001 0140
 	;;
 
 label_ceres)
