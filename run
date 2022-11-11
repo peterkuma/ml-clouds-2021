@@ -193,6 +193,10 @@ calc_geo_cto_historical)
 	if [ ! -e "$DATA"/geo_cto/historical/all/CERES.nc ]; then
 		bin/calc_geo_cto "$DATA"/samples_tf/historical/CERES "$INPUT"/tas/historical/CERES.nc "$DATA"/geo_cto/historical/all/CERES.nc
 	fi
+	mkdir -p "$DATA"/geo_cto/historical/validation
+	if [ ! -e "$DATA"/geo_cto/historical/validation/CERES.nc ]; then
+		bin/calc_geo_cto "$DATA"/samples_tf/historical/CERES/validation "$INPUT"/tas/historical/CERES.nc "$DATA"/geo_cto/historical/validation/CERES.nc
+	fi
 	for model in $(cat "$INPUT"/models_historical); do
 		if [ ! -e "$DATA"/samples_tf/historical/$model -o -e "$DATA"/geo_cto/historical/all/$model.nc ]; then
 			continue
@@ -209,13 +213,13 @@ calc_geo_cto_historical)
 		if [ ! -e "$DATA"/geo_cto/historical/all/$model.nc ]; then
 			continue
 		fi
-		cp "$DATA"/geo_cto/historical/all/$model.nc "$DATA"/geo_cto/historical/part_1/
+		ln -s ../all/$model.nc "$DATA"/geo_cto/historical/part_1/
 	done
 	for model in $(cat "$INPUT"/models_historical_part_2); do
 		if [ ! -e "$DATA"/geo_cto/historical/all/$model.nc ]; then
 			continue
 		fi
-		cp "$DATA"/geo_cto/historical/all/$model.nc "$DATA"/geo_cto/historical/part_2/
+		ln -s ../all/$model.nc "$DATA"/geo_cto/historical/part_2/
 	done
 	;;
 
@@ -229,7 +233,7 @@ calc_geo_cto_xval)
 			bin/calc_geo_cto "$dir"/samples_tf/historical/CERES "$INPUT"/tas/historical/CERES.nc "$dir"/geo_cto/historical/all/CERES.nc
 		fi
 	done
-	bin/merge_xval_geo_cto "$DATA"/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc { 15 45 -60 -30 } { 30 60 90 120 } { -45 -15 150 180 } { -30 0 -75 -45 } "$DATA"/xval/geo_cto/regions.nc
+	bin/merge_xval_geo_cto "$DATA"/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc ${EXTENT[na]} ${EXTENT[ea]} ${EXTENT[oc]} ${EXTENT[sa]} "$DATA"/xval/geo_cto/regions.nc
 	ln -sf ../../../geo_cto/historical/validation/CERES.nc "$DATA"/xval/geo_cto/all/0_xval_all.nc
 	i=1
 	for region in nw ne se sw; do
@@ -252,13 +256,13 @@ calc_geo_cto_abrupt-4xCO2)
 		if [ ! -e "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc ]; then
 			continue
 		fi
-		cp "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/part_1/
+		ln -s ../all/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/part_1/
 	done
 	for model in $(cat "$INPUT"/models_abrupt-4xCO2_part_2); do
 		if [ ! -e "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc ]; then
 			continue
 		fi
-		cp "$DATA"/geo_cto/abrupt-4xCO2/all/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/part_2/
+		ln -s ../all/$model.nc "$DATA"/geo_cto/abrupt-4xCO2/part_2/
 	done
 	;;
 
@@ -323,7 +327,7 @@ calc_idd_geo)
 	;;
 
 plot_validation)
-	bin/plot_validation "$DATA"/idd_geo/{validation,training}.nc "$DATA"/geo_cto/historical/all/CERES.nc "$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.pdf
+	bin/plot_validation "$DATA"/idd_geo/{validation,training}.nc "$DATA"/geo_cto/historical/validation/CERES.nc "$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.pdf
 	;;
 
 calc_val_stats)
