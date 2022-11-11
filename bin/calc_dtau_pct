@@ -18,7 +18,7 @@ Options:
 
 Examples:
 
-bin/calc_dtau_pct data/samples_tf/ceres input/ceres data/dtau_pct/dtau_pct.nc
+bin/calc_dtau_pct data/samples_pred/ceres input/ceres data/dtau_pct/dtau_pct.nc
 '''
 
 import sys

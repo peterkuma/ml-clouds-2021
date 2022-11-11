@@ -16,8 +16,8 @@ Options:
 
 Examples:
 
-bin/calc_geo_cto data/samples_tf/ceres input/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
-bin/calc_geo_cto data/samples_tf/historical/AWI-ESM-1-1-LR input/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/all/AWI-ESM-1-1-LR.nc
+bin/calc_geo_cto data/samples_pred/ceres input/tas/historical/CERES.nc data/geo_cto/historical/all/CERES.nc
+bin/calc_geo_cto data/samples_pred/historical/AWI-ESM-1-1-LR input/tas/historical/AWI-ESM-1-1-LR data/geo_cto/historical/all/AWI-ESM-1-1-LR.nc
 '''
 
 import sys
