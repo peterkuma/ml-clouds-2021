@@ -2,7 +2,7 @@
 '''Train or apply a TensorFlow CNN.
 
 Usage: tf train <input> <input_val> <output> <output_history> [options]
-       tf apply <model> <input> <y1> <y2> <output> [options]
+       tf apply <model> <input> <output> [options]
 
 Depends on: prepare_samples
 
@@ -28,8 +28,6 @@ Arguments (apply):
 
 - model: TensorFlow model (HDF5).
 - input: Input directory with samples - the output of prepare_samples (NetCDF).
-- y1: Start year.
-- y2: End year.
 - output: Output samples directory (NetCDF).
 
 Options (apply):
@@ -40,8 +38,8 @@ Options (apply):
 Examples:
 
 bin/tf train data/samples/ceres_training/training data/samples/ceres_training/validation data/ann/ceres.h5 data/ann/history.nc
-bin/tf apply data/ann/ceres.h5 data/samples/ceres 2003 2020 data/samples_pred/ceres
-bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR 2003 2014 data/samples_pred/historical/AWI-ESM-1-1-LR
+bin/tf apply data/ann/ceres.h5 data/samples/ceres data/samples_pred/ceres
+bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR data/samples_pred/historical/AWI-ESM-1-1-LR
 '''
 
 import warnings
@@ -234,7 +232,7 @@ def read_samples(filename, exclude=None, exclude_night=True, classes=0):
 		d['lat'][mask,::] if 'lat' in d else None, \
 		d['lon'][mask,::] if 'lon' in d else None
 
-def apply_(model_file, input_, y1, y2, output, classes=0, night=False,
+def apply_(model_file, input_, output, classes=0, night=False,
 	exclude_night=True):
 
 	nclasses = {0: 4, 1: 10, 2: 27}[classes]
@@ -243,10 +241,6 @@ def apply_(model_file, input_, y1, y2, output, classes=0, night=False,
 	for file_ in sorted(files):
 		if not file_.endswith('.nc'):
 			continue
-		if y1 is not None and y2 is not None:
-			year = int(file_[:-3])
-			if not (year >= y1 and year <= y2):
-				continue
 		filename = os.path.join(input_, file_)
 		images, labels, time0, lat0, lon0 = read_samples(
 			filename,
@@ -359,15 +353,13 @@ if __name__ == '__main__':
 			exclude_night=exclude_night,
 		)
 	elif action == 'apply':
-		if len(args) != 7:
+		if len(args) != 5:
 			sys.stderr.write(sys.modules[__name__].__doc__)
 			sys.exit(1)
 		model = args[2]
 		input_ = args[3]
-		y1 = args[4]
-		y2 = args[5]
-		output = args[6]
-		apply_(model, input_, y1, y2, output,
+		output = args[4]
+		apply_(model, input_, output,
 			classes=classes,
 			night=night,
 			exclude_night=exclude_night,
