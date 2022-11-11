@@ -13,8 +13,28 @@ Adrian J. McDonald<sup>2</sup>,
 This repository contains code for the paper
 [Machine learning of cloud types in satellite observations and climate models](https://doi.org/10.5281/zenodo.6184907).
 
-If you have any questions about the code you can contact the authors or submit
-an Issue on GitHub.
+## Introduction
+
+The code contains scripts for training an artificial neural network (ANN) for
+prediction of cloud types based on satellite and ground-based station data, and
+related data processing and visualisation. The artificial neural network is
+implemented in [TensorFlow](https://www.tensorflow.org/). The scripts use
+Python and bash. They should be run on Linux, although it may be possible to
+adapt them to other operating systems.
+
+The scripts are divided into data processing scripts and plotting scripts.
+The scripts are dependent on one another for data input and output. The script
+`run` in the main directory runs the individual data processing and plotting
+scripts located in the directory `bin` and takes care of the dependencies.
+
+Storage requirements for running the code on all available climate models and
+reanalyses are on the scale of 10 TB, and main memory requirements are on the
+scale of 60 GB. Lower hardware requirements are possible if used with fewer
+models or shorter training data time periods.
+
+Please see the manuscript for more details about the ANN. If you have any
+questions about the code you can contact the manuscript authors or submit an
+Issue on GitHub.
 
 ## Requirements
 
@@ -35,14 +55,13 @@ and Python packages:
 - numpy 1.22.3
 - matplotlib 3.5.3
 - pymc3 3.11.5
-- pst-format 1.2.0
-- aquarius-time 0.1.1
-- ds-format 3.3.0
+- pst-format 1.2.1
+- aquarius-time 0.1.0
+- ds-format 3.3.1
 - pyproj 3.0.0
 - pandas 1.1.5
-
-Space requirements for processing all of the CMIP6 and CMIP6 models, ERA5 and
-MERRA-2 reanalyses are about 6 TB.
+- netCDF4 1.5.5.1
+- Cartopy 0.18.0
 
 On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
@@ -51,7 +70,8 @@ software can be installed with:
 apt install python3 cython3 aria2 parallel cdo
 ```
 
-We recommend installing the Python packages in a virtual environment (venv):
+Optionally, to install the Python packages in a virtual environment (venv)
+instead of the user's home directory:
 
 ```sh
 python3 -m venv venv
@@ -64,7 +84,18 @@ To install the Python packages:
 pip3 install -r requirements.txt
 ```
 
+Depending on the Linux distribution, python and pip might be available as
+`python` or `python3`, and `pip` or `pip3`.
+
 ## Input datasets
+
+The input datasets are not contained in this repository because of their large
+size, except for surface temperature data and a table of model ECS, TCR and
+cloud feedback. The rest of the datasets have to be downloaded from other
+repositories as described below. It is possible to run the scripts with fewer
+climate models and reanalyses and thus reduce the amount of data needed to
+be downloaded. The `run` script expects a particular subdirectory structure of
+the `input` directory, described [below](#input-directory).
 
 ### Historical Unidata Internet Data Distribution (IDD) Global Observational Data
 
@@ -75,7 +106,7 @@ the SYNOP and BUOY NetCDF files (2008–present), and the HISTSURFACEOBS tar
 files (2003–2008). The HISTSURFACEOBS files have to be unpacked after
 downloading.
 
-In the examples below it is assumed that the IDD files are stored under
+In the examples below it is assumed that the IDD NetCDF files are stored under
 `input/idd/synop` and `input/idd/buoy` for the synop and buoy files,
 respectively.
 
@@ -94,10 +125,10 @@ to download from a JSON catalog file, which can be created on the archive site
 above (`return results as JSON` on the search page). `limit=` in the URL to the
 JSON file should be changed to 10000, and `Show All Replicas` should be
 selected when searching. The resulting file list can be used with the program
-aria2c as `aria2c -i <file>` to download to files. Afterwards, use
-the commands `create_by_model` and `create_by_var` to create an index of
-symlinks in the directory where the downloaded files are stored. This index is
-required by the main commands.
+aria2c as `aria2c -i <file>` to download the files. Afterwards, use the
+commands `create_by_model` and `create_by_var` to create an index of symlinks
+in the directory where the downloaded files are stored. This index is required
+by the `run` script.
 
 In the examples below it is assumed that the CMIP5 and CMIP6 files are stored
 in `input/cmip5/<experiment>/<frequency/` and
@@ -105,7 +136,8 @@ in `input/cmip5/<experiment>/<frequency/` and
 is either `historical` (for both `historical` and `hist-1950`) or
 `abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
-After downloading, the data should be resambled to 2.5° resolution with [cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
+After downloading, the data should be resambled to 2.5° resolution with
+[cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
 
 ```sh
 # To be run in the directory with the CMIP NetCDF files.
@@ -117,33 +149,37 @@ parallel cdo -remapcon,r144x96 {} 2.5deg/{} ::: *.nc
 
 The GISTEMP dataset is in `data/gistemp` available as the original file
 (CSV) and converted to NetCDF with `gistemp_to_nc` (required by the main
-commands). The original dataset has been downloaded from [NASA
-GISS](https://data.giss.nasa.gov/gistemp/), and the original terms of use of
-this dataset apply.
+commands). The original dataset was downloaded from [NASA
+GISS](https://data.giss.nasa.gov/gistemp/). The original terms of use apply.
 
 ### CERES
 
-SYN1deg Level 3 daily means can be downloaded from the [CERES website](https://ceres.larc.nasa.gov).
-They have to be converted to NetCDF with h4toh5 and stored in `input/ceres`.
+SYN1deg Level 3 daily means can be downloaded from the [CERES
+website](https://ceres.larc.nasa.gov). They have to be converted to NetCDF with
+the tool
+[h4toh5](https://portal.hdfgroup.org/display/support/Download+h4h5tools)
+(provided by the HDF Group), and stored in `input/ceres`.
 
 ### ERA5
 
 ERA5 hourly data on pressure levels from 1979 to present can be downloaded
-from the [Copernicus website](https://cds.climate.copernicus.eu/#!/search?text=ERA5&type=dataset).
+from the [Copernicus
+website](https://cds.climate.copernicus.eu/#!/search?text=ERA5&type=dataset).
 They have to be converted to daily mean files with cdo and stored in
 `input/era5`.
 
 The data should be resampled to 2.5° resolution in the same way as the CMIP
-data (see above).
+data.
 
 ### MERRA-2
 
-The M2T1NXRAD MERRA-2 product can be downloaded from [NASA EarthData](https://disc.gsfc.nasa.gov/datasets?project=MERRA-2).
-Daily means can be downloaded with the GES DISC Subsetter. They have to
-be stored in `input/merra-2`.
+The M2T1NXRAD MERRA-2 product can be downloaded from [NASA
+EarthData](https://disc.gsfc.nasa.gov/datasets?project=MERRA-2). Daily means
+can be downloaded with the GES DISC Subsetter. They have to be stored in
+`input/merra-2`.
 
 The data should be resampled to 2.5° resolution in the same way as the CMIP
-data (see above).
+data.
 
 ### Global mean near-surface temperature
 
@@ -157,10 +193,9 @@ archive `input/tas.tar.xz`.
 
 The `input` directory should contain the necessary input files. Apart from the
 datasets already contained in this repository, the files need to be downloaded
-from the sources as described above. NorESM2 is optional. If NorESM2 data is not
-available, it should removed from the `input/models_*` files. Space
-requirements for the input directory are about 5 TB. Below is description of
-the structure of the input directory:
+from the sources as described above. NorESM2 is optional. If the NorESM2 data
+are not available, it should removed from the `input/models_*` files. Below is
+a description of the structure of the input directory:
 
 ```
 ceres: CERES SYN1deg daily mean files (NetCDF).
@@ -223,7 +258,8 @@ tas.tar.xz: Near-surface air temperature (compressed archive).
 
 Output from the processing commands is written in the data directory
 (`data_4`, `data_10` and `data_27` for 4, 10 and 27 cloud types).
-Below is a description of its structure:
+Below is a description of its structure (this is created automatically by the
+`run` script during the data processing):
 
 ```
 ann
@@ -284,17 +320,16 @@ xval
 ## How to run
 
 The `input` directory should be populated with the required input files before
-running the scripts. The CMIP input files should be indexed with
-`create_by_model` after they are downloaded. Space requirements for the data
-directory are about 1 TB, and up to 60 GB of RAM.
+running the scripts.
 
-The `run` bash script runs the Python scripts for various tasks. The tasks can
-be run in a sequence as below. Before running the `run` script, configuration
-should be imported from one of `config_4`, `config_10` or `config_27` for
-4, 10 and 27 cloud types, respectively. The output directories for data
-files (NetCDF) and plots (PDF and PNG) are `data_x` and `plot_x`, where x is 4,
-10, or 27, respectively. Some tasks might take a significant amount of time to
-complete (hours to days, depending on the CPU).
+The `run` bash script runs the Python scripts in `bin` for various tasks. The
+tasks can be run in a sequence as below. Before running the `run` script,
+configuration should be imported from one of `config_4`, `config_10` or
+`config_27` for 4, 10 and 27 cloud types, respectively. The output directories
+for data files (NetCDF) and plots (PDF and PNG) are `data_x` and `plot_x`,
+where x is 4, 10, or 27, respectively. Some of the tasks might take a
+significant amount of time to complete (hours to days, depending on the CPU).
+In general, the tasks should be run in order because of data dependencies.
 
 ```sh
 # Optional configuration:
@@ -390,8 +425,8 @@ export JOBS=24 # Number of concurrent jobs
 
 ### Overview
 
-Below is an overview of the available commands showing their dependencies
-and the paper figures they produce.
+Below is an overview of the available commands showing their dependencies and
+the paper figures they produce.
 
 ```
 prepare_samples
@@ -422,7 +457,7 @@ prepare_samples
 ### Main commands
 
 Below is a description of the main commands. They can be run either
-individually or through the run command as described above. They should be run
+individually or with the `run` command as described above. They should be run
 in a Linux terminal (bash). The commands are located in the `bin` directory as
 should be run from the main repository directory with `bin/<command>
 [<arguments>...]`.
@@ -1102,4 +1137,6 @@ bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 
 ## License
 
-See [LICENSE.md](LICENSE.md).
+The code in this repository is open source, and can be used and distributed
+freely under the terms of an MIT license. Plase see [LICENSE.md](LICENSE.md)
+for details.
