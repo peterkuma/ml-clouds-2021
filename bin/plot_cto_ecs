@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 '''Plot cloud type occurrence vs. ECS regression.
 
-Usage: plot_cto_ecs <varname> <input> <summary> <output>
-
-Depends on: calc_cto calc_cto_ecs
+Usage: plot_cto_ecs VARNAME INPUT SUMMARY OUTPUT
 
 Arguments:
 
-- varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
-  feedback).
-- input: Input file - the output of calc_cto_ecs (NetCDF).
-- output: Output plot (PDF).
+  VARNAME  Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
+  INPUT    Input file. The output of calc_cto_ecs (NetCDF).
+  OUTPUT   Output plot (PDF).
 
 Examples:
 

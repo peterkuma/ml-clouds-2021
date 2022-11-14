@@ -1,23 +1,20 @@
 #!/usr/bin/env python3
 '''Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <input> <ecs> <output> [options]
-
-Depends on: calc_geo_cto
+Usage: plot_geo_cto INPUT ECS OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Input directory - the output of calc_geo_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
 
 Options:
 
-- degree: Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
-- relative: Plot relative to CERES. One of: true or false. Default: true.
-- normalized: <value>: Plot normaized CERES. One of: true, false, only.
-  Default: false.
-- with_ref: <value>: Plot reference row. One of: true, false. Default: true.
+  degree: VALUE      Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+  relative: VALUE    Plot relative to CERES. One of: true or false. Default: true.
+  normalized: VALUE  Plot normaized CERES. One of: true, false, only.  Default: false.
+  with_ref: VALUE    Plot reference row. One of: true, false. Default: true.
 
 Examples:
 

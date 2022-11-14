@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
 '''Calculate cloud optical depth - cloud top press histogram.
 
-Usage: calc_dtau_pct <samples> <ceres> <output> [options]
-
-Depends on: merge_samples
+Usage: calc_dtau_pct SAMPLES CERES OUTPUT [OPTIONS]
 
 Arguments:
 
-- samples: Directory with samples - the output of merge_samples (NetCDF).
-- ceres: Directory with CERES SYN1deg (NetCDF).
-- output: Output file (NetCDF).
+  SAMPLES  Directory with samples. The output of merge_samples (NetCDF).
+  CERES    Directory with CERES SYN1deg (NetCDF).
+  OUTPUT   Output file (NetCDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 

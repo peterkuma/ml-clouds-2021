@@ -416,23 +416,23 @@ should be run from the main repository directory with `bin/<command>
 ```
 Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <start> <end> <output> [options]
+Usage: prepare_samples TYPE INPUT SYNOP BUOY START END OUTPUT [OPTIONS]
 
 Arguments:
 
-- type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
-  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
-- input: Input directory with input files (NetCDF).
-- synop: Input directory with IDD synoptic files or "none" (NetCDF).
-- buoy: Input directory with IDD buoy files or "none" (NetCDF).
-- start: Start time (ISO).
-- end: End time (ISO).
-- output: Output directory.
+  TYPE    Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6), "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
+  INPUT   Input directory with input files (NetCDF).
+  SYNOP   Input directory with IDD synoptic files or "none" (NetCDF).
+  BUOY    Input directory with IDD buoy files or "none" (NetCDF).
+  START   Start time (ISO).
+  END     End time (ISO).
+  OUTPUT  Output directory.
 
 Options:
 
-- seed: <value>: Random seed.
-- keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
+  seed: VALUE           Random seed.
+  keep_stations: VALUE  Keep station records in samples ("true" or "false").  Default: "false".
+  nsamples: VALUE       Number of samples per day to generate. Default: 100.
 
 Examples:
 
@@ -447,17 +447,15 @@ prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none non
 ```
 Plot IDD stations on a map.
 
-Usage: plot_idd_stations <input> <sample> <n> <output> <title>
-
-Depends on: tf
+Usage: plot_idd_stations INPUT SAMPLE N OUTPUT TITLE
 
 Arguments:
 
-- input: IDD input directory (NetCDF).
-- sample: CERES sample - the output of tf apply (NetCDF).
-- n: Sample number.
-- output: Output plot (PDF).
-- title: Plot title.
+  INPUT   IDD input directory (NetCDF).
+  SAMPLE  CERES sample. The output of tf apply (NetCDF).
+  N       Sample number.
+  OUTPUT  Output plot (PDF).
+  TITLE   Plot title.
 
 Examples:
 
@@ -471,39 +469,34 @@ bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00
 ```
 Train or apply a TensorFlow CNN.
 
-Usage: tf train <input> <input_val> <output> <output_history> [options]
-       tf apply <model> <input> <output> [options]
+Usage: tf train INPUT INPUT_VAL OUTPUT OUTPUT_HISTORY [OPTIONS]
+       tf apply MODEL INPUT OUTPUT [OPTIONS]
 
-Depends on: prepare_samples
+Arguments (tf train):
 
-Arguments (train):
+  INPUT           Input directory with samples. The output of prepare_samples (NetCDF).
+  INPUT_VAL       Input directory with validation samples (NetCDF).
+  OUTPUT          Output model (HDF5).
+  OUTPUT_HISTORY  History output (NetCDF).
 
-- input: Input directory with samples - the output of prepare_samples (NetCDF).
-- input_val: Input directory with validation samples (NetCDF).
-- output: Output model (HDF5).
-- output_history: History output (NetCDF).
+Arguments (tf apply):
 
-Options (train):
+  MODEL   TensorFlow model (HDF5).
+  INPUT   Input directory with samples. The output of prepare_samples (NetCDF).
+  OUTPUT  Output samples directory (NetCDF).
 
-- night: <value>: Train for nighttime only. One of: true or false.
-  Default: false.
-- exclude_night: <value>. Exclude nighttime samples. One of: true or false.
-  Default: true.
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
-  region bounded by given latitude and longitude. Default: none.
+Options (tf train):
 
-Arguments (apply):
+  night: VALUE          Train for nighttime only. One of: true or false. Default: false.
+  exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
+  classes: VALUE        Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  exclude: { LAT1 LAT2 LON1 LON2 }
+      Exclude samples with pixels in a region bounded by given latitude and longitude. Default: none.
+  nsamples: VALUE       Maximum number of samples to use for the training per day. Default: 20.
 
-- model: TensorFlow model (HDF5).
-- input: Input directory with samples - the output of prepare_samples (NetCDF).
-- output: Output samples directory (NetCDF).
+Options (tf apply):
 
-Options (apply):
-
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -519,15 +512,15 @@ bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR data/sampl
 ```
 Plot sample.
 
-Usage: plot_samples <input> <n> <output>
-
-Depends on: tf
+Usage: plot_samples INPUT N OUTPUT
 
 Arguments:
 
-- input: Input sample (NetCDF) - the output of tf.
-- n: Sample number.
-- output: Output plot (PDF).
+  INPUT   Input sample (NetCDF). The output of tf.
+  N       Sample number.
+  OUTPUT  Output plot (PDF).
+
+Examples:
 
 bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.pdf
 ```
@@ -539,14 +532,12 @@ bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot
 ```
 Plot training history loss function.
 
-Usage: plot_history <input> <output>
-
-Depends on: tf
+Usage: plot_history INPUT OUTPUT
 
 Arguments:
 
-- input: Input history file - the output of tf (NetCDF).
-- output: Output plot (PDF).
+  INPUT   Input history file. The output of tf (NetCDF).
+  OUTPUT  Output plot (PDF).
 
 Examples:
 
@@ -560,20 +551,17 @@ bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 ```
 Calculate cloud optical depth - cloud top press histogram.
 
-Usage: calc_dtau_pct <samples> <ceres> <output> [options]
-
-Depends on: merge_samples
+Usage: calc_dtau_pct SAMPLES CERES OUTPUT [OPTIONS]
 
 Arguments:
 
-- samples: Directory with samples - the output of merge_samples (NetCDF).
-- ceres: Directory with CERES SYN1deg (NetCDF).
-- output: Output file (NetCDF).
+  SAMPLES  Directory with samples. The output of merge_samples (NetCDF).
+  CERES    Directory with CERES SYN1deg (NetCDF).
+  OUTPUT   Output file (NetCDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -587,16 +575,14 @@ bin/calc_dtau_pct data/samples_pred/ceres input/ceres data/dtau_pct/dtau_pct.nc
 ```
 Plot cloud optical depth - cloud top pressure histogram.
 
-Usage: plot_dtau_pct <input> <output>
-
-Depends on: calc_dtau_pct
+Usage: plot_dtau_pct INPUT OUTPUT
 
 Arguments:
 
-- input: Input file - the output of calc_dtau_pct (NetCDF).
-- output: Output plot (PDF).
+  INPUT   Input file. The output of calc_dtau_pct (NetCDF).
+  OUTPUT  Output plot (PDF).
 
-Example:
+Examples:
 
 bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
 ```
@@ -608,18 +594,18 @@ bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
 ```
 Calculate geographical distribution of cloud type occurrence distribution.
 
-Usage: calc_geo_cto <input> [<input_night>] <tas> <output>
+Usage: calc_geo_cto INPUT [INPUT_NIGHT] TAS OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Input file or directory (NetCDF).
-- input_night: Input directory daily files - nightime samples (NetCDF).
-- tas: Input file with tas - the output of gistemp_to_nc (NetCDF).
-- output: Output file (NetCDF).
+  INPUT        Input file or directory (NetCDF). The output of tf.
+  INPUT_NIGHT  Input directory daily files - nightime samples (NetCDF). The output of tf.
+  TAS          Input file with tas. The output of gistemp_to_nc (NetCDF).
+  OUTPUT       Output file (NetCDF).
 
 Options:
 
-- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+  resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by <value>.
 
 Examples:
 
@@ -634,23 +620,20 @@ bin/calc_geo_cto data/samples_pred/historical/AWI-ESM-1-1-LR input/tas/historica
 ```
 Plot geographical distribution of cloud type occurrence.
 
-Usage: plot_geo_cto <input> <ecs> <output> [options]
-
-Depends on: calc_geo_cto
+Usage: plot_geo_cto INPUT ECS OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Input directory - the output of calc_geo_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
 
 Options:
 
-- degree: Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
-- relative: Plot relative to CERES. One of: true or false. Default: true.
-- normalized: <value>: Plot normaized CERES. One of: true, false, only.
-  Default: false.
-- with_ref: <value>: Plot reference row. One of: true, false. Default: true.
+  degree: VALUE      Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+  relative: VALUE    Plot relative to CERES. One of: true or false. Default: true.
+  normalized: VALUE  Plot normaized CERES. One of: true, false, only.  Default: false.
+  with_ref: VALUE    Plot reference row. One of: true, false. Default: true.
 
 Examples:
 
@@ -663,22 +646,19 @@ bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_h
 
 
 ```
-Plot scatter plot of RMSE of the geographical distribution of cloud type
-occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
+Plot scatter plot of RMSE of the geographical distribution of cloud type occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
-Usage: plot_cto_rmse_ecs <input> <ecs> <output> [legend: <legend>]
-
-Depends on: calc_geo_cto | calc_cto
+Usage: plot_cto_rmse_ecs INPUT ECS OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Input directory - the output of calc_geo_cto or calc_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+  INPUT   Input directory. The output of calc_geo_cto or calc_cto (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
 
 Options:
 
-- legend: Plot legend ("true" or "false"). Default: "true".
+  legend: VALUE  Plot legend ("true" or "false"). Default: "true".
 
 Examples:
 
@@ -692,25 +672,22 @@ bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto
 ```
 Plot global mean cloud type occurrence.
 
-Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <output> <title> [legend: <legend>]
-
-Depends on: calc_cto
+Usage: plot_cto VARNAME DEGREE ABSREL REGRESSION INPUT ECS OUTPUT TITLE [OPTIONS]
 
 Arguments:
 
-- varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
-  feedback).
-- degree: One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
-- absrel: One of "absolute" (absolute value), "relative" (relative to CERES).
-- regression: Plot regression. One of: true or false.
-- input: Input directoy - the output of calc_geo_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
-- title: Plot title.
+  VARNAME     Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
+  DEGREE      One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
+  ABSREL      One of "absolute" (absolute value), "relative" (relative to CERES).
+  REGRESSION  Plot regression. One of: true or false.
+  INPUT       Input directoy. The output of calc_geo_cto (NetCDF).
+  ECS         ECS file (CSV).
+  OUTPUT      Output plot (PDF).
+  TITLE       Plot title.
 
 Options:
 
-- legend: Show legend ("true" or "false"). Default: "true".
+- legend: VALUE  Show legend ("true" or "false"). Default: "true".
 
 Examples:
 
@@ -725,15 +702,13 @@ bin/plot_cto ecs 1-tas absolute false data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.c
 ```
 Calculate cloud type occurrence vs. ECS regression.
 
-Usage: calc_cto_ecs <input> <ecs> <output>
-
-Depends on: calc_cto
+Usage: calc_cto_ecs INPUT ECS OUTPUT
 
 Arguments:
 
-- input: Input directory - the output of calc_geo_cto (NetCDF).
-- ecs: ECS, TCR and CLD input (CSV).
-- output: Output file (NetCDF).
+  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
+  ECS     ECS, TCR and CLD input (CSV).
+  OUTPUT  Output file (NetCDF).
 
 Examples:
 
@@ -747,16 +722,13 @@ bin/calc_cto_ecs data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv data/cto_ecs/cto_e
 ```
 Plot cloud type occurrence vs. ECS regression.
 
-Usage: plot_cto_ecs <varname> <input> <summary> <output>
-
-Depends on: calc_cto calc_cto_ecs
+Usage: plot_cto_ecs VARNAME INPUT SUMMARY OUTPUT
 
 Arguments:
 
-- varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
-  feedback).
-- input: Input file - the output of calc_cto_ecs (NetCDF).
-- output: Output plot (PDF).
+  VARNAME  Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
+  INPUT    Input file. The output of calc_cto_ecs (NetCDF).
+  OUTPUT   Output plot (PDF).
 
 Examples:
 
@@ -770,21 +742,18 @@ bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 ```
 Calculate statistics of cloud properties by cloud type.
 
-Usage: calc_cloud_props <type> <cto> <input> <output> [options]
-
-Depends on: merge_samples
+Usage: calc_cloud_props TYPE CTO INPUT OUTPUT [OPTIONS]
 
 Arguments:
 
-- type: Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).
-- cto: Cloud type occurrence - the output of calc_geo_cto (NetCDF).
-- input: CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
-- output: Output file (NetCDF).
+  TYPE    Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).
+  CTO     Cloud type occurrence. The output of calc_geo_cto (NetCDF).
+  INPUT   CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
+  OUTPUT  Output file (NetCDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -796,19 +765,18 @@ bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6
 
 
 ```
-
-Usage: plot_cloud_prop <var> <input> <ecs> <output> [options]
+Usage: plot_cloud_prop VAR INPUT ECS OUTPUT [OPTIONS]
 
 Arguments:
 
-- var: Variable. One of: "clt", "cod", "pct".
-- input: Input directory - the output of calc_cloud_props (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+  VAR     Variable. One of: "clt", "cod", "pct".
+  INPUT   Input directory. The output of calc_cloud_props (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
 
 Options:
 
-- legend: <value>: Plot legend (true or false). Default: true.
+  legend: VALUE  Plot legend ("true" or "false"). Default: "true".
 
 Examples:
 
@@ -822,17 +790,16 @@ bin/plot_cloud_props pct data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_pc
 
 
 ```
-
 Plot spatial and temporal correlation of stations.
 
-Usage: bin/plot_station_corr <type> <input1> <input2> <output>
+Usage: bin/plot_station_corr TYPE INPUT1 INPUT2 OUTPUT
 
 Arguments:
 
-- type: One of: "time" (time correlation), "space" (space correlation).
-- input1: Input file - the output of calc_idd_geo (NetCDF).
-- input2: Input file - the output of calc_geo_cto (NetCDF).
-- output: Output plot (PDF).
+  TYPE    One of: "time" (time correlation), "space" (space correlation).
+  INPUT1  Input file. The output of calc_idd_geo (NetCDF).
+  INPUT2  Input file. The output of calc_geo_cto (NetCDF).
+  OUTPUT  Output plot (PDF).
 ```
 
 
@@ -842,21 +809,20 @@ Arguments:
 ```
 Calculate geographical distribution of cloud types from IDD data.
 
-Usage: calc_idd_geo <synop> <buoy> <from> <to> <output>
+Usage: calc_idd_geo SYNOP BUOY FROM TO OUTPUT
 
 Arguments:
 
-- synop: Input synop directory (NetCDF).
-- buoy: Input buoy directory (NetCDF).
-- from: From date (ISO).
-- to: To date (ISO).
-- output: Output file (NetCDF).
+  SYNOP   Input synop directory (NetCDF).
+  BUOY    Input buoy directory (NetCDF).
+  FROM    From date (ISO).
+  TO      To date (ISO).
+  OUTPUT  Output file (NetCDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+  classes: VALUE     Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by VALUE.
 
 Examples:
 
@@ -870,12 +836,12 @@ bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.
 ```
 Plot a map showing the number of observations in IDD.
 
-Usage: bin/plot_idd_n_obs <input> <output>
+Usage: bin/plot_idd_n_obs INPUT OUTPUT
 
 Arguments:
 
-- input: Input dataset - the output of calc_idd_geo (NetCDF).
-- output: Output plot (PDF).
+  INPUT   Input dataset. The output of calc_idd_geo (NetCDF).
+  OUTPUT  Output plot (PDF).
 ```
 
 
@@ -886,13 +852,13 @@ Arguments:
 
 Merge cross validation geographical distribution of cloud type occurrence.
 
-Usage: bin/merge_xval_geo_cto [<input>...] [<area>...] <output>
+Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
 
 Arguments:
 
-- input: the output of calc_geo_cto (NetCDF).
-- area: { <lat1> <lat2> <lon1> <lon2> }: Area of input to merge. The number of area arguments must be the same as the number of input arguments.
-- output: Output file (NetCDF).
+  INPUT   The output of calc_geo_cto (NetCDF).
+  AREA    Area of input to merge the format { LAT1 LAT2 LON1 LON2 }. The number of area arguments must be the same as the number of input arguments.
+  OUTPUT  Output file (NetCDF).
 ```
 
 
@@ -900,21 +866,20 @@ Arguments:
 
 
 ```
-
 Calculate cross-validation statistics.
 
-Usage: bin/plot_validation <idd_val> <idd_train> <input>... <output> [options]
+Usage: bin/plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
 
 Arguments:
 
-- idd_val: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
-- idd_train: Training IDD dataset - the output of calc_idd_geo for training years (NetCDF).
-- input: CERES dataset - the output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
-- output: Output plot (PDF).
+  IDD_VAL    Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
+  IDD_TRAIN  Training IDD dataset. The output of calc_idd_geo for training years (NetCDF).
+  INPUT      CERES dataset. The output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
+  OUTPUT     Output plot (PDF).
 
 Options:
 
---normalized: Plot normalized plots.
+  --normalized  Plot normalized plots.
 
 Examples:
 
@@ -926,21 +891,20 @@ bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historica
 
 
 ```
-
 Calculate cross-validation statistics.
 
-Usage: bin/calc_val_stats <input> <idd> <output> [options]
+Usage: bin/calc_val_stats INPUT IDD OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Validation CERES/ANN dataset - the output of calc_geo_cto for validation years (NetCDF).
-- idd: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
-- output: Output file (NetCDF).
+  INPUT   Validation CERES/ANN dataset. The output of calc_geo_cto for validation years (NetCDF).
+  IDD     Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
+  OUTPUT  Output file (NetCDF).
 
 Options:
 
-- area: { <lat1> <lat2> <lon1> <lon2> }: Area to validate on.
-- train_idd: <value>: Training IDD input - the output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
+  area: { LAT1 LAT2 LON1 LON2 }  Area to validate on.
+  train_idd: VALUE               Training IDD input. The output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
 
 Examples:
 
@@ -952,16 +916,15 @@ bin/calc_val_stats data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD
 
 
 ```
-
 Plot ROC validation curves.
 
-Usage: bin/plot_roc <input> <output> <title>
+Usage: bin/plot_roc INPUT OUTPUT TITLE
 
 Arguments:
 
-- input: Input data - the output of calc_val_stats (NetCDF).
-- output: Output plot (PDF)
-- title: Plot title.
+  INPUT   Input data. The output of calc_val_stats (NetCDF).
+  OUTPUT  Output plot (PDF)
+  TITLE   Plot title.
 ```
 
 
@@ -974,15 +937,15 @@ Arguments:
 
 Build the README document from a template.
 
-Usage: build_readme <input> <bindir> <output>
+Usage: build_readme INPUT BINDIR OUTPUT
 
 Arguments:
 
-- input: Input file.
-- bindir: Directory with scripts.
-- output: Output file.
+  INPUT   Input file.
+  BINDIR  Directory with scripts.
+  OUTPUT  Output file.
 
-Example:
+Examples:
 
 bin/build_readme README.md.in bin README.md
 ```
@@ -992,19 +955,18 @@ bin/build_readme README.md.in bin README.md
 
 
 ```
-Download CMIP data based on a JSON catalogue downloaded from the CMIP
-archive search page.
+Download CMIP data based on a JSON catalogue downloaded from the CMIP archive search page.
 
-Usage: download_cmip <filename> <var> <start> <end>
+Usage: download_cmip FILENAME VAR START END
 
 Arguments:
 
-- filename: Input file (JSON).
-- var: Variable name.
-- start: Start time (ISO).
-- end: End time (ISO).
+  FILENAME  Input file (JSON).
+  VAR       Variable name.
+  START     Start time (ISO).
+  END       End time (ISO).
 
-Example:
+Examples:
 
 bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
 ```
@@ -1018,7 +980,7 @@ directory with CMIP data.
 
 Usage: create_by_model
 
-Example:
+Examples:
 
 cd data/cmip5/historical/day
 ./create_by_model
@@ -1032,7 +994,7 @@ directory with CMIP data.
 
 Usage: create_by_var
 
-Example:
+Examples:
 
 cd data/cmip5/historical/day
 ./create_by_var

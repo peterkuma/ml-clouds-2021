@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 '''Plot a map showing the number of observations in IDD.
 
-Usage: bin/plot_idd_n_obs <input> <output>
+Usage: bin/plot_idd_n_obs INPUT OUTPUT
 
 Arguments:
 
-- input: Input dataset - the output of calc_idd_geo (NetCDF).
-- output: Output plot (PDF).
+  INPUT   Input dataset. The output of calc_idd_geo (NetCDF).
+  OUTPUT  Output plot (PDF).
 '''
 
 import sys

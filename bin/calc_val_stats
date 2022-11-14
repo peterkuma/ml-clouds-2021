@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-'''
-Calculate cross-validation statistics.
+'''Calculate cross-validation statistics.
 
-Usage: bin/calc_val_stats <input> <idd> <output> [options]
+Usage: bin/calc_val_stats INPUT IDD OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Validation CERES/ANN dataset - the output of calc_geo_cto for validation years (NetCDF).
-- idd: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
-- output: Output file (NetCDF).
+  INPUT   Validation CERES/ANN dataset. The output of calc_geo_cto for validation years (NetCDF).
+  IDD     Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
+  OUTPUT  Output file (NetCDF).
 
 Options:
 
-- area: { <lat1> <lat2> <lon1> <lon2> }: Area to validate on.
-- train_idd: <value>: Training IDD input - the output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
+  area: { LAT1 LAT2 LON1 LON2 }  Area to validate on.
+  train_idd: VALUE               Training IDD input. The output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
 
 Examples:
 

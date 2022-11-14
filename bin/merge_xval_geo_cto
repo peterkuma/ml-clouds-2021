@@ -2,13 +2,13 @@
 '''
 Merge cross validation geographical distribution of cloud type occurrence.
 
-Usage: bin/merge_xval_geo_cto [<input>...] [<area>...] <output>
+Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
 
 Arguments:
 
-- input: the output of calc_geo_cto (NetCDF).
-- area: { <lat1> <lat2> <lon1> <lon2> }: Area of input to merge. The number of area arguments must be the same as the number of input arguments.
-- output: Output file (NetCDF).
+  INPUT   The output of calc_geo_cto (NetCDF).
+  AREA    Area of input to merge the format { LAT1 LAT2 LON1 LON2 }. The number of area arguments must be the same as the number of input arguments.
+  OUTPUT  Output file (NetCDF).
 '''
 
 import sys

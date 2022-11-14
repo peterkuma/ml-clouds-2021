@@ -1,14 +1,12 @@
 #!/usr/bin/env python3
 '''Plot training history loss function.
 
-Usage: plot_history <input> <output>
-
-Depends on: tf
+Usage: plot_history INPUT OUTPUT
 
 Arguments:
 
-- input: Input history file - the output of tf (NetCDF).
-- output: Output plot (PDF).
+  INPUT   Input history file. The output of tf (NetCDF).
+  OUTPUT  Output plot (PDF).
 
 Examples:
 

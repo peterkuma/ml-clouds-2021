@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-'''
-Calculate cross-validation statistics.
+'''Calculate cross-validation statistics.
 
-Usage: bin/plot_validation <idd_val> <idd_train> <input>... <output> [options]
+Usage: bin/plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
 
 Arguments:
 
-- idd_val: Validation IDD dataset - the output of calc_idd_geo for validation years (NetCDF).
-- idd_train: Training IDD dataset - the output of calc_idd_geo for training years (NetCDF).
-- input: CERES dataset - the output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
-- output: Output plot (PDF).
+  IDD_VAL    Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
+  IDD_TRAIN  Training IDD dataset. The output of calc_idd_geo for training years (NetCDF).
+  INPUT      CERES dataset. The output of calc_geo_cto or merge_xval_geo_cto (NetCDF).
+  OUTPUT     Output plot (PDF).
 
 Options:
 
---normalized: Plot normalized plots.
+  --normalized  Plot normalized plots.
 
 Examples:
 

@@ -1,20 +1,17 @@
 #!/usr/bin/env python3
-'''Plot scatter plot of RMSE of the geographical distribution of cloud type
-occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
+'''Plot scatter plot of RMSE of the geographical distribution of cloud type occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
-Usage: plot_cto_rmse_ecs <input> <ecs> <output> [legend: <legend>]
-
-Depends on: calc_geo_cto | calc_cto
+Usage: plot_cto_rmse_ecs INPUT ECS OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Input directory - the output of calc_geo_cto or calc_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+  INPUT   Input directory. The output of calc_geo_cto or calc_cto (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
 
 Options:
 
-- legend: Plot legend ("true" or "false"). Default: "true".
+  legend: VALUE  Plot legend ("true" or "false"). Default: "true".
 
 Examples:
 

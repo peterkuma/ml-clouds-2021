@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-"""Download CMIP data based on a JSON catalogue downloaded from the CMIP
-archive search page.
+'''Download CMIP data based on a JSON catalogue downloaded from the CMIP archive search page.
 
-Usage: download_cmip <filename> <var> <start> <end>
+Usage: download_cmip FILENAME VAR START END
 
 Arguments:
 
-- filename: Input file (JSON).
-- var: Variable name.
-- start: Start time (ISO).
-- end: End time (ISO).
+  FILENAME  Input file (JSON).
+  VAR       Variable name.
+  START     Start time (ISO).
+  END       End time (ISO).
 
-Example:
+Examples:
 
 bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
-"""
+'''
 
 import sys
 import os

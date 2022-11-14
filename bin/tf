@@ -1,41 +1,34 @@
 #!/usr/bin/env python3
 '''Train or apply a TensorFlow CNN.
 
-Usage: tf train <input> <input_val> <output> <output_history> [options]
-       tf apply <model> <input> <output> [options]
+Usage: tf train INPUT INPUT_VAL OUTPUT OUTPUT_HISTORY [OPTIONS]
+       tf apply MODEL INPUT OUTPUT [OPTIONS]
 
-Depends on: prepare_samples
+Arguments (tf train):
 
-Arguments (train):
+  INPUT           Input directory with samples. The output of prepare_samples (NetCDF).
+  INPUT_VAL       Input directory with validation samples (NetCDF).
+  OUTPUT          Output model (HDF5).
+  OUTPUT_HISTORY  History output (NetCDF).
 
-- input: Input directory with samples - the output of prepare_samples (NetCDF).
-- input_val: Input directory with validation samples (NetCDF).
-- output: Output model (HDF5).
-- output_history: History output (NetCDF).
+Arguments (tf apply):
 
-Options (train):
+  MODEL   TensorFlow model (HDF5).
+  INPUT   Input directory with samples. The output of prepare_samples (NetCDF).
+  OUTPUT  Output samples directory (NetCDF).
 
-- night: <value>: Train for nighttime only. One of: true or false.
-  Default: false.
-- exclude_night: <value>. Exclude nighttime samples. One of: true or false.
-  Default: true.
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
-  region bounded by given latitude and longitude. Default: none.
-- nsamples: <value>: Maximum number of samples to use for the training per day.
-  Default: 20.
+Options (tf train):
 
-Arguments (apply):
+  night: VALUE          Train for nighttime only. One of: true or false. Default: false.
+  exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
+  classes: VALUE        Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  exclude: { LAT1 LAT2 LON1 LON2 }
+      Exclude samples with pixels in a region bounded by given latitude and longitude. Default: none.
+  nsamples: VALUE       Maximum number of samples to use for the training per day. Default: 20.
 
-- model: TensorFlow model (HDF5).
-- input: Input directory with samples - the output of prepare_samples (NetCDF).
-- output: Output samples directory (NetCDF).
+Options (tf apply):
 
-Options (apply):
-
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 

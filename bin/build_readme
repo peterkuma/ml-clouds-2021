@@ -2,15 +2,15 @@
 '''
 Build the README document from a template.
 
-Usage: build_readme <input> <bindir> <output>
+Usage: build_readme INPUT BINDIR OUTPUT
 
 Arguments:
 
-- input: Input file.
-- bindir: Directory with scripts.
-- output: Output file.
+  INPUT   Input file.
+  BINDIR  Directory with scripts.
+  OUTPUT  Output file.
 
-Example:
+Examples:
 
 bin/build_readme README.md.in bin README.md
 '''

@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 '''Plot sample.
 
-Usage: plot_samples <input> <n> <output>
-
-Depends on: tf
+Usage: plot_samples INPUT N OUTPUT
 
 Arguments:
 
-- input: Input sample (NetCDF) - the output of tf.
-- n: Sample number.
-- output: Output plot (PDF).
+  INPUT   Input sample (NetCDF). The output of tf.
+  N       Sample number.
+  OUTPUT  Output plot (PDF).
+
+Examples:
 
 bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.pdf
 '''

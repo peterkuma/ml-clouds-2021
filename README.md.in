@@ -516,7 +516,7 @@ directory with CMIP data.
 
 Usage: create_by_model
 
-Example:
+Examples:
 
 cd data/cmip5/historical/day
 ./create_by_model
@@ -530,7 +530,7 @@ directory with CMIP data.
 
 Usage: create_by_var
 
-Example:
+Examples:
 
 cd data/cmip5/historical/day
 ./create_by_var

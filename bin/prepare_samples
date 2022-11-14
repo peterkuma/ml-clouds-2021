@@ -1,24 +1,23 @@
 #!/usr/bin/env python3
 '''Prepare samples of clouds for CNN training.
 
-Usage: prepare_samples <type> <input> <synop> <buoy> <start> <end> <output> [options]
+Usage: prepare_samples TYPE INPUT SYNOP BUOY START END OUTPUT [OPTIONS]
 
 Arguments:
 
-- type: Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6),
-  "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
-- input: Input directory with input files (NetCDF).
-- synop: Input directory with IDD synoptic files or "none" (NetCDF).
-- buoy: Input directory with IDD buoy files or "none" (NetCDF).
-- start: Start time (ISO).
-- end: End time (ISO).
-- output: Output directory.
+  TYPE    Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6), "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
+  INPUT   Input directory with input files (NetCDF).
+  SYNOP   Input directory with IDD synoptic files or "none" (NetCDF).
+  BUOY    Input directory with IDD buoy files or "none" (NetCDF).
+  START   Start time (ISO).
+  END     End time (ISO).
+  OUTPUT  Output directory.
 
 Options:
 
-- seed: <value>: Random seed.
-- keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
-- nsamples: <value>: Number of samples per day to generate. Default: 100.
+  seed: VALUE           Random seed.
+  keep_stations: VALUE  Keep station records in samples ("true" or "false").  Default: "false".
+  nsamples: VALUE       Number of samples per day to generate. Default: 100.
 
 Examples:
 

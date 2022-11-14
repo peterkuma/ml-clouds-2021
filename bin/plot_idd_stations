@@ -1,17 +1,15 @@
 #!/usr/bin/env python3
 '''Plot IDD stations on a map.
 
-Usage: plot_idd_stations <input> <sample> <n> <output> <title>
-
-Depends on: tf
+Usage: plot_idd_stations INPUT SAMPLE N OUTPUT TITLE
 
 Arguments:
 
-- input: IDD input directory (NetCDF).
-- sample: CERES sample - the output of tf apply (NetCDF).
-- n: Sample number.
-- output: Output plot (PDF).
-- title: Plot title.
+  INPUT   IDD input directory (NetCDF).
+  SAMPLE  CERES sample. The output of tf apply (NetCDF).
+  N       Sample number.
+  OUTPUT  Output plot (PDF).
+  TITLE   Plot title.
 
 Examples:
 

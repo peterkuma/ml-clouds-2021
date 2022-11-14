@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
 '''Plot cloud optical depth - cloud top pressure histogram.
 
-Usage: plot_dtau_pct <input> <output>
-
-Depends on: calc_dtau_pct
+Usage: plot_dtau_pct INPUT OUTPUT
 
 Arguments:
 
-- input: Input file - the output of calc_dtau_pct (NetCDF).
-- output: Output plot (PDF).
+  INPUT   Input file. The output of calc_dtau_pct (NetCDF).
+  OUTPUT  Output plot (PDF).
 
-Example:
+Examples:
 
 bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
 '''

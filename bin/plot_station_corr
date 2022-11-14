@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
-'''
-Plot spatial and temporal correlation of stations.
+'''Plot spatial and temporal correlation of stations.
 
-Usage: bin/plot_station_corr <type> <input1> <input2> <output>
+Usage: bin/plot_station_corr TYPE INPUT1 INPUT2 OUTPUT
 
 Arguments:
 
-- type: One of: "time" (time correlation), "space" (space correlation).
-- input1: Input file - the output of calc_idd_geo (NetCDF).
-- input2: Input file - the output of calc_geo_cto (NetCDF).
-- output: Output plot (PDF).
+  TYPE    One of: "time" (time correlation), "space" (space correlation).
+  INPUT1  Input file. The output of calc_idd_geo (NetCDF).
+  INPUT2  Input file. The output of calc_geo_cto (NetCDF).
+  OUTPUT  Output plot (PDF).
 '''
 
 import sys

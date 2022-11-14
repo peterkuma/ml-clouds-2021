@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-'''
-Plot ROC validation curves.
+'''Plot ROC validation curves.
 
-Usage: bin/plot_roc <input> <output> <title>
+Usage: bin/plot_roc INPUT OUTPUT TITLE
 
 Arguments:
 
-- input: Input data - the output of calc_val_stats (NetCDF).
-- output: Output plot (PDF)
-- title: Plot title.
+  INPUT   Input data. The output of calc_val_stats (NetCDF).
+  OUTPUT  Output plot (PDF)
+  TITLE   Plot title.
 '''
 
 import sys

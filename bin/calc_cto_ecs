@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 '''Calculate cloud type occurrence vs. ECS regression.
 
-Usage: calc_cto_ecs <input> <ecs> <output>
-
-Depends on: calc_cto
+Usage: calc_cto_ecs INPUT ECS OUTPUT
 
 Arguments:
 
-- input: Input directory - the output of calc_geo_cto (NetCDF).
-- ecs: ECS, TCR and CLD input (CSV).
-- output: Output file (NetCDF).
+  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
+  ECS     ECS, TCR and CLD input (CSV).
+  OUTPUT  Output file (NetCDF).
 
 Examples:
 

@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-'''
-Usage: plot_cloud_prop <var> <input> <ecs> <output> [options]
+'''Usage: plot_cloud_prop VAR INPUT ECS OUTPUT [OPTIONS]
 
 Arguments:
 
-- var: Variable. One of: "clt", "cod", "pct".
-- input: Input directory - the output of calc_cloud_props (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
+  VAR     Variable. One of: "clt", "cod", "pct".
+  INPUT   Input directory. The output of calc_cloud_props (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
 
 Options:
 
-- legend: <value>: Plot legend (true or false). Default: true.
+  legend: VALUE  Plot legend ("true" or "false"). Default: "true".
 
 Examples:
 

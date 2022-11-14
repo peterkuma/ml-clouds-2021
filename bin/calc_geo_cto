@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 '''Calculate geographical distribution of cloud type occurrence distribution.
 
-Usage: calc_geo_cto <input> [<input_night>] <tas> <output>
+Usage: calc_geo_cto INPUT [INPUT_NIGHT] TAS OUTPUT [OPTIONS]
 
 Arguments:
 
-- input: Input file or directory (NetCDF).
-- input_night: Input directory daily files - nightime samples (NetCDF).
-- tas: Input file with tas - the output of gistemp_to_nc (NetCDF).
-- output: Output file (NetCDF).
+  INPUT        Input file or directory (NetCDF). The output of tf.
+  INPUT_NIGHT  Input directory daily files - nightime samples (NetCDF). The output of tf.
+  TAS          Input file with tas. The output of gistemp_to_nc (NetCDF).
+  OUTPUT       Output file (NetCDF).
 
 Options:
 
-- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+  resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by <value>.
 
 Examples:
 

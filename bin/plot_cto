@@ -1,25 +1,22 @@
 #!/usr/bin/env python3
 '''Plot global mean cloud type occurrence.
 
-Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <output> <title> [legend: <legend>]
-
-Depends on: calc_cto
+Usage: plot_cto VARNAME DEGREE ABSREL REGRESSION INPUT ECS OUTPUT TITLE [OPTIONS]
 
 Arguments:
 
-- varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
-  feedback).
-- degree: One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
-- absrel: One of "absolute" (absolute value), "relative" (relative to CERES).
-- regression: Plot regression. One of: true or false.
-- input: Input directoy - the output of calc_geo_cto (NetCDF).
-- ecs: ECS file (CSV).
-- output: Output plot (PDF).
-- title: Plot title.
+  VARNAME     Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
+  DEGREE      One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
+  ABSREL      One of "absolute" (absolute value), "relative" (relative to CERES).
+  REGRESSION  Plot regression. One of: true or false.
+  INPUT       Input directoy. The output of calc_geo_cto (NetCDF).
+  ECS         ECS file (CSV).
+  OUTPUT      Output plot (PDF).
+  TITLE       Plot title.
 
 Options:
 
-- legend: Show legend ("true" or "false"). Default: "true".
+- legend: VALUE  Show legend ("true" or "false"). Default: "true".
 
 Examples:
 

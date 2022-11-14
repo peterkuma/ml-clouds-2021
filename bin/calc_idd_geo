@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 '''Calculate geographical distribution of cloud types from IDD data.
 
-Usage: calc_idd_geo <synop> <buoy> <from> <to> <output>
+Usage: calc_idd_geo SYNOP BUOY FROM TO OUTPUT
 
 Arguments:
 
-- synop: Input synop directory (NetCDF).
-- buoy: Input buoy directory (NetCDF).
-- from: From date (ISO).
-- to: To date (ISO).
-- output: Output file (NetCDF).
+  SYNOP   Input synop directory (NetCDF).
+  BUOY    Input buoy directory (NetCDF).
+  FROM    From date (ISO).
+  TO      To date (ISO).
+  OUTPUT  Output file (NetCDF).
 
 Options:
 
-- classes: <value>: Classification. One of: 0 (4 cloud types),
-  1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
-- resolution: <value>: Resolution (degrees). Default: 5. 180 must be divisible by <value>.
+  classes: VALUE     Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by VALUE.
 
 Examples:
 
