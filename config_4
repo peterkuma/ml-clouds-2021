@@ -2,4 +2,4 @@ export INPUT=input
 export DATA=data_4
 export DATA_COMMON=data
 export PLOT=plot_4
-export CLASSES=0
+export NCLASSES=4

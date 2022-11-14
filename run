@@ -7,7 +7,7 @@ INPUT="${INPUT:-input}"
 DATA="${DATA:-data}"
 DATA_COMMON="${DATA_COMMON:-data}"
 PLOT="${PLOT:-plot}"
-CLASSES="${CLASSES:-0}"
+NCLASSES="${NCLASSES:-4}"
 
 TRAIN_YEARS="$(echo 2004 2005 {2009..2011} {2013..2016} {2018..2020})"
 VAL_YEARS="2007 2012 2017"
@@ -89,7 +89,7 @@ prepare_ceres)
 train_ann)
 	mkdir -p "$DATA"/ann
 	bin/tf train "$DATA"/samples/ceres/{training,validation} \
-		"$DATA"/ann/ceres.h5 "$DATA"/ann/history.nc classes: "$CLASSES"
+		"$DATA"/ann/ceres.h5 "$DATA"/ann/history.nc nclasses: "$NCLASSES"
 	;;
 
 train_ann_xval)
@@ -99,7 +99,7 @@ train_ann_xval)
 		mkdir -p "$dir"/ann
 		bin/tf train "$DATA"/samples/ceres/{training,validation} \
 			"$dir"/ann/ceres.h5 "$dir"/ann/history.nc \
-			classes: "$CLASSES" exclude: $extent
+			nclasses: "$NCLASSES" exclude: $extent
 	done
 	;;
 
@@ -174,7 +174,7 @@ prepare_abrupt-4xCO2)
 predict_ceres)
 	mkdir -p "$DATA"/samples_pred/historical/CERES/validation
 	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres \
-		"$DATA"/samples_pred/historical/CERES classes: "$CLASSES"
+		"$DATA"/samples_pred/historical/CERES nclasses: "$NCLASSES"
 	for y in $VAL_YEARS; do
 		ln -sf ../$y.nc "$DATA"/samples_pred/historical/CERES/validation/
 	done
@@ -185,7 +185,7 @@ predict_ceres_xval)
 		dir="$DATA/xval/$region/"
 		mkdir -p "$dir"/samples_pred/historical/CERES
 		bin/tf apply "$dir"/ann/ceres.h5 "$DATA"/samples/ceres/validation/ \
-			"$dir"/samples_pred/historical/CERES classes: "$CLASSES"
+			"$dir"/samples_pred/historical/CERES nclasses: "$NCLASSES"
 	done
 	;;
 
@@ -198,7 +198,7 @@ predict_historical)
 		fi
 		mkdir -p "$DATA"/samples_pred/$exp/$model
 		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
-			"$DATA"/samples_pred/$exp/$model classes: "$CLASSES"
+			"$DATA"/samples_pred/$exp/$model nclasses: "$NCLASSES"
 	done
 	;;
 
@@ -211,7 +211,7 @@ predict_abrupt-4xCO2)
 		fi
 		mkdir -p "$DATA"/samples_pred/$exp/$model
 		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
-			"$DATA"/samples_pred/$exp/$model classes: "$CLASSES"
+			"$DATA"/samples_pred/$exp/$model nclasses: "$NCLASSES"
 	done
 	;;
 
@@ -324,36 +324,33 @@ plot_cto_rmse_ecs)
 
 plot_cto_historical)
 	label="CMIP6 historical and reanalyses (${MODEL_YEARS_FIRST}-${MODEL_YEARS_LAST}) relative to CERES (${CERES_YEARS_FIRST}-${CERES_YEARS_LAST})"
-	if [ "$CLASSES" = 2 ]; then
-		bin/plot_cto_3 ecs 0 relative false "$DATA"/geo_cto/historical/part_1 \
-			"$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical_1.pdf "$label" \
-			classes: "$CLASSES"
-		bin/plot_cto_3 ecs 0 relative false "$DATA"/geo_cto/historical/part_2 \
-			"$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical_2.pdf "$label" \
-			classes: "$CLASSES"
+	if [ "$NCLASSES" = 27 ]; then
+		bin/plot_cto ecs 0 relative false "$DATA"/geo_cto/historical/part_1 \
+			"$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical_1.pdf "$label"
+		bin/plot_cto ecs 0 relative false "$DATA"/geo_cto/historical/part_2 \
+			"$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical_2.pdf "$label"
 	else
-		bin/plot_cto_3 ecs 0 relative false "$DATA"/geo_cto/historical/all \
-			"$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical.pdf "$label" \
-			classes: "$CLASSES"
+		bin/plot_cto ecs 0 relative false "$DATA"/geo_cto/historical/all \
+			"$INPUT"/ecs/ecs.csv "$PLOT"/cto_historical.pdf "$label"
 	fi
 	;;
 
 plot_cto_abrupt-4xCO2)
 	label="CMIP abrupt-4xCO2 (first 100 years)"
-	if [ "$CLASSES" = 2 ]; then
-		bin/plot_cto_3 ecs 1-tas absolute false \
+	if [ "$NCLASSES" = 27 ]; then
+		bin/plot_cto ecs 1-tas absolute false \
 			"$DATA"/geo_cto/abrupt-4xCO2/part_1 "$INPUT"/ecs/ecs.csv \
 			"$PLOT"/cto_abrupt-4xCO2_1.pdf "$label" \
-			legend: false classes: "$CLASSES"
-		bin/plot_cto_3 ecs 1-tas absolute false \
+			legend: false
+		bin/plot_cto ecs 1-tas absolute false \
 			"$DATA"/geo_cto/abrupt-4xCO2/part_2 "$INPUT"/ecs/ecs.csv \
 			"$PLOT"/cto_abrupt-4xCO2_2.pdf "$label" \
-			legend: false classes: "$CLASSES"
+			legend: false
 	else
-		bin/plot_cto_3 ecs 1-tas absolute false \
+		bin/plot_cto ecs 1-tas absolute false \
 			"$DATA"/geo_cto/abrupt-4xCO2/all "$INPUT"/ecs/ecs.csv \
 			"$PLOT"/cto_abrupt-4xCO2.pdf "$label" \
-			legend: false classes: "$CLASSES"
+			legend: false
 	fi
 	;;
 
@@ -369,9 +366,9 @@ plot_cto_ecs)
 calc_idd_geo)
 	mkdir -p "$DATA"/idd_geo/{,validation,training}
 	parallel bin/calc_idd_geo "$INPUT"/idd/{synop,buoy} {}-01-01 {}-12-31 \
-		"$DATA"/idd_geo/validation/{}.nc classes: "$CLASSES" ::: $VAL_YEARS
+		"$DATA"/idd_geo/validation/{}.nc nclasses: "$NCLASSES" ::: $VAL_YEARS
 	parallel bin/calc_idd_geo "$INPUT"/idd/{synop,buoy} {}-01-01 {}-12-31 \
-		"$DATA"/idd_geo/training/{}.nc classes: "$CLASSES" ::: $TRAIN_YEARS
+		"$DATA"/idd_geo/training/{}.nc nclasses: "$NCLASSES" ::: $TRAIN_YEARS
 	ds merge time "$DATA"/idd_geo/validation/*.nc "$DATA"/idd_geo/validation.nc
 	ds merge time "$DATA"/idd_geo/training/*.nc "$DATA"/idd_geo/training.nc
 	;;

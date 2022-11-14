@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 '''Calculate cloud optical depth - cloud top press histogram.
 
-Usage: calc_dtau_pct SAMPLES CERES OUTPUT [OPTIONS]
+Usage: calc_dtau_pct SAMPLES CERES OUTPUT
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  SAMPLES  Directory with samples. The output of merge_samples (NetCDF).
+  SAMPLES  Directory with samples. The output of prepare_samples (NetCDF).
   CERES    Directory with CERES SYN1deg (NetCDF).
   OUTPUT   Output file (NetCDF).
-
-Options:
-
-  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -88,12 +84,11 @@ if __name__ == '__main__':
 	samples = args[1]
 	ceres = args[2]
 	output = args[3]
-	classes = opts.get('classes', 0)
 
-	k = {0: 4, 1: 10, 2: 27}[classes]
 	n = len(DTAU)
 	m = len(PCT)
-	hist = np.zeros((k, n, m), np.float64)
+	k = None
+	hist = None
 
 	files = sorted(os.listdir(samples))
 	for file_ in files:
@@ -102,6 +97,9 @@ if __name__ == '__main__':
 		filename = os.path.join(samples, file_)
 		print('<- %s' % filename)
 		d = ds.read(filename, ['lat', 'lon', 'time', 'stats'])
+		if hist is None:
+			k = ds.dim(d, 'cloud_type')
+			hist = np.zeros((k, n, m), np.float64)
 		hist += process(d, DTAU, PCT, ceres)
 
 	for j in range(k):

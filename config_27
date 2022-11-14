@@ -2,4 +2,4 @@ export INPUT=input
 export DATA=data_27
 export DATA_COMMON=data
 export PLOT=plot_27
-export CLASSES=2
+export NCLASSES=27

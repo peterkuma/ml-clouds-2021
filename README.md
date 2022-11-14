@@ -500,14 +500,14 @@ Options (tf train):
 
   night: VALUE          Train for nighttime only. One of: true or false. Default: false.
   exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
-  classes: VALUE        Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  nclasses: VALUE       Number of cloud types. One of: 4, 10, 27. Default: 4.
   exclude: { LAT1 LAT2 LON1 LON2 }
       Exclude samples with pixels in a region bounded by given latitude and longitude. Default: none.
   nsamples: VALUE       Maximum number of samples to use for the training per day. Default: 20.
 
 Options (tf apply):
 
-  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  nclasses: VALUE  Number of cloud types. One of: 4, 10, 27. Default: 4.
 
 Examples:
 
@@ -564,19 +564,15 @@ bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 ```
 Calculate cloud optical depth - cloud top press histogram.
 
-Usage: calc_dtau_pct SAMPLES CERES OUTPUT [OPTIONS]
+Usage: calc_dtau_pct SAMPLES CERES OUTPUT
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  SAMPLES  Directory with samples. The output of merge_samples (NetCDF).
+  SAMPLES  Directory with samples. The output of prepare_samples (NetCDF).
   CERES    Directory with CERES SYN1deg (NetCDF).
   OUTPUT   Output file (NetCDF).
-
-Options:
-
-  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -767,7 +763,7 @@ bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 ```
 Calculate statistics of cloud properties by cloud type.
 
-Usage: calc_cloud_props TYPE CTO INPUT OUTPUT [OPTIONS]
+Usage: calc_cloud_props TYPE CTO INPUT OUTPUT
 
 This program uses PST for command line argument parsing.
 
@@ -777,10 +773,6 @@ Arguments:
   CTO     Cloud type occurrence. The output of calc_geo_cto (NetCDF).
   INPUT   CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
   OUTPUT  Output file (NetCDF).
-
-Options:
-
-  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -852,12 +844,12 @@ Arguments:
 
 Options:
 
-  classes: VALUE     Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  nclasses: VALUE    Number of cloud types. One of: 4, 10 or 27. Default: 4.
   resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by VALUE.
 
 Examples:
 
-bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc classes: 1
+bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc nclasses: 10
 ```
 
 

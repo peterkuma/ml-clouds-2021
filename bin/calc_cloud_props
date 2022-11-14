@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Calculate statistics of cloud properties by cloud type.
 
-Usage: calc_cloud_props TYPE CTO INPUT OUTPUT [OPTIONS]
+Usage: calc_cloud_props TYPE CTO INPUT OUTPUT
 
 This program uses PST for command line argument parsing.
 
@@ -11,10 +11,6 @@ Arguments:
   CTO     Cloud type occurrence. The output of calc_geo_cto (NetCDF).
   INPUT   CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
   OUTPUT  Output file (NetCDF).
-
-Options:
-
-  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 
 Examples:
 
@@ -206,11 +202,9 @@ if __name__ == '__main__':
 	cto = args[2]
 	input_ = args[3]
 	output = args[4]
-	classes = opts.get('classes', 0)
-
-	nclasses = {0: 4, 1: 10, 2: 27}[classes]
 
 	d_cto = ds.read(cto)
+	nclasses = ds.dim(d_cto, 'cloud_type')
 
 	read = {
 		'ceres': read_ceres,

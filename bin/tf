@@ -23,14 +23,14 @@ Options (tf train):
 
   night: VALUE          Train for nighttime only. One of: true or false. Default: false.
   exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
-  classes: VALUE        Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  nclasses: VALUE       Number of cloud types. One of: 4, 10, 27. Default: 4.
   exclude: { LAT1 LAT2 LON1 LON2 }
       Exclude samples with pixels in a region bounded by given latitude and longitude. Default: none.
   nsamples: VALUE       Maximum number of samples to use for the training per day. Default: 20.
 
 Options (tf apply):
 
-  classes: VALUE  Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  nclasses: VALUE  Number of cloud types. One of: 4, 10, 27. Default: 4.
 
 Examples:
 
@@ -175,7 +175,7 @@ def unet_model(x, nclasses, n=16, dropout=0.1, batchnorm=True):
 	y = Conv2D(nclasses*2, (1, 1), activation='sigmoid')(y)
 	return Model(inputs=[x], outputs=[y])
 
-def read_samples(filename, exclude=None, exclude_night=True, classes=0):
+def read_samples(filename, exclude=None, exclude_night=True, nclasses=4):
 	print('<- %s' % filename)
 	d = ds.read(filename, ['data', 'time', 'lat', 'lon', 'station_clouds', \
 		'station_clouds_n'])
@@ -201,10 +201,10 @@ def read_samples(filename, exclude=None, exclude_night=True, classes=0):
 	images = np.moveaxis(d['data'], 1, 3)
 	if 'station_clouds' in d:
 		calc_stats = {
-			0: calc_stats_4,
-			1: calc_stats_10,
-			2: lambda x, xn: (x, xn)
-		}[classes]
+			4: calc_stats_4,
+			10: calc_stats_10,
+			27: lambda x, xn: (x, xn)
+		}[nclasses]
 		station_clouds, station_clouds_n = calc_stats(
 			d['station_clouds'],
 			d['station_clouds_n']
@@ -231,10 +231,8 @@ def read_samples(filename, exclude=None, exclude_night=True, classes=0):
 		d['lat'][mask,::] if 'lat' in d else None, \
 		d['lon'][mask,::] if 'lon' in d else None
 
-def apply_(model_file, input_, output, classes=0, night=False,
+def apply_(model_file, input_, output, nclasses=4, night=False,
 	exclude_night=True):
-
-	nclasses = {0: 4, 1: 10, 2: 27}[classes]
 
 	files = os.listdir(input_)
 	for file_ in sorted(files):
@@ -243,7 +241,7 @@ def apply_(model_file, input_, output, classes=0, night=False,
 		filename = os.path.join(input_, file_)
 		images, labels, time0, lat0, lon0 = read_samples(
 			filename,
-			classes=classes,
+			nclasses=nclasses,
 		)
 		if night:
 			images[:,:,:,0] = 0
@@ -262,7 +260,7 @@ def apply_(model_file, input_, output, classes=0, night=False,
 			'.': META,
 		})
 
-def read_dataset(input_, exclude=None, exclude_night=True, classes=0,
+def read_dataset(input_, exclude=None, exclude_night=True, nclasses=4,
 	nsamples=NSAMPLES):
 	images = []
 	labels = []
@@ -274,7 +272,7 @@ def read_dataset(input_, exclude=None, exclude_night=True, classes=0,
 			filename,
 			exclude=exclude,
 			exclude_night=exclude_night,
-			classes=classes,
+			nclasses=nclasses,
 		)
 		if images0.shape[0] > nsamples:
 			images0 = images0[:nsamples]
@@ -285,16 +283,14 @@ def read_dataset(input_, exclude=None, exclude_night=True, classes=0,
 	labels = np.concatenate(labels)
 	return images, labels
 
-def train(input_, input_val, output, output_history, classes=0, night=False,
+def train(input_, input_val, output, output_history, nclasses=4, night=False,
 	exclude=None, exclude_night=True, nsamples=NSAMPLES):
 
-	nclasses = {0: 4, 1: 10, 2: 27}[classes]
-
 	train_images, train_labels = read_dataset(input_,
-		exclude=exclude, exclude_night=exclude_night, classes=classes,
+		exclude=exclude, exclude_night=exclude_night, nclasses=nclasses,
 		nsamples=nsamples)
 	test_images, test_labels = read_dataset(input_val,
-		exclude=exclude, exclude_night=exclude_night, classes=classes,
+		exclude=exclude, exclude_night=exclude_night, nclasses=nclasses,
 		nsamples=nsamples)
 
 	policy = tf.keras.mixed_precision.Policy("float64")
@@ -335,7 +331,7 @@ if __name__ == '__main__':
 	action = args[1]
 	night = opts.get('night', False)
 	exclude_night = opts.get('exclude_night', True)
-	classes = opts.get('classes', 0)
+	nclasses = opts.get('nclasses', 4)
 	exclude = opts.get('exclude')
 	nsamples = opts.get('nsamples', NSAMPLES)
 
@@ -350,7 +346,7 @@ if __name__ == '__main__':
 		output = args[4]
 		output_history = args[5]
 		train(input_, input_val, output, output_history,
-			classes=classes,
+			nclasses=nclasses,
 			night=night,
 			exclude=exclude,
 			exclude_night=exclude_night,
@@ -364,7 +360,7 @@ if __name__ == '__main__':
 		input_ = args[3]
 		output = args[4]
 		apply_(model, input_, output,
-			classes=classes,
+			nclasses=nclasses,
 			night=night,
 			exclude_night=exclude_night,
 		)

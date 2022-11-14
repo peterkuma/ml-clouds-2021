@@ -15,12 +15,12 @@ Arguments:
 
 Options:
 
-  classes: VALUE     Classification. One of: 0 (4 cloud types), 1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
+  nclasses: VALUE    Number of cloud types. One of: 4, 10 or 27. Default: 4.
   resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by VALUE.
 
 Examples:
 
-bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc classes: 1
+bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc nclasses: 10
 '''
 
 import sys
@@ -31,13 +31,6 @@ import numpy as np
 import ds_format as ds
 import aquarius_time as aq
 import pst
-
-def get_nclasses(classes):
-	return {
-		0: 4,
-		1: 10,
-		2: 27,
-	}[classes]
 
 def read_idd(dirname, t):
 	date = aq.to_date(t)
@@ -68,7 +61,7 @@ def read_idd(dirname, t):
 		'cloud_h': d['cloudHigh'],
 	}
 
-def calc_stats0(cloud_l, cloud_m, cloud_h):
+def calc_stats_4(cloud_l, cloud_m, cloud_h):
 	n = len(cloud_l)
 	stats = np.zeros((n, 4), np.int64)
 	stats_n = np.zeros((n, 4), np.int64)
@@ -83,7 +76,7 @@ def calc_stats0(cloud_l, cloud_m, cloud_h):
 	stats_n[:,3] = np.isfinite(cloud_l)
 	return stats, stats_n
 
-def calc_stats1(cloud_l, cloud_m, cloud_h):
+def calc_stats_10(cloud_l, cloud_m, cloud_h):
 	n = len(cloud_l)
 	stats = np.zeros((n, 10), np.int64)
 	stats_n = np.zeros((n, 10), np.int64)
@@ -105,7 +98,7 @@ def calc_stats1(cloud_l, cloud_m, cloud_h):
 		stats_n[:,i] = np.isfinite(cloud_l)
 	return stats, stats_n
 
-def calc_stats2(cloud_l, cloud_m, cloud_h):
+def calc_stats_27(cloud_l, cloud_m, cloud_h):
 	n = len(cloud_l)
 	stats = np.zeros((n, 27), np.int64)
 	stats_n = np.zeros((n, 27), np.int64)
@@ -115,12 +108,12 @@ def calc_stats2(cloud_l, cloud_m, cloud_h):
 			stats_n[:,i*9 +j] = np.isfinite(var)
 	return stats, stats_n
 
-def postprocess(d, classes):
+def postprocess(d, nclasses):
 	func = {
-		0: calc_stats0,
-		1: calc_stats1,
-		2: calc_stats2,
-	}[classes]
+		4: calc_stats_4,
+		10: calc_stats_10,
+		27: calc_stats_27,
+	}[nclasses]
 	stats, stats_n = func(d['cloud_l'], d['cloud_m'], d['cloud_h'])
 	d['stats'] = stats
 	d['stats_n'] = stats_n
@@ -156,7 +149,7 @@ if __name__ == '__main__':
 	from_ = aq.from_iso(args[3])
 	to = aq.from_iso(args[4])
 	output = args[5]
-	classes = opts.get('classes', 0)
+	nclasses = opts.get('nclasses', 4)
 	resolution = opts.get('resolution', 5)
 
 	if 180 % resolution != 0:
@@ -166,7 +159,6 @@ if __name__ == '__main__':
 	lat_bnds = np.arange(-90., 90. + resolution, resolution)
 
 	time = np.arange(from_, to + 1)
-	nclasses = get_nclasses(classes)
 	n = len(time)
 	nlat = len(lat_bnds) - 1
 	nlon = len(lon_bnds) - 1
@@ -182,11 +174,11 @@ if __name__ == '__main__':
 			if buoy is not None: d_buoy = read_idd(buoy, t)
 		except Exception as e: logging.warning(e)
 		if d_buoy is not None:
-			postprocess(d_buoy, classes)
+			postprocess(d_buoy, nclasses)
 			update_stats(stats[i,:,:,:], stats_n[i,:,:,:], d_buoy,
 				lat_bnds, lon_bnds)
 		if d_synop is not None:
-			postprocess(d_synop, classes)
+			postprocess(d_synop, nclasses)
 			update_stats(stats[i,:,:,:], stats_n[i,:,:,:], d_synop,
 				lat_bnds, lon_bnds)
 	stats_mean = tmean(stats, stats_n)
