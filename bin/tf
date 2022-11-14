@@ -23,6 +23,8 @@ Options (train):
   1 (10 cloud genera), 2 (27 cloud genera). Default: 0.
 - exclude: { <lat1> <lat2> <lon1> <lon2> }: Exclude samples with pixels in a
   region bounded by given latitude and longitude. Default: none.
+- nsamples: <value>: Maximum number of samples to use for the training per day.
+  Default: 20.
 
 Arguments (apply):
 
@@ -62,6 +64,8 @@ from tensorflow.keras.layers import Input, Conv2D, Conv2DTranspose, \
 	AveragePooling2D, MaxPooling2D, Flatten, Dense, Dropout, \
 	BatchNormalization, Activation
 from tensorflow.keras.utils import Sequence
+
+NSAMPLES = 20
 
 META = {
 	'time': {
@@ -263,7 +267,8 @@ def apply_(model_file, input_, output, classes=0, night=False,
 			'.': META,
 		})
 
-def read_dataset(input_, exclude=None, exclude_night=True, classes=0):
+def read_dataset(input_, exclude=None, exclude_night=True, classes=0,
+	nsamples=NSAMPLES):
 	images = []
 	labels = []
 	for file_ in sorted(os.listdir(input_)):
@@ -276,9 +281,9 @@ def read_dataset(input_, exclude=None, exclude_night=True, classes=0):
 			exclude_night=exclude_night,
 			classes=classes,
 		)
-		if images0.shape[0] > 20:
-			images0 = images0[:20]
-			labels0 = labels0[:20]
+		if images0.shape[0] > nsamples:
+			images0 = images0[:nsamples]
+			labels0 = labels0[:nsamples]
 		images += [images0]
 		labels += [labels0]
 	images = np.concatenate(images)
@@ -286,14 +291,16 @@ def read_dataset(input_, exclude=None, exclude_night=True, classes=0):
 	return images, labels
 
 def train(input_, input_val, output, output_history, classes=0, night=False,
-	exclude=None, exclude_night=True):
+	exclude=None, exclude_night=True, nsamples=NSAMPLES):
 
 	nclasses = {0: 4, 1: 10, 2: 27}[classes]
 
 	train_images, train_labels = read_dataset(input_,
-		exclude=exclude, exclude_night=exclude_night, classes=classes)
+		exclude=exclude, exclude_night=exclude_night, classes=classes,
+		nsamples=nsamples)
 	test_images, test_labels = read_dataset(input_val,
-		exclude=exclude, exclude_night=exclude_night, classes=classes)
+		exclude=exclude, exclude_night=exclude_night, classes=classes,
+		nsamples=nsamples)
 
 	policy = tf.keras.mixed_precision.Policy("float64")
 	tf.keras.mixed_precision.set_global_policy(policy)
@@ -335,6 +342,7 @@ if __name__ == '__main__':
 	exclude_night = opts.get('exclude_night', True)
 	classes = opts.get('classes', 0)
 	exclude = opts.get('exclude')
+	nsamples = opts.get('nsamples', NSAMPLES)
 
 	tf.config.threading.set_inter_op_parallelism_threads(24)
 
@@ -351,6 +359,7 @@ if __name__ == '__main__':
 			night=night,
 			exclude=exclude,
 			exclude_night=exclude_night,
+			nsamples=nsamples,
 		)
 	elif action == 'apply':
 		if len(args) != 5:
