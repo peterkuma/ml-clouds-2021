@@ -934,7 +934,6 @@ Arguments:
 
 
 ```
-
 Build the README document from a template.
 
 Usage: build_readme INPUT BINDIR OUTPUT
