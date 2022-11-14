@@ -18,6 +18,7 @@ Options:
 
 - seed: <value>: Random seed.
 - keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
+- nsamples: <value>: Number of samples to generate. Default: 100.
 
 Examples:
 
@@ -46,10 +47,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 np.seterr(divide='ignore', invalid='ignore')
 
 D = 2000000 # Half-size of the domain (m).
-MAX_STATIONS = 10000
-NSAMPLES = 100
-
-NCLASSES = 27
+MAX_STATIONS = 10000 # Maximum number of stations in the output data files.
+NCLASSES = 27 # Number of cloud types.
 
 META = {
 	'data': {
@@ -576,6 +575,7 @@ if __name__ == '__main__':
 	output = args[7]
 	seed = opts.get('seed')
 	keep_stations = opts.get('keep_stations', False)
+	nsamples = opts.get('nsamples', 100)
 
 	if seed is not None:
 		np.random.seed(seed)
@@ -611,10 +611,7 @@ if __name__ == '__main__':
 		d2['cre_sw_rel'][d2['rsdt'] < 50] = np.nan
 		d2['cre_lw_rel'] = (d2['rlutcs'] - d2['rlut'])/d2['rlutcs']
 		dd = []
-		n = 0
-		nx = 0
-		while n < NSAMPLES and nx < 1.5*NSAMPLES:
-			nx += 1
+		for n in range(nsamples):
 			data = np.stack([
 				-d2['cre_sw_rel'],
 				d2['cre_lw_rel'],
@@ -656,7 +653,6 @@ if __name__ == '__main__':
 
 			dx['.'] = META
 			dd += [dx]
-			n += 1
 
 		if len(dd) > 0:
 			dout = ds.merge(dd, 'sample', 'time')
