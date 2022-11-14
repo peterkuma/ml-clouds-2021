@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -e -x
 
-JOBS="${JOBS:-24}"
+NCORES="$(getconf _NPROCESSORS_ONLN)"
+JOBS="${JOBS:-$NCORES}"
 INPUT="${INPUT:-input}"
 DATA="${DATA:-data}"
 DATA_COMMON="${DATA_COMMON:-data}"

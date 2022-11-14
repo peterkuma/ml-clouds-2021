@@ -335,7 +335,7 @@ should be run in order because of data dependencies.
 
 ```sh
 # Optional configuration:
-export JOBS=24 # Number of concurrent jobs
+export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores if not set.
 
 . config_4 # Configuration for 4 cloud types
 # . config_10 for 10 cloud types.
