@@ -18,7 +18,7 @@ Options:
 
 - seed: <value>: Random seed.
 - keep_stations: <value>: Keep station records in samples ("true" or "false").  Default: "false".
-- nsamples: <value>: Number of samples to generate. Default: 100.
+- nsamples: <value>: Number of samples per day to generate. Default: 100.
 
 Examples:
 
