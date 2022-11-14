@@ -410,6 +410,11 @@ in a Linux terminal (bash). The commands are located in the `bin` directory as
 should be run from the main repository directory with `bin/<command>
 [<arguments>...]`.
 
+Some of the commands use [PST](https://github.com/peterkuma/pst/) for command
+line argument parsing, which allows passing of complex arguments such as
+arrays, but may also require escaping special characters, for example in file
+names.
+
 #### prepare\_samples
 
 
