@@ -687,7 +687,7 @@ Arguments:
 
 Options:
 
-- legend: VALUE  Show legend ("true" or "false"). Default: "true".
+  legend: VALUE  Show legend ("true" or "false"). Default: "true".
 
 Examples:
 
