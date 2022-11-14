@@ -4,8 +4,17 @@ set -e -x
 JOBS="${JOBS:-24}"
 INPUT="${INPUT:-input}"
 DATA="${DATA:-data}"
+DATA_COMMON="${DATA_COMMON:-data}"
 PLOT="${PLOT:-plot}"
 CLASSES="${CLASSES:-0}"
+
+mkdir -p "$DATA"
+mkdir -p "$DATA_COMMON"
+mkdir -p "$DATA_COMMON/samples"
+if [ "$DATA" != "$DATA_COMMON" ]; then
+	ln -sfT "$DATA/samples" "$(realpath "$DATA_COMMON/samples")" || true
+fi
+mkdir -p "$PLOT"
 
 TRAIN_YEARS="$(echo 2004 2005 {2009..2011} {2013..2016} {2018..2020})"
 VAL_YEARS="2007 2012 2017"
