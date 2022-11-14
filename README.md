@@ -1006,14 +1006,14 @@ cd data/cmip5/historical/day
 ```
 Convert GISTEMP yearly temperature data to NetCDF.
 
-Usage: gistemp_to_nc <input> <output>
+Usage: gistemp_to_nc INPUT OUTPUT
 
 Arguments:
 
-- input: Input file "totalCI_ERA.csv" (CSV).
-- output: Output file (NetCDF).
+  INPUT   Input file "totalCI_ERA.csv" (CSV).
+  OUTPUT  Output file (NetCDF).
 
-Example:
+Examples:
 
 bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 ```
