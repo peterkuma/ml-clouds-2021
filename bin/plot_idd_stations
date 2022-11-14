@@ -3,6 +3,8 @@
 
 Usage: plot_idd_stations INPUT SAMPLE N OUTPUT TITLE
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   IDD input directory (NetCDF).

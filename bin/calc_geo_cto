@@ -3,6 +3,8 @@
 
 Usage: calc_geo_cto INPUT [INPUT_NIGHT] TAS OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT        Input file or directory (NetCDF). The output of tf.

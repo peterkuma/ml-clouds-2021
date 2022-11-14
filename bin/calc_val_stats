@@ -3,6 +3,8 @@
 
 Usage: bin/calc_val_stats INPUT IDD OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   Validation CERES/ANN dataset. The output of calc_geo_cto for validation years (NetCDF).

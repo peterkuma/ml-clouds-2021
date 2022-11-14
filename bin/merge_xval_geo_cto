@@ -4,6 +4,8 @@ Merge cross validation geographical distribution of cloud type occurrence.
 
 Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   The output of calc_geo_cto (NetCDF).

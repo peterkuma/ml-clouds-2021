@@ -3,6 +3,8 @@
 
 Usage: bin/plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   IDD_VAL    Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).

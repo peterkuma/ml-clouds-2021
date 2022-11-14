@@ -3,6 +3,8 @@
 
 Usage: download_cmip FILENAME VAR START END
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   FILENAME  Input file (JSON).

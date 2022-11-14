@@ -3,6 +3,8 @@
 
 Usage: prepare_samples TYPE INPUT SYNOP BUOY START END OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   TYPE    Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6), "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).

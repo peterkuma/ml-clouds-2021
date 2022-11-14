@@ -3,6 +3,8 @@
 
 Usage: calc_dtau_pct SAMPLES CERES OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   SAMPLES  Directory with samples. The output of merge_samples (NetCDF).

@@ -3,6 +3,8 @@
 
 Usage: calc_cloud_props TYPE CTO INPUT OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   TYPE    Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).

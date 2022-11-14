@@ -3,6 +3,8 @@
 
 Usage: plot_geo_cto INPUT ECS OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   Input directory. The output of calc_geo_cto (NetCDF).

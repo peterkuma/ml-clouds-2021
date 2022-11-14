@@ -3,6 +3,8 @@
 
 Usage: plot_cto VARNAME DEGREE ABSREL REGRESSION INPUT ECS OUTPUT TITLE [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   VARNAME     Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).

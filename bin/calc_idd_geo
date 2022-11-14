@@ -3,6 +3,8 @@
 
 Usage: calc_idd_geo SYNOP BUOY FROM TO OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   SYNOP   Input synop directory (NetCDF).

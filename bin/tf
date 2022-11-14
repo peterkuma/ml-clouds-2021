@@ -4,6 +4,8 @@
 Usage: tf train INPUT INPUT_VAL OUTPUT OUTPUT_HISTORY [OPTIONS]
        tf apply MODEL INPUT OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments (tf train):
 
   INPUT           Input directory with samples. The output of prepare_samples (NetCDF).

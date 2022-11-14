@@ -3,6 +3,8 @@
 
 Usage: plot_samples INPUT N OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   Input sample (NetCDF). The output of tf.

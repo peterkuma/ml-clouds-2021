@@ -423,6 +423,8 @@ Prepare samples of clouds for CNN training.
 
 Usage: prepare_samples TYPE INPUT SYNOP BUOY START END OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   TYPE    Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6), "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
@@ -454,6 +456,8 @@ Plot IDD stations on a map.
 
 Usage: plot_idd_stations INPUT SAMPLE N OUTPUT TITLE
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   IDD input directory (NetCDF).
@@ -476,6 +480,8 @@ Train or apply a TensorFlow CNN.
 
 Usage: tf train INPUT INPUT_VAL OUTPUT OUTPUT_HISTORY [OPTIONS]
        tf apply MODEL INPUT OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments (tf train):
 
@@ -519,6 +525,8 @@ Plot sample.
 
 Usage: plot_samples INPUT N OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   Input sample (NetCDF). The output of tf.
@@ -557,6 +565,8 @@ bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 Calculate cloud optical depth - cloud top press histogram.
 
 Usage: calc_dtau_pct SAMPLES CERES OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -601,6 +611,8 @@ Calculate geographical distribution of cloud type occurrence distribution.
 
 Usage: calc_geo_cto INPUT [INPUT_NIGHT] TAS OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT        Input file or directory (NetCDF). The output of tf.
@@ -626,6 +638,8 @@ bin/calc_geo_cto data/samples_pred/historical/AWI-ESM-1-1-LR input/tas/historica
 Plot geographical distribution of cloud type occurrence.
 
 Usage: plot_geo_cto INPUT ECS OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -655,6 +669,8 @@ Plot scatter plot of RMSE of the geographical distribution of cloud type occurre
 
 Usage: plot_cto_rmse_ecs INPUT ECS OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   Input directory. The output of calc_geo_cto or calc_cto (NetCDF).
@@ -678,6 +694,8 @@ bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto
 Plot global mean cloud type occurrence.
 
 Usage: plot_cto VARNAME DEGREE ABSREL REGRESSION INPUT ECS OUTPUT TITLE [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -729,6 +747,8 @@ Plot cloud type occurrence vs. ECS regression.
 
 Usage: plot_cto_ecs VARNAME INPUT SUMMARY OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   VARNAME  Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
@@ -748,6 +768,8 @@ bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 Calculate statistics of cloud properties by cloud type.
 
 Usage: calc_cloud_props TYPE CTO INPUT OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -771,6 +793,8 @@ bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6
 
 ```
 Usage: plot_cloud_prop VAR INPUT ECS OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -816,6 +840,8 @@ Calculate geographical distribution of cloud types from IDD data.
 
 Usage: calc_idd_geo SYNOP BUOY FROM TO OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   SYNOP   Input synop directory (NetCDF).
@@ -859,6 +885,8 @@ Merge cross validation geographical distribution of cloud type occurrence.
 
 Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   INPUT   The output of calc_geo_cto (NetCDF).
@@ -874,6 +902,8 @@ Arguments:
 Calculate cross-validation statistics.
 
 Usage: bin/plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -899,6 +929,8 @@ bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historica
 Calculate cross-validation statistics.
 
 Usage: bin/calc_val_stats INPUT IDD OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 
@@ -962,6 +994,8 @@ bin/build_readme README.md.in bin README.md
 Download CMIP data based on a JSON catalogue downloaded from the CMIP archive search page.
 
 Usage: download_cmip FILENAME VAR START END
+
+This program uses PST for command line argument parsing.
 
 Arguments:
 

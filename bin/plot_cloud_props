@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 '''Usage: plot_cloud_prop VAR INPUT ECS OUTPUT [OPTIONS]
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   VAR     Variable. One of: "clt", "cod", "pct".

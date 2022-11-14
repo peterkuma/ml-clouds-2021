@@ -3,6 +3,8 @@
 
 Usage: plot_cto_ecs VARNAME INPUT SUMMARY OUTPUT
 
+This program uses PST for command line argument parsing.
+
 Arguments:
 
   VARNAME  Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
