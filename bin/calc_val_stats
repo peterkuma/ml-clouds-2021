@@ -191,18 +191,6 @@ if __name__ == '__main__':
 	z = a/b
 	#z[~mask2] = np.nan
 
-	#plt.figure(figsize=(15,5))
-	#plt.subplot(1, 3, 1)
-	#k = 0
-	#vmin = min(np.nanmin(z[k]), np.nanmin(x[k]), np.nanmin(u[k]))
-	#vmax = max(np.nanmax(z[k]), np.nanmax(x[k]), np.nanmax(u[k]))
-	#plt.imshow(z[k], origin='lower', vmin=vmin, vmax=vmax)
-	#plt.subplot(1, 3, 2)
-	#plt.imshow(x[k], origin='lower', vmin=vmin, vmax=vmax)
-	#plt.subplot(1, 3, 3)
-	#plt.imshow(np.isfinite(z[k])*u[k], origin='lower', vmin=vmin, vmax=vmax)
-	#plt.savefig('fig.pdf', bbox_inches='tight')
-
 	latg, long_ = np.meshgrid(d['lat'], d['lon'])
 	latg, long_ = latg.T, long_.T
 	w = []
@@ -211,16 +199,6 @@ if __name__ == '__main__':
 		w0[np.isnan(z[j])] = np.nan
 		w0 /= np.nansum(w0)
 		w += [w0]
-
-	#print(['%.3f' % np.sqrt(np.nanmean((zd[j] - ut[j])**2)) for j in range(nclasses)])
-	#print(['%.3f' % np.sqrt(np.nanmean((zd[j] - xd[j,::])**2)) for j in range(nclasses)])
-	#print(['%.3f' % np.sqrt(np.nansum((z[j] - u[j])**2)) for j in range(nclasses)])
-	#print(['%.3f' % np.sqrt(np.nansum((z[j] - x[j,::])**2)) for j in range(nclasses)])
-	#print(['%.4f' % np.nanstd(zd[j] - ut[j]) for j in range(nclasses)])
-	#print(['%.4f' % np.nanstd(zd[j] - xd[j]) for j in range(nclasses)])
-	#print(['%.3f' % np.nanmean(np.abs(z[j] - u[j])) for j in range(nclasses)])
-	#print(['%.3f' % np.nanmean(np.abs(z[j] - x[j,::])) for j in range(nclasses)])
-	#sys.exit(0)
 
 	roc_x = np.full((npred, nthresholds, nclasses), np.nan)
 	roc_y = np.full((npred, nthresholds, nclasses), np.nan)
@@ -267,24 +245,6 @@ if __name__ == '__main__':
 			err = np.array([x0[j] - ad[j,::]/bd[j,::] for j in range(nclasses)])
 		else:
 			err = x0 - ad/bd
-
-		#plt.subplot(3, 2, 1)
-		#k = 3
-		#plt.imshow(np.nanmean(err[k], axis=0), origin='lower', cmap='bwr', vmin=-0.8, vmax=0.8)
-		#plt.text(0.5, 0.15, '%.3f' % np.sqrt(np.nanmean(np.nanmean(err[k], axis=0)**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
-		#plt.text(0.5, 0, '%.3f' % np.sqrt(np.nanmean(err[k]**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
-		#plt.subplot(3, 2, 2)
-		#plt.imshow(np.nanmean((ad/bd)[k]) - np.nanmean((ad/bd)[k], axis=0), origin='lower', cmap='bwr', vmin=-0.8, vmax=0.8)
-		#plt.text(0.5, 0.15, '%.3f' % np.sqrt(np.nanmean((np.nanmean((ad/bd)[k]) - np.nanmean((ad/bd)[k], axis=0))**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
-		#plt.text(0.5, 0, '%.3f' % np.sqrt(np.nanmean((np.nanmean((ad/bd)[k]) - (ad/bd)[k])**2)), va='bottom', ha='center', transform=plt.gca().transAxes)
-		#plt.subplot(3, 2, 3)
-		#plt.imshow(np.nanmean(x0[k], axis=0), origin='lower', vmin=0, vmax=1)
-		#plt.subplot(3, 2, 4)
-		#plt.imshow(np.zeros(ad.shape[2:]) + np.nanmean((ad/bd)[k]), origin='lower', vmin=0, vmax=1)
-		#plt.subplot(3, 2, 5)
-		#plt.imshow(np.nanmean((ad/bd)[k], axis=0), origin='lower', vmin=0, vmax=1)
-		#plt.savefig(output)
-		#sys.exit(0)
 
 		#err[~mask2] = np.nan
 		err2 = np.nanmean(err, axis=1)
