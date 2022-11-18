@@ -1,24 +1,25 @@
 #!/usr/bin/env python3
 '''Plot global mean cloud type occurrence.
 
-Usage: plot_cto VARNAME DEGREE ABSREL REGRESSION INPUT ECS OUTPUT TITLE [OPTIONS]
+Usage: plot_cto <varname> <degree> <absrel> <regression> <input> <ecs> <output> <title> [legend: <legend>]
 
-This program uses PST for command line argument parsing.
+Depends on: calc_cto
 
 Arguments:
 
-  VARNAME     Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
-  DEGREE      One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
-  ABSREL      One of "absolute" (absolute value), "relative" (relative to CERES).
-  REGRESSION  Plot regression. One of: true or false.
-  INPUT       Input directoy. The output of calc_geo_cto (NetCDF).
-  ECS         ECS file (CSV).
-  OUTPUT      Output plot (PDF).
-  TITLE       Plot title.
+- varname: Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud
+  feedback).
+- degree: One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
+- absrel: One of "absolute" (absolute value), "relative" (relative to CERES).
+- regression: Plot regression. One of: true or false.
+- input: Input directoy - the output of calc_geo_cto (NetCDF).
+- ecs: ECS file (CSV).
+- output: Output plot (PDF).
+- title: Plot title.
 
 Options:
 
-  legend: VALUE  Show legend ("true" or "false"). Default: "true".
+- legend: Show legend ("true" or "false"). Default: "true".
 
 Examples:
 
@@ -37,10 +38,11 @@ import pandas as pd
 import pymc3 as pm
 import pst
 import pandas as pd
+import statsmodels.stats.weightstats
 
 mpl.rc('font', family='Open Sans')
 mpl.rc('axes', linewidth=0.3)
-mpl.rc('axes', grid=True)
+#mpl.rc('axes', grid=True)
 mpl.rc('lines', linewidth=1.2)
 mpl.rc('xtick.major', width=0.3)
 mpl.rc('ytick.major', width=0.3)
@@ -53,7 +55,8 @@ mpl.rc('grid', color='k')
 mpl.rc('grid', alpha=0.2)
 mpl.rc('grid', lw=0.1)
 
-COLORS = ['#0084C8', '#DC0000', '#009100', '#FFC022']
+COLORS0 = ['#0084C8', '#DC0000', '#009100', '#FFC022']
+COLORS1 = plt.get_cmap('tab10')(range(0, 11))
 
 LABELS = {
 	'ecs': 'ECS (K)',
@@ -66,32 +69,35 @@ CLOUD_TYPES1 = ['Ci', 'Cs', 'Cc', 'As', 'Ac', 'Cu', 'Sc', 'St', 'Cu+Sc', 'Cb']
 CLOUD_TYPES2 = [
 	'Cirrus fibratus/uncinus (H1)',
 	'Cirrus spissatus (H2)',
-	'Cirrus spissatus\ncumulonimbogenitus (H3)',
+	'Cirrus spissatus cumulonimbogenitus (H3)',
 	'Cirrus fibratus/uncinus (H4)',
 	'Cirrus/cirrostratus (H5)',
 	'Cirrus/cirrostratus (H6)',
 	'Cirrostratus whole sky (H7)',
-	'Cirrostratus\nnot whole sky (H8)',
+	'Cirrostratus not whole sky (H8)',
 	'Cirrocumulus (H9)',
-	'Cumulonimbus\ncapillatus (M1)',
-	'Altostratus\nopacus/nimbostratus (M2)',
-	'Altocumulus\ntranslucidus\nsingle level (M3)',
-	'Altocumulus\ntranslucidus patches (M4)',
-	'Altocumulus\ntranslucidus bands (M5)',
-	'Altocumulus\ncumulogenitus (M6)',
-	'Altocumulus\ntranslucidus/opacus (M7)',
-	'Altocumulus\ncastellanus/floccus (M8)',
-	'Altocumulus\nchaotic sky (M9)',
-	'Cumulus\nhumilis/fractus (L1)',
-	'Cumulus\nmediocris/congestus (L2)',
+	'Cumulonimbus capillatus (M1)',
+	'Altostratus opacus/nimbostratus (M2)',
+	'Altocumulus translucidus single level (M3)',
+	'Altocumulus translucidus patches (M4)',
+	'Altocumulus translucidus bands (M5)',
+	'Altocumulus cumulogenitus (M6)',
+	'Altocumulus translucidus/opacus (M7)',
+	'Altocumulus castellanus/floccus (M8)',
+	'Altocumulus chaotic sky (M9)',
+	'Cumulus humilis/fractus (L1)',
+	'Cumulus mediocris/congestus (L2)',
 	'Cumulonimbus calvus (L3)',
-	'Stratocumulus\ncumulogenitus (L4)',
+	'Stratocumulus cumulogenitus (L4)',
 	'Stratocumulus (L5)',
-	'Stratus\nnebulosus/fractus (L6)',
+	'Stratus nebulosus/fractus (L6)',
 	'Stratus/cumulus fractus (L7)',
-	'Cumulus\nand stratocumulus (L8)',
+	'Cumulus and stratocumulus (L8)',
 	'Cumulonimbus capillatus (L9)',
 ]
+
+for i, cloud_type in enumerate(CLOUD_TYPES2):
+	CLOUD_TYPES2[i] = cloud_type[-3:-1] + ' ' + cloud_type[0:-5]
 
 HATCH = [
 	'///',
@@ -100,7 +106,12 @@ HATCH = [
 	'...',
 ]
 
-CHAR = ['%s%s' % (l, i) for l in ['H', 'M', 'L'] for i in range(1, 10)]
+LABELS0 = None
+LABELS1 = list(CLOUD_TYPES1)
+LABELS1[-2] = 'CS'
+LABELS2 = ['%s%s' % (l, i) for l in ['H', 'M', 'L'] for i in range(1, 10)]
+
+SYMBOLS = ['.', ':', ',', ';', '!', ')', '(', ']', '[', '{']
 
 def read_ecs(filename):
 	d = pd.read_csv(filename)
@@ -109,9 +120,9 @@ def read_ecs(filename):
 		'ecs': np.array(d['ECS']),
 		'tcr': np.array(d['TCR']),
 		'cld': np.array(d['CLD']),
-		'ext_ecs': np.array(d['Extended_ECS']),
-		'ext_tcr': np.array(d['Extended_TCR']),
-		'ext_cld': np.array(d['Extended_CLD']),
+		'ext_ecs': np.array(d['Extended_ECS'].astype(str)),
+		'ext_tcr': np.array(d['Extended_TCR'].astype(str)),
+		'ext_cld': np.array(d['Extended_CLD'].astype(str)),
 		'.': {
 			'model': {'.dims': ['model']},
 			'ecs': {'.dims': ['model']},
@@ -148,19 +159,9 @@ if __name__ == '__main__':
 	ecs = args[6]
 	output = args[7]
 	title = args[8]
-	classes = opts.get('classes', 0)
 
 	if varname not in ('ecs', 'tcr', 'cld'):
 		raise ValueError('Invalid varname "%s"' % varname)
-
-	rel_label = ' relative to CERES' if absrel == 'relative' else ''
-	ylabel_pos = None
-
-	cloud_types = {
-		0: CLOUD_TYPES0,
-		1: CLOUD_TYPES1,
-		2: CLOUD_TYPES2,
-	}[classes]
 
 	if degree == 0:
 		key = 'cloud_occurrence'
@@ -169,7 +170,7 @@ if __name__ == '__main__':
 			ylabel = 'Cloud type occurrence relative to CERES (%)'
 		else:
 			ylabel = 'Cloud type occurrence (%)'
-		ylabel_pos = [-0.04, 0.54]
+		ylabel_pos = [-0.04, 0.55]
 	elif degree == '1-time':
 		key = 'stats_time'
 		suptitle = 'Cloud type occurrence trend'
@@ -178,19 +179,37 @@ if __name__ == '__main__':
 		key = 'cloud_occurrence_tas'
 		suptitle = 'Cloud type occurrence change with respect to GMST'
 		ylabel = 'Cloud type occurrence change with respect to GMST (% K$^{-1}$)'
-		ylabel_pos = [-0.055, 0.4]
+		ylabel_pos = [-0.04, 0.55]
 	else:
 		raise ValueError('Invalid degree "%s"' % degree)
 
+	rel_label = ' relative to CERES' if absrel == 'relative' else ''
 	suptitle += rel_label
 
 	print('<- %s' % input_)
 	dd = ds.readdir(input_, [
-		'cloud_occurrence',
-		'cloud_occurrence_tas',
+		key,
 		'lon',
 		'lat',
 	])
+	nclasses = ds.dim(dd[0], 'cloud_type')
+
+	COLORS = COLORS0 if nclasses == 4 else COLORS1
+
+	ylabel_pos = None
+
+	cloud_types = {
+		4: CLOUD_TYPES0,
+		10: CLOUD_TYPES1,
+		27: CLOUD_TYPES2,
+	}[nclasses]
+
+	labels = {
+		4: LABELS0,
+		10: LABELS1,
+		27: LABELS2,
+	}[nclasses]
+
 	d = ds.merge(dd, 'model')
 	d['models'] = np.array([os.path.basename(x)[:-3] for x in d['filename']])
 
@@ -200,18 +219,20 @@ if __name__ == '__main__':
 	ds.select(d_ecs, {'model': np.isfinite(d_ecs['ecs'])})
 
 	ecs_order = np.argsort(d_ecs['ecs'])
-	ecs_order2 = ['CERES'] + list(d_ecs['model'][ecs_order])
+	ecs_order = ['CERES'] + list(d_ecs['model'][ecs_order])
 
 	order = []
-	for model in ecs_order2:
+	for model in ecs_order:
 		try:
 			i = np.where(d['models'] == model)[0][0]
 			order += [i]
 		except IndexError:
 			pass
+	print(order)
+	print(len(d['models']))
 	order = list(np.array(order))
 	for i, model in enumerate(d['models']):
-		if model not in ecs_order2:
+		if model not in ecs_order:
 			order += [i]
 
 	for name in ds.get_vars(d):
@@ -246,23 +267,23 @@ if __name__ == '__main__':
 		ncol = 1
 
 	w = {
-		0: 10,
-		1: 10,
-		2: 12,
-	}[classes]
+		4: 10,
+		10: 10,
+		27: 12,
+	}[nclasses]
 
-	plt.figure(figsize=[w + (3.0 if classes == 2 else 0.7), 4 + 2])
+	plt.figure(figsize=[w + (3.0 if nclasses == 27 else 0.7), 4 + 2])
 	plt.subplot(nrow, ncol, 1)
 
 	if degree == 0:
 		if absrel == 'relative':
 			yticks = np.arange(-24, 24, 2)
-			if classes == 0:
+			if nclasses == 4:
 				plt.ylim([-22, 6])
-			elif classes == 1:
-				plt.ylim([-13, 5])
+			elif nclasses == 10:
+				plt.ylim([-12, 5])
 			else:
-				plt.ylim([-8, 6])
+				plt.ylim([-8, 7])
 			ylim = plt.ylim()
 			plt.yticks(yticks[(yticks >= ylim[0]) & (yticks <= ylim[1])][1:])
 		else:
@@ -270,72 +291,62 @@ if __name__ == '__main__':
 	elif degree == '1-time':
 		plt.ylim([-3, 3])
 	elif degree == '1-tas':
-		if classes == 0:
+		if nclasses == 4:
 			plt.ylim([-0.7, 0.4])
-		elif classes == 1:
-			plt.ylim([-0.5, 0.4])
+		elif nclasses == 10:
+			plt.ylim([-0.45, 0.4])
 		else:
-			plt.ylim([-0.3, 0.3])
+			plt.ylim([-0.25, 0.3])
 	ylim = plt.gca().get_ylim()
-	plt.xlim(-0.44, np.sum(mask) - 0.56)
+	plt.xlim(-0.4, np.sum(mask) - 0.6)
 
-	H = []
+	pz = np.full(len(cloud_types), np.nan, float)
 
 	for i, cloud_type in enumerate(cloud_types):
 		h = d[key][mask,i]
 		x = np.arange(len(h), dtype=np.float64)
-		width = 0.22*4/len(cloud_types)
+		width = 0.2*4/len(cloud_types)
 		x[:] += i*width - width*len(cloud_types)/2 + width/2
 		if absrel == 'relative':
 			h -= d[key][i_ceres,i]
-		h *= 100
-		hatch = HATCH[i] if len(cloud_types) <= len(HATCH) else None
-		color = COLORS[i] if len(cloud_types) <= len(COLORS) else None
-		plt.bar(x, h,
+		hatch = (HATCH[i] if nclasses == 4 else None),
+		color = (COLORS[i % 9] if nclasses == 27 else COLORS[i]),
+		if nclasses == 4:
+			label = cloud_type
+		elif nclasses == 10:
+			label = '%s %s' % (SYMBOLS[i], cloud_type)
+		else:
+			label = '%s %s' % (SYMBOLS[i % 9], cloud_type)
+		plt.bar(x, h*100.,
 			width=width,
 			hatch=hatch,
 			alpha=0.999,
-			label=cloud_type,
+			label=label,
 			color=color,
 		)
-		H += [h]
-		for j in range(len(x)):
-			s = np.sign(h[j])
-			level = s*(np.abs(h[j]) + 0.2)
-			rerun = True
-			D = 0.4
-			while rerun:
-				rerun = False
-				for k in range(2, 6):
-					if len(H) >= k:
-						dist = level - H[-k][j]
-						offset = 0
-						if np.abs(dist) < D:
-							if s == 1:
-								if dist > 0:
-									offset = D - dist
-								else:
-									offset = -dist + D
-							else:
-								if dist > 0:
-									offset = -dist - D
-								else:
-									offset = -(D + dist)
-						if np.abs(offset) > 1e-10:
-							rerun = True
-						level += offset
-			plt.text(x[j], level, CHAR[i],
-				fontsize=6,
-				ha='center',
-				va='center',
-				fontfamily='monospace',
-			)
-			plt.plot([x[j], x[j]], [h[j], level],
-				color='k',
-				lw=0.3,
-				linestyle='dotted',
-			)
-			H[-1][j] = level
+		n = int((len(h) - 2)/2)
+		_, pz[i] = statsmodels.stats.weightstats.ztest(h[:n], h[n:-2])
+		ylim = plt.ylim()
+		dy = ylim[1] - ylim[0]
+		if nclasses == 27 and i % 9 == 0:
+			label = ['H', 'M', 'L'][i//9]
+			for xi in x:
+				plt.text(xi + width*4.5, plt.ylim()[1] - dy*0.01, label,
+					ha='center',
+					va='top',
+					fontsize=8,
+				)
+		if nclasses == 27 and i in (9, 18):
+			for xi in x:
+				plt.axvline(xi - width/2, lw=0.5, color='k', alpha=0.5)
+		if nclasses in (10, 27):
+			for j in range(len(x)):
+				symbol = SYMBOLS[i % 9] if nclasses == 27 else SYMBOLS[i]
+				plt.text(x[j], h[j]*100, symbol,
+					ha='center',
+					va=('bottom' if h[j] > 0 else 'top'),
+					fontsize=8,
+				)
 		if (key+'_samples') in d:
 			h_samples = d[key+'_samples'][mask,i,:]
 			if absrel == 'relative':
@@ -352,17 +363,39 @@ if __name__ == '__main__':
 		plt.ylabel(ylabel)
 		if ylabel_pos is not None:
 			plt.gca().yaxis.set_label_coords(*ylabel_pos)
+		rotated = len(d['models'][mask]) > 12
 		plt.xticks(range(len(h)), [m for m in d['models'][mask]],
-			rotation='vertical')
+			fontsize=8,
+			rotation=(45 if rotated else None),
+			ha=('right' if rotated else 'center'),
+		)
+
+	if nclasses <= 10:
+		plt.text(0.01, 0.095, '\n'.join([
+				'p$_{z,\mathrm{%s}}$ = %.0e' % (
+					cloud_types[i].lower() if nclasses == 4 else cloud_types[i],
+					pz[i],
+				)
+				for i in range(len(cloud_types))
+			]),
+			transform=plt.gca().transAxes,
+			bbox=dict(facecolor='#eeeeee', edgecolor='none'),
+			fontsize=8,
+		)
 
 	x = np.arange(len(h), dtype=np.float64)
-	plt.grid(True, zorder=-1)
+	plt.grid(True, zorder=-1, axis=('y' if nclasses == 27 else 'both'))
 	if opts.get('legend', True):
-		if classes in (0, 1):
+		if nclasses == 4:
 			plt.legend(
 				loc='lower right',
 				labelspacing=0.2,
 				bbox_to_anchor=(1, 0.06),
+			)
+		elif nclasses == 10:
+			plt.legend(
+				loc='lower right',
+				labelspacing=0.2,
 			)
 		else:
 			plt.legend(
@@ -376,7 +409,6 @@ if __name__ == '__main__':
 		fontsize=9,
 		ha='right',
 		va='top',
-		bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0.05'),
 	)
 	for i in range(len(x)):
 		ecs, ext = get_ecs(d_ecs, varname, d['models'][mask][i])
@@ -390,7 +422,7 @@ if __name__ == '__main__':
 			ha='center',
 			va='top',
 			bbox=dict(facecolor='#ffffff', edgecolor='none', boxstyle='square,pad=0.05'),
-			color=color
+			color=color,
 		)
 
 	if regression:
@@ -431,7 +463,7 @@ if __name__ == '__main__':
 	w, h = plt.gcf().get_size_inches()
 	plt.subplots_adjust(
 		left=0.9/w,
-		right=(1 - 2.1/w if classes == 2 else 1 - 0.1/w),
+		right=(1 - 2.1/w if nclasses == 27 else 1 - 0.1/w),
 		top=1 - 0.4/h,
 		bottom=1.6/h,
 	)
@@ -445,4 +477,4 @@ if __name__ == '__main__':
 	)
 
 	print('-> %s' % output)
-	plt.savefig(output)
+	plt.savefig(output, bbox_inches='tight')
