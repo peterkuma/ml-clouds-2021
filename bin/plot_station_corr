@@ -33,6 +33,7 @@ mpl.rc('grid', color='k')
 mpl.rc('grid', alpha=0.2)
 mpl.rc('grid', lw=0.1)
 
+N = 100000 # Number of point combinations to evaluate.
 COLORS = ['#0084C8', '#DC0000', '#009100', '#FFC022']
 CLOUD_TYPES = ['High', 'Middle', 'Cumuliform', 'Stratiform']
 
@@ -52,37 +53,40 @@ if __name__ == '__main__':
 	input2 = sys.argv[3]
 	output = sys.argv[4]
 
-	d1 = ds.read(input1)
-	d2 = ds.read(input2)
+	print('<- %s' % input1)
+	d1 = ds.read(input1, ['time'])
+	print('<- %s' % input2)
+	d2 = ds.read(input2, ['time'])
+
+	time = sorted(list(set(d1['time']) & set(d2['time'])))
+
+	ii1 = np.searchsorted(d1['time'], time)
+	ii2 = np.searchsorted(d2['time'], time)
+
+	print('<- %s' % input1)
+	d1 = ds.read(input1, sel={'time': ii1})
+	print('<- %s' % input2)
+	d2 = ds.read(input2, sel={'time': ii2})
 
 	x1 = d1['cloud_occurrence_daily']
 	x2 = d2['cloud_occurrence_daily']
+
 	err = x2 - x1
-	print(np.nanmean(err, axis=(1,2,3)))
 	for i in range(err.shape[1]):
 		err[:,i,::] -= np.nanmean(err, axis=1)
 	stats = d1['stats_daily']
 	stats_n = d1['stats_n_daily']
 	nclasses, n, m, l = x1.shape
 
-	N = 100000
-
-	#dt = np.zeros(N)
-	#dx = np.zeros(N)
-
 	xmax = 5000
 	xstep = 200
 	xbins = np.arange(0, xmax + xstep, xstep)
 	x = 0.5*(xbins[1:] + xbins[:-1])
-	#ax = np.zeros(len(xbins) - 1)
-	#bx = np.zeros(len(xbins) - 1)
 
 	tmax = 180
 	tstep = 1
 	tbins = np.arange(0, tmax + tstep, tstep)
 	t = 0.5*(tbins[1:] + tbins[:-1])
-	#at = np.zeros(len(tbins) - 1)
-	#bt = np.zeros(len(tbins) - 1)
 
 	if type_ == 'space':
 		plt.title('Spatial correlation of CERES/ANN error relative to IDD at stations')
@@ -120,42 +124,6 @@ if __name__ == '__main__':
 				label=CLOUD_TYPES[i]
 			)
 
-	#if type_ == 'space':
-	#	for i in range(nclasses):
-	#		ax = [[] for i in range(len(xbins))]
-	#		bx = [[] for i in range(len(xbins))]
-	#		j = 0
-	#		while j < N:
-	#			#itime1 = np.random.randint(0, n)
-	#			#itime2 = itime1 + np.random.randint(max(-itime1, -10), min(n - itime1, 10))
-	#			ilat1 = np.random.randint(0, m)
-	#			ilat2 = np.random.randint(0, m)
-	#			ilon1 = np.random.randint(0, l)
-	#			ilon2 = np.random.randint(0, l)
-	#			itime1 = 0
-	#			itime2 = 0
-	#			if stats_n[i,itime1,ilat1,ilon1] < 10 or \
-	#			   stats_n[i,itime2,ilat2,ilon2] < 10:
-	#				continue
-	#			#dt[j] = np.abs(d['time'][itime2] - d['time'][itime1])
-	#			dx = calc_dist(
-	#				d1['lon'][ilon1], d1['lat'][ilat1],
-	#				d1['lon'][ilon2], d1['lat'][ilat2]
-	#			)
-	#			j += 1
-	#			k = int(dx/xstep)
-	#			if k >= len(xbins) - 1:
-	#				continue
-	#			#ax[k] += x[i,itime1,ilat1,ilon1]*x[i,itime2,ilat2,ilon2] + \
-	#			#	(1 - x[i,itime1,ilat1,ilon1])*(1 - x[i,itime2,ilat2,ilon2])
-	#			#bx[k] += 1
-	#	plt.plot(
-	#		x,
-	#		ax/bx,
-	#		color=COLORS[i],
-	#		label=CLOUD_TYPES[i]
-	#	)
-
 	if type_ == 'time':
 		plt.title('Temporal correlation of CERES/ANN error relative to IDD at stations')
 		plt.xlabel('Time difference (days)')
@@ -185,10 +153,6 @@ if __name__ == '__main__':
 
 				at[k] += [err[i,itime1,ilat,ilon]]
 				bt[k] += [err[i,itime2,ilat,ilon]]
-
-				#at[k] += x[i,itime1,ilat,ilon]*x[i,itime2,ilat,ilon] + \
-				#	(1 - x[i,itime1,ilat,ilon])*(1 - x[i,itime2,ilat,ilon])
-				#bt[k] += 1
 			plt.plot(
 				t,
 				[np.corrcoef(at[k], bt[k])[0,1] for k in range(len(tbins) - 1)],
@@ -198,10 +162,5 @@ if __name__ == '__main__':
 
 	plt.legend()
 	plt.ylabel('Correlation coefficient')
-
-	#print(at[1], bt[1])
-	#plt.plot(t, at/bt)
-	#print([np.corrcoef(at[k], bt[k])[0,1] for k in range(len(tbins) - 1)])
-	#plt.plot(t, [len(at[k]) for k in range(len(tbins) - 1)])
-
+	print('-> %s' % output)
 	plt.savefig(output, bbox_inches='tight')

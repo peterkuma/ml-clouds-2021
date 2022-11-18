@@ -368,6 +368,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run plot_validation            # Plot validation results [Figure 4].
 ./run calc_val_stats             # Calculate validation statistics.
 ./run plot_roc                   # Plot ROC [Figure 5].
+./run plot_station_corr          # Plot CERES/ANN-IDD station spatial and temporal error correlation [Figure S3].
 ```
 
 ## Commands
