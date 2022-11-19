@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+'''Calculate receiver operating characteristic.
+
+Usage: bin/calc_roc INPUT IDD OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  INPUT   Validation CERES/ANN dataset. The output of calc_geo_cto for validation years (NetCDF).
+  IDD     Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
+  OUTPUT  Output file (NetCDF).
+
+Options:
+
+  area: { LAT1 LAT2 LON1 LON2 }  Area to validate on.
+
+Examples:
+
+bin/calc_roc data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/roc/NE.nc area: { 0 90 -180 0 }
+'''
+
+import numpy as np
+import sys
+import pst
+import ds_format as ds
+
+np.seterr(divide='ignore', invalid='ignore')
+
+THRESHOLDS = np.arange(0, 1 + 0.05, 0.05)[::-1]
+
+def calc_stats(x, y, z, threshold=None):
+	if threshold is None:
+		x1 = x
+		x2 = 1 - x
+	else:
+		x1 = x >= threshold
+		x2 = x < threshold
+	tp = np.nansum(x1*y, axis=(1, 2, 3))
+	fp = np.nansum(x1*(z - y), axis=(1, 2, 3))
+	tn = np.nansum(x2*(z - y), axis=(1, 2, 3))
+	fn = np.nansum(x2*y, axis=(1, 2, 3))
+	tpr = (tp/(tp + fn))
+	fpr = (fp/(tp + fn))
+	tnr = (tn/(tn + fp))
+	fnr = (fn/(tn + fp))
+	acc = (tp + tn)/(tp + tn + fp + fn)
+	return np.array([tpr, fpr, tnr, fnr, acc])
+
+def calc_roc(x, y, z):
+	n = len(THRESHOLDS)
+	nclasses = z.shape[0]
+	a = np.full((n, nclasses), np.nan)
+	b = np.full((n, nclasses), np.nan)
+	a[0,::] = 0
+	b[0,::] = 0
+	a[-1,::] = 1
+	b[-1,::] = 1
+	for i, threshold in enumerate(THRESHOLDS[1:-1]):
+		stats = calc_stats(x, y, z, threshold=threshold)
+		a[i+1,::] = 1 - stats[2,::]
+		b[i+1,::] = stats[0,::]
+	auc = np.sum(0.5*(b[1:] + b[:-1])*np.diff(a, axis=0), axis=0)
+	return a, b, auc
+
+if __name__ == '__main__':
+	args, opts = pst.decode_argv(sys.argv, as_unicode=True)
+	if len(args) != 4:
+		sys.stderr.write(sys.modules[__name__].__doc__)
+		sys.exit(1)
+	input_ = args[1]
+	idd = args[2]
+	output = args[3]
+	area = opts.get('area')
+
+	print('<- %s' % input_)
+	d = ds.read(input_)
+	print('<- %s' % idd)
+	d_idd = ds.read(idd)
+
+	sel = [t in d_idd['time'] for t in d['time']]
+	ds.select(d, {'time': sel})
+
+	nclasses = ds.dim(d, 'cloud_type')
+	nlat = ds.dim(d, 'lat')
+	nlon = ds.dim(d, 'lon')
+	nthresholds = len(THRESHOLDS)
+
+	x = d['cloud_occurrence_daily']
+	a = d_idd['stats_daily'].astype(float)
+	b = d_idd['stats_n_daily'].astype(float)
+
+	if area is not None:
+		for y in (x, a, b):
+			if y is None: continue
+			mask = np.ones(y.shape, bool)
+			if mask.ndim == 4:
+				mask[:,:,(d['lat'] < area[0]),:] = False
+				mask[:,:,(d['lat'] >= area[1]),:] = False
+				mask[:,:,:,(d['lon'] < area[2])] = False
+				mask[:,:,:,(d['lon'] >= area[3])] = False
+			else:
+				mask[:,(d['lat'] < area[0]),:] = False
+				mask[:,(d['lat'] >= area[1]),:] = False
+				mask[:,:,(d['lon'] < area[2])] = False
+				mask[:,:,(d['lon'] >= area[3])] = False
+			y[~mask] = np.nan
+
+	roc_x, roc_y, auc = calc_roc(x, a, b)
+
+	print('-> %s' % output)
+	ds.write(output, {
+		'threshold': THRESHOLDS,
+		'roc_x': roc_x,
+		'roc_y': roc_y,
+		'auc': auc,
+		'.': {
+			'.': ({'area': area} if area is not None else {}),
+			'threshold': {'.dims': ['threshold']},
+			'roc_x': {'.dims': ['threshold', 'cloud_type']},
+			'roc_y': {'.dims': ['threshold', 'cloud_type']},
+			'auc': {'.dims': ['cloud_type']},
+		}
+	})

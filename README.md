@@ -303,7 +303,7 @@ samples_pred
   ↳ ceres/<year>.nc  CERES samples predicted with tf apply for a year.
   ↳ <model>
     ↳ <year>.nc      Samples predicted with tf apply for a model/year in the historical experiment.
-val_stats            Validation statistics calculated by calc_val_stats.
+roc                  Receiver operating characteristic.
 ↳ all.nc
 ↳ regions.nc
 xval
@@ -369,7 +369,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run plot_geo_cto_xval          # Plot geographical distribution of cloud type occurrence for cross-validation [Figure 3, S12].
 ./run calc_idd_geo               # Calculate geographical distribution of IDD cloud type occurrence.
 ./run plot_validation            # Plot validation results [Figure 4].
-./run calc_val_stats             # Calculate validation statistics.
+./run calc_roc                   # Calculate ROC.
 ./run plot_roc                   # Plot ROC [Figure 5].
 ./run plot_station_corr          # Plot CERES/ANN-IDD station spatial and temporal error correlation [Figure S3].
 ./run plot_idd_n_obs             # Plot number of observations per grid cell in the IDD dataset [Figure S2].
@@ -403,7 +403,7 @@ prepare_samples
       ↳ plot_idd_n_obs [Figure S2]
       ↳ merge_xval_geo_cto
         ↳ plot_validation [Figure 4]
-        ↳ calc_val_stats
+        ↳ calc_roc
           ↳ plot_roc [Figure 5]
 ```
 
@@ -921,13 +921,13 @@ bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historica
 ```
 
 
-#### calc\_val\_stats
+#### calc\_roc
 
 
 ```
-Calculate cross-validation statistics.
+Calculate receiver operating characteristic.
 
-Usage: bin/calc_val_stats INPUT IDD OUTPUT [OPTIONS]
+Usage: bin/calc_roc INPUT IDD OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
@@ -940,11 +940,10 @@ Arguments:
 Options:
 
   area: { LAT1 LAT2 LON1 LON2 }  Area to validate on.
-  train_idd: VALUE               Training IDD input. The output of calc_idd_geo for training years (NetCDF). If specified, the uninformative predictor is calculated from the training years.
 
 Examples:
 
-bin/calc_val_stats data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/val_stats/NE.nc area: { 0 90 -180 0 }
+bin/calc_roc data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/roc/NE.nc area: { 0 90 -180 0 }
 ```
 
 

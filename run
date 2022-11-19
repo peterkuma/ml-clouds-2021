@@ -381,25 +381,17 @@ plot_validation)
 		"$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.png "$opts"
 	;;
 
-calc_val_stats)
-	mkdir -p "$DATA"/val_stats
-	bin/calc_val_stats \
-		"$DATA"/geo_cto/historical/validation/CERES.nc \
-		"$DATA"/idd_geo/IDD.nc "$DATA"/val_stats/all.nc \
-		train_idd: "$DATA"/idd_geo/training.nc
-	for region in $REGIONS; do
-		region_upper=${region^^}
-		extent="${EXTENT[$region]}"
-		bin/calc_val_stats \
-			"$DATA"/xval/"$region"/geo_cto/historical/all/CERES.nc \
-			"$DATA"/idd_geo/IDD.nc "$DATA"/val_stats/"$region_upper".nc \
-			area: $extent train_idd: "$DATA"/idd_geo/training.nc
-	done
+calc_roc)
+	mkdir -p "$DATA"/roc
+	bin/calc_roc "$DATA"/geo_cto/historical/validation/CERES.nc \
+		"$DATA"/idd_geo/IDD.nc "$DATA"/roc/all.nc
+	bin/calc_roc "$DATA"/xval/geo_cto/regions.nc "$DATA"/idd_geo/IDD.nc \
+		"$DATA"/roc/regions.nc
 	;;
 
 plot_roc)
-	bin/plot_roc "$DATA"/val_stats/all.nc "$PLOT"/roc_all.pdf all
-	bin/plot_roc "$DATA"/val_stats/regions.nc "$PLOT"/roc_regions.pdf regions
+	bin/plot_roc "$DATA"/roc/all.nc "$PLOT"/roc_all.pdf all
+	bin/plot_roc "$DATA"/roc/regions.nc "$PLOT"/roc_regions.pdf regions
 	;;
 
 plot_station_corr)

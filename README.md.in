@@ -303,7 +303,7 @@ samples_pred
   ↳ ceres/<year>.nc  CERES samples predicted with tf apply for a year.
   ↳ <model>
     ↳ <year>.nc      Samples predicted with tf apply for a model/year in the historical experiment.
-val_stats            Validation statistics calculated by calc_val_stats.
+roc                  Receiver operating characteristic.
 ↳ all.nc
 ↳ regions.nc
 xval
@@ -369,7 +369,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run plot_geo_cto_xval          # Plot geographical distribution of cloud type occurrence for cross-validation [Figure 3, S12].
 ./run calc_idd_geo               # Calculate geographical distribution of IDD cloud type occurrence.
 ./run plot_validation            # Plot validation results [Figure 4].
-./run calc_val_stats             # Calculate validation statistics.
+./run calc_roc                   # Calculate ROC.
 ./run plot_roc                   # Plot ROC [Figure 5].
 ./run plot_station_corr          # Plot CERES/ANN-IDD station spatial and temporal error correlation [Figure S3].
 ./run plot_idd_n_obs             # Plot number of observations per grid cell in the IDD dataset [Figure S2].
@@ -403,7 +403,7 @@ prepare_samples
       ↳ plot_idd_n_obs [Figure S2]
       ↳ merge_xval_geo_cto
         ↳ plot_validation [Figure 4]
-        ↳ calc_val_stats
+        ↳ calc_roc
           ↳ plot_roc [Figure 5]
 ```
 
@@ -500,9 +500,9 @@ names.
 
 {plot_validation}
 
-#### calc\_val\_stats
+#### calc\_roc
 
-{calc_val_stats}
+{calc_roc}
 
 #### plot\_roc [Figure 5]
 
