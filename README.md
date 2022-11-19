@@ -11,7 +11,8 @@ Adrian J. McDonald<sup>2</sup>,
 <sup>3</sup>Norwegian Meteorological Institute, Oslo, Norway
 
 This repository contains code for the paper
-[Machine learning of cloud types in satellite observations and climate models](https://doi.org/10.5281/zenodo.6184907).
+[Machine learning of cloud types in satellite observations and climate
+models](https://doi.org/10.5281/zenodo.6184907) (in review).
 
 ## Introduction
 
