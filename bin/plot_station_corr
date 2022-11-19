@@ -9,6 +9,11 @@ Arguments:
   INPUT1  Input file. The output of calc_idd_geo (NetCDF).
   INPUT2  Input file. The output of calc_geo_cto (NetCDF).
   OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_station_corr space data/idd_geo/2007.nc data/geo_cto/historical/all/CERES.nc plot/station_corr_space.pdf
+bin/plot_station_corr time data/idd_geo/2007.nc data/geo_cto/historical/all/CERES.nc plot/station_corr_time.pdf
 '''
 
 import sys

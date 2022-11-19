@@ -825,6 +825,11 @@ Arguments:
   INPUT1  Input file. The output of calc_idd_geo (NetCDF).
   INPUT2  Input file. The output of calc_geo_cto (NetCDF).
   OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_station_corr space data/idd_geo/2007.nc data/geo_cto/historical/all/CERES.nc plot/station_corr_space.pdf
+bin/plot_station_corr time data/idd_geo/2007.nc data/geo_cto/historical/all/CERES.nc plot/station_corr_time.pdf
 ```
 
 
@@ -892,6 +897,8 @@ Arguments:
   INPUT   The output of calc_geo_cto (NetCDF).
   AREA    Area of input to merge the format { LAT1 LAT2 LON1 LON2 }. The number of area arguments must be the same as the number of input arguments.
   OUTPUT  Output file (NetCDF).
+
+bin/merge_xval_geo_cto data/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc { 15 45 -60 -30 } { 30 60 90 120 } { -45 -15 150 180 } { -30 0 -75 -45 } data/xval/geo_cto/regions.nc
 ```
 
 
@@ -961,6 +968,11 @@ Arguments:
   INPUT   Input data. The output of calc_val_stats (NetCDF).
   OUTPUT  Output plot (PDF)
   TITLE   Plot title.
+
+Examples:
+
+bin/plot_roc data/roc/all.nc plot/roc_all.pdf all
+bin/plot_roc data/roc/regions.nc plot/roc_regions.pdf regions
 ```
 
 

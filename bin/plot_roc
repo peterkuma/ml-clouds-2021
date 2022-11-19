@@ -8,6 +8,11 @@ Arguments:
   INPUT   Input data. The output of calc_val_stats (NetCDF).
   OUTPUT  Output plot (PDF)
   TITLE   Plot title.
+
+Examples:
+
+bin/plot_roc data/roc/all.nc plot/roc_all.pdf all
+bin/plot_roc data/roc/regions.nc plot/roc_regions.pdf regions
 '''
 
 import sys
