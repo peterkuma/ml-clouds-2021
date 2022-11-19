@@ -18,7 +18,7 @@ Arguments:
 Options:
 
   seed: VALUE           Random seed.
-  keep_stations: VALUE  Keep station records in samples ("true" or "false").  Default: "false".
+  keep_stations: VALUE  Keep station records in samples ("true" or "false"). Default: "false".
   nsamples: VALUE       Number of samples per day to generate. Default: 100.
 
 Examples:
