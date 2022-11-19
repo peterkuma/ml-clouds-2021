@@ -333,6 +333,9 @@ are stored in `data`. Some of the tasks might take a significant amount of
 time to complete (hours to days, depending on the CPU).  In general, the tasks
 should be run in order because of data dependencies.
 
+Plots which contain complex vector graphics are saved as PNG with width of
+slightly above 1920px. Other plots are saved as PDF.
+
 ```sh
 # Optional configuration:
 export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores if not set.
@@ -692,14 +695,12 @@ Plot global mean cloud type occurrence.
 
 Usage: plot_cto VARNAME DEGREE ABSREL REGRESSION INPUT ECS OUTPUT TITLE [OPTIONS]
 
-This program uses PST for command line argument parsing.
-
 Arguments:
 
   VARNAME     Variable name. One of: "ecs" (ECS), "tcr" (TCR), "cld" (cloud feedback).
   DEGREE      One of: "0" (mean), "1-time" (trend in time), "1-tas" (trend in tas).
   ABSREL      One of "absolute" (absolute value), "relative" (relative to CERES).
-  REGRESSION  Plot regression. One of: true or false.
+  REGRESSION  Plot regression. One of: "true" or "false".
   INPUT       Input directoy. The output of calc_geo_cto (NetCDF).
   ECS         ECS file (CSV).
   OUTPUT      Output plot (PDF).
