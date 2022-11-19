@@ -106,4 +106,4 @@ if __name__ == '__main__':
 	cb1.ax.tick_params(labelsize=7)
 
 	print('-> %s' % output)
-	plt.savefig(output, bbox_inches='tight', dpi=300)
+	plt.savefig(output, bbox_inches='tight', dpi=120)

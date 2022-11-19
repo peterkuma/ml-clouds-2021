@@ -99,4 +99,4 @@ if __name__ == '__main__':
 	gl.yformatter = LATITUDE_FORMATTER
 	plt.title('Location of IDD stations: %s' % title, fontsize=7)
 	plt.legend(fontsize=4.5, loc='upper right')
-	plt.savefig(output, bbox_inches='tight', dpi=600)
+	plt.savefig(output, bbox_inches='tight', dpi=450)

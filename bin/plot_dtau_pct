@@ -116,6 +116,7 @@ if __name__ == '__main__':
 	input_ = sys.argv[1]
 	output = sys.argv[2]
 
+	print('<- %s' % input_)
 	d = ds.read(input_)
 	n = d['hist'].shape[0]
 
@@ -207,4 +208,5 @@ if __name__ == '__main__':
 
 	plt.subplots_adjust(wspace=0.1)
 
-	plt.savefig(output, bbox_inches='tight')
+	print('-> %s' % output)
+	plt.savefig(output, bbox_inches='tight', dpi=160)

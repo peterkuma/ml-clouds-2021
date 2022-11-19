@@ -225,7 +225,7 @@ if __name__ == '__main__':
 	idd_train = args[2]
 	input_ = args[3:-1]
 	output = args[-1]
-	normalized = opts.get('normalized')
+	normalized = opts.get('normalized', False)
 
 	print('<- %s' % idd_val)
 	d_idd_val = ds.read(idd_val)
@@ -336,7 +336,7 @@ if __name__ == '__main__':
 				if i == 0:
 					label(name + '\n(normalised)')
 				letter(row + 2, i + 1, color=('k' if name == 'regions' else 'white'))
-			subplot(nrows, ncols, 1 + (row + 1 + normalized)*ncols + i)
+			subplot(nrows, ncols, 1 + (row + 1 + bool(normalized))*ncols + i)
 			plt2, rmse1, rmse2 = plot(d, i, rel=d_idd_val, first=(i == 0))
 			mse1 += rmse1**2
 			mse2 += rmse2**2
@@ -359,4 +359,4 @@ if __name__ == '__main__':
 	cb.set_ticks(np.arange(-90, 100, 30))
 	cb.set_label(label='Cloud type occurrence probability anomaly', fontsize=8)
 	print('-> %s' % output)
-	plt.savefig(output, bbox_inches='tight', dpi=280)
+	plt.savefig(output, bbox_inches='tight', dpi=210)
