@@ -407,6 +407,10 @@ plot_station_corr)
 	bin/plot_station_corr time "$DATA"/idd_geo/2007.nc "$DATA"/geo_cto/historical/all/CERES.nc "$PLOT"/station_corr_time.pdf
 	;;
 
+plot_idd_n_obs)
+	bin/plot_idd_n_obs "$DATA"/idd_geo/validation.nc "$PLOT"/idd_n_obs.png
+	;;
+
 *)
 	printf "%s: Unknown command\n" "$1" >&2
 esac

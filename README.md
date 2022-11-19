@@ -372,6 +372,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run calc_val_stats             # Calculate validation statistics.
 ./run plot_roc                   # Plot ROC [Figure 5].
 ./run plot_station_corr          # Plot CERES/ANN-IDD station spatial and temporal error correlation [Figure S3].
+./run plot_idd_n_obs             # Plot number of observations per grid cell in the IDD dataset [Figure S2].
 ```
 
 ## Commands
@@ -867,6 +868,10 @@ Arguments:
 
   INPUT   Input dataset. The output of calc_idd_geo (NetCDF).
   OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_idd_n_obs data/idd_geo/validation.nc plot/idd_n_obs.png
 ```
 
 

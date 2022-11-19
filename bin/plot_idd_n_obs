@@ -7,6 +7,10 @@ Arguments:
 
   INPUT   Input dataset. The output of calc_idd_geo (NetCDF).
   OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_idd_n_obs data/idd_geo/validation.nc plot/idd_n_obs.png
 '''
 
 import sys
@@ -84,4 +88,4 @@ if __name__ == '__main__':
 		)
 	plt.colorbar(im, pad=0.02, label='Number of observations')
 	plt.title('Number of IDD station observations')
-	plt.savefig(output, bbox_inches='tight')
+	plt.savefig(output, bbox_inches='tight', dpi=330)
