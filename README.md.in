@@ -35,7 +35,7 @@ models or shorter training data time periods.
 
 Please see the manuscript for more details about the ANN. If you have any
 questions about the code you can contact the manuscript authors or submit an
-Issue on GitHub.
+[issue on GitHub](https://github.com/peterkuma/ml-clouds-2021/issues).
 
 ## Requirements
 
@@ -137,7 +137,7 @@ in `input/cmip5/<experiment>/<frequency/` and
 is either `historical` (for both `historical` and `hist-1950`) or
 `abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
-After downloading, the data should be resambled to 2.5° resolution with
+After downloading, the data should be resampled to 2.5° resolution with
 [cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
 
 ```sh
@@ -242,7 +242,7 @@ noresm2             NorESM2 files.
       ↳ <variable>  The same as above, but resampled to 2.5°.
 ↳ abrupt-4xCO2
   ↳ day             Daily mean files.
-    ↳ <variable>    Daily mean NorESM2 NetCDF files in the abrupt-4xCO2 experiment for variabes FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
+    ↳ <variable>    Daily mean NorESM2 NetCDF files in the abrupt-4xCO2 experiment for variables FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
       ↳ 2.5deg      The same as above, but resampled to 2.5°.
 tas                 Near-surface air temperature (to be extracted from tas.tar.xz).
 ↳ historical
@@ -276,7 +276,7 @@ geo_cto              Geographical distribution files for models and CERES calcul
   ↳ all              All models.
   ↳ part_1           Models for the first figure.
   ↳ part_2           Models for the continued figure.
-↳ historical         CMIP6 historical expeirment.
+↳ historical         CMIP6 historical experiment.
   ↳ all              All models.
   ↳ part_1           Models for the first figure.
   ↳ part_2           Models for the continued figure.
@@ -554,5 +554,5 @@ cd data/cmip5/historical/day
 ## License
 
 The code in this repository is open source, and can be used and distributed
-freely under the terms of an MIT license. Plase see [LICENSE.md](LICENSE.md)
+freely under the terms of an MIT license. Please see [LICENSE.md](LICENSE.md)
 for details.
