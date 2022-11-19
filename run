@@ -88,7 +88,7 @@ prepare_ceres)
 
 train_ann)
 	mkdir -p "$DATA"/ann
-	bin/tf train "$DATA"/samples/ceres/{training,validation} \
+	bin/ann train "$DATA"/samples/ceres/{training,validation} \
 		"$DATA"/ann/ceres.h5 "$DATA"/ann/history.nc nclasses: "$NCLASSES"
 	;;
 
@@ -97,7 +97,7 @@ train_ann_xval)
 		extent="${EXTENT[$region]}"
 		dir="$DATA/xval/$region"
 		mkdir -p "$dir"/ann
-		bin/tf train "$DATA"/samples/ceres/{training,validation} \
+		bin/ann train "$DATA"/samples/ceres/{training,validation} \
 			"$dir"/ann/ceres.h5 "$dir"/ann/history.nc \
 			nclasses: "$NCLASSES" exclude: $extent
 	done
@@ -121,7 +121,7 @@ plot_idd_stations)
 		"$DATA"/idd_sample/idd
 	cp "$INPUT"/idd/buoy/Surface_Buoy_20100101_0000.nc \
 		"$DATA"/idd_sample/idd
-	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/idd_sample/samples \
+	bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/idd_sample/samples \
 		"$DATA"/idd_sample/samples_pred
 	bin/plot_idd_stations "$DATA"/idd_sample/idd \
 		"$DATA/idd_sample/samples/2010/2010-01-01T00:00:00.nc" \
@@ -172,7 +172,7 @@ prepare_abrupt-4xCO2)
 
 predict_ceres)
 	mkdir -p "$DATA"/samples_pred/historical/CERES/validation
-	bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres \
+	bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/samples/ceres \
 		"$DATA"/samples_pred/historical/CERES nclasses: "$NCLASSES"
 	for y in $VAL_YEARS; do
 		ln -sf ../$y.nc "$DATA"/samples_pred/historical/CERES/validation/
@@ -183,7 +183,7 @@ predict_ceres_xval)
 	for region in $REGIONS; do
 		dir="$DATA/xval/$region/"
 		mkdir -p "$dir"/samples_pred/historical/CERES
-		bin/tf apply "$dir"/ann/ceres.h5 "$DATA"/samples/ceres/validation/ \
+		bin/ann apply "$dir"/ann/ceres.h5 "$DATA"/samples/ceres/validation/ \
 			"$dir"/samples_pred/historical/CERES nclasses: "$NCLASSES"
 	done
 	;;
@@ -196,7 +196,7 @@ predict_historical)
 			continue
 		fi
 		mkdir -p "$DATA"/samples_pred/$exp/$model
-		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
+		bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
 			"$DATA"/samples_pred/$exp/$model nclasses: "$NCLASSES"
 	done
 	;;
@@ -209,7 +209,7 @@ predict_abrupt-4xCO2)
 			continue
 		fi
 		mkdir -p "$DATA"/samples_pred/$exp/$model
-		bin/tf apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
+		bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
 			"$DATA"/samples_pred/$exp/$model nclasses: "$NCLASSES"
 	done
 	;;

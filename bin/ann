@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
-'''Train or apply a TensorFlow CNN.
+'''Train or apply the artificial neural network (ANN).
 
-Usage: tf train INPUT INPUT_VAL OUTPUT OUTPUT_HISTORY [OPTIONS]
-       tf apply MODEL INPUT OUTPUT [OPTIONS]
+Usage: ann train INPUT INPUT_VAL OUTPUT OUTPUT_HISTORY [OPTIONS]
+       ann apply MODEL INPUT OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
-Arguments (tf train):
+Arguments (ann train):
 
   INPUT           Input directory with samples. The output of prepare_samples (NetCDF).
   INPUT_VAL       Input directory with validation samples (NetCDF).
   OUTPUT          Output model (HDF5).
   OUTPUT_HISTORY  History output (NetCDF).
 
-Arguments (tf apply):
+Arguments (ann apply):
 
   MODEL   TensorFlow model (HDF5).
   INPUT   Input directory with samples. The output of prepare_samples (NetCDF).
   OUTPUT  Output samples directory (NetCDF).
 
-Options (tf train):
+Options (ann train):
 
   night: VALUE          Train for nighttime only. One of: true or false. Default: false.
   exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
@@ -28,15 +28,15 @@ Options (tf train):
       Exclude samples with pixels in a region bounded by given latitude and longitude. Default: none.
   nsamples: VALUE       Maximum number of samples to use for the training per day. Default: 20.
 
-Options (tf apply):
+Options (ann apply):
 
   nclasses: VALUE  Number of cloud types. One of: 4, 10, 27. Default: 4.
 
 Examples:
 
-bin/tf train data/samples/ceres_training/training data/samples/ceres_training/validation data/ann/ceres.h5 data/ann/history.nc
-bin/tf apply data/ann/ceres.h5 data/samples/ceres data/samples_pred/ceres
-bin/tf apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR data/samples_pred/historical/AWI-ESM-1-1-LR
+bin/ann train data/samples/ceres_training/training data/samples/ceres_training/validation data/ann/ceres.h5 data/ann/history.nc
+bin/ann apply data/ann/ceres.h5 data/samples/ceres data/samples_pred/ceres
+bin/ann apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR data/samples_pred/historical/AWI-ESM-1-1-LR
 '''
 
 import warnings
