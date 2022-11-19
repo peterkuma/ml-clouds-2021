@@ -473,7 +473,7 @@ Arguments:
 
 Examples:
 
-bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.pdf '2010-01-01'
+bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.png '2010-01-01'
 ```
 
 
@@ -540,7 +540,7 @@ Arguments:
 
 Examples:
 
-bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.pdf
+bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.png
 ```
 
 
@@ -600,7 +600,7 @@ Arguments:
 
 Examples:
 
-bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.pdf
+bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.png
 ```
 
 
@@ -657,8 +657,8 @@ Options:
 
 Examples:
 
-bin/plot_geo_cto data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.pdf
-bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.pdf
+bin/plot_geo_cto data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.png
+bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.png
 ```
 
 
@@ -917,7 +917,7 @@ Options:
 
 Examples:
 
-bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historical/all/CERES.nc data/xval/geo_cto/CERES_sectors.nc plot/validation.pdf
+bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historical/all/CERES.nc data/xval/geo_cto/CERES_sectors.nc plot/validation.png
 ```
 
 
