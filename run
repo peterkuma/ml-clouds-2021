@@ -373,9 +373,10 @@ calc_idd_geo)
 	;;
 
 plot_validation)
+	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_validation "$DATA"/idd_geo/{validation,training}.nc \
 		"$DATA"/geo_cto/historical/validation/CERES.nc \
-		"$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.png
+		"$DATA"/xval/geo_cto/regions.nc "$PLOT"/validation.png "$opts"
 	;;
 
 calc_val_stats)
