@@ -1012,8 +1012,7 @@ bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
 #### create\_by\_model
 
 ```
-Create a by-model index of CMIP data. This command should be run in the
-directory with CMIP data.
+Create a by-model index of CMIP data. This command should be run in the directory with CMIP data.
 
 Usage: create_by_model
 
@@ -1026,8 +1025,7 @@ cd data/cmip5/historical/day
 #### create\_by\_var
 
 ```
-Create a by-var index of CMIP data. This command should be run in the
-directory with CMIP data.
+Create a by-var index of CMIP data. This command should be run in the directory with CMIP data.
 
 Usage: create_by_var
 
