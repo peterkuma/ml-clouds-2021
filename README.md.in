@@ -194,10 +194,10 @@ archive `input/tas.tar.xz`.
 
 The `input` directory should contain the necessary input files. Apart from the
 datasets already contained in this repository, the files need to be downloaded
-from the sources as described above. NorESM2 is optional. If the NorESM2 data
-are not available, it should removed from the `input/models_*` files. Below is
-a description of the structure of the input directory (directories are marked
-with `/` at the end of the name).
+from the sources as described above. Models and reanalyses which are not
+available should be removed from the `input/models_*` files before running
+`run`. Below is a description of the structure of the input directory
+(directories are marked with `/` at the end of the name).
 
 ```
 ceres/              CERES SYN1deg daily mean files (NetCDF).
