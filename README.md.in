@@ -240,11 +240,12 @@ noresm2/            NorESM2 model files.
   ↳ day/            Daily mean files.
     ↳ <variable>/   Daily mean NorESM NetCDF files in the historical experiment, where variable is FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
     ↳ 2.5deg/       The same as above, but resampled to 2.5°.
-      ↳ <variable>/ The same as above, but resampled to 2.5°.
+      ↳ <variable>/
 ↳ abrupt-4xCO2/
   ↳ day/            Daily mean files.
     ↳ <variable>/   Daily mean NorESM2 NetCDF files in the abrupt-4xCO2 experiment, where variable is FLNT, FLNTC, FLUT, FLUTC, FSNTOA, FSNTOAC and SOLIN.
-      ↳ 2.5deg/     The same as above, but resampled to 2.5°.
+    ↳ 2.5deg/       The same as above, but resampled to 2.5°.
+      ↳ <variable>/
 tas/                Near-surface air temperature. This should be extracted from tas.tar.xz.
 ↳ historical/
   ↳ CERES.nc        Near-surface air temperature from observations (GISTEMP).
