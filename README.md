@@ -336,6 +336,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 . config_4 # Configuration for 4 cloud types
 # . config_10 for 10 cloud types.
 # . config_27 for 27 cloud types.
+# ./run prepare_* commands only have to be run once for either of config_4, config_10 and config_27 because they are shared between the configurations.
 
 ./run prepare_ceres              # Prepare CERES samples.
 ./run train_ann                  # Train the ANN.
