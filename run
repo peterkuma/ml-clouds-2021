@@ -68,7 +68,7 @@ mkdir -p "$DATA"
 mkdir -p "$DATA_COMMON"
 mkdir -p "$DATA_COMMON/samples"
 if [ "$DATA" != "$DATA_COMMON" ]; then
-	ln -sfT "$DATA/samples" "$(realpath "$DATA_COMMON/samples")" || true
+	ln -sfT "$(realpath "$DATA_COMMON/samples")" "$DATA/samples" || true
 fi
 mkdir -p "$PLOT"
 
