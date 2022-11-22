@@ -98,6 +98,23 @@ climate models and reanalyses and thus reduce the amount of data needed to
 be downloaded. The `run` script expects a particular subdirectory structure of
 the `input` directory, described [below](#input-directory).
 
+### CERES
+
+SYN1deg Level 3 daily means can be downloaded from the [CERES
+website](https://ceres.larc.nasa.gov). They have to be converted to NetCDF with
+the tool
+[h4toh5](https://portal.hdfgroup.org/display/support/Download+h4h5tools)
+(provided by the HDF Group), and stored in `input/ceres`.
+
+After downloading, the data should be resampled to 2.5° resolution with
+[cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
+
+```sh
+# To be run in the directory with the CERES NetCDF files.
+mkdir 2.5deg
+parallel cdo -remapcon,r144x96 {} 2.5deg/{} ::: *.nc
+```
+
 ### Historical Unidata Internet Data Distribution (IDD) Global Observational Data
 
 The IDD dataset contains ship and buoy records from the Global Telecommunication
@@ -137,14 +154,8 @@ in `input/cmip5/<experiment>/<frequency/` and
 is either `historical` (for both `historical` and `hist-1950`) or
 `abrupt-4xCO2` and `<frequency>` is `day` or `mon`.
 
-After downloading, the data should be resampled to 2.5° resolution with
-[cdo](https://code.mpimet.mpg.de/projects/cdo/embedded/index.html):
-
-```sh
-# To be run in the directory with the CMIP NetCDF files.
-mkdir 2.5deg
-parallel cdo -remapcon,r144x96 {} 2.5deg/{} ::: *.nc
-```
+The data should be resampled to 2.5° resolution in the same way as the CERES
+data.
 
 ### GISS Surface Temperature Analysis (GISTEMP)
 
@@ -152,14 +163,6 @@ The GISTEMP dataset is in `data/gistemp` available as the original file
 (CSV) and converted to NetCDF with `gistemp_to_nc` (required by the main
 commands). The original dataset was downloaded from [NASA
 GISS](https://data.giss.nasa.gov/gistemp/). The original terms of use apply.
-
-### CERES
-
-SYN1deg Level 3 daily means can be downloaded from the [CERES
-website](https://ceres.larc.nasa.gov). They have to be converted to NetCDF with
-the tool
-[h4toh5](https://portal.hdfgroup.org/display/support/Download+h4h5tools)
-(provided by the HDF Group), and stored in `input/ceres`.
 
 ### ERA5
 
@@ -169,7 +172,7 @@ website](https://cds.climate.copernicus.eu/#!/search?text=ERA5&type=dataset).
 They have to be converted to daily mean files with cdo and stored in
 `input/era5`.
 
-The data should be resampled to 2.5° resolution in the same way as the CMIP
+The data should be resampled to 2.5° resolution in the same way as the CERES
 data.
 
 ### MERRA-2
@@ -179,7 +182,7 @@ EarthData](https://disc.gsfc.nasa.gov/datasets?project=MERRA-2). Daily means
 can be downloaded with the GES DISC Subsetter. They have to be stored in
 `input/merra-2`.
 
-The data should be resampled to 2.5° resolution in the same way as the CMIP
+The data should be resampled to 2.5° resolution in the same way as the CERES
 data.
 
 ### Global mean near-surface temperature
