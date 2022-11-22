@@ -43,26 +43,13 @@ The code can be run on a Linux distribution with the following software
 (exact versions are listed for reproducibility, but newer version may work
 equally well):
 
-- Python 3.9.2
-- Cython 0.29.2
-- aria2 1.35.0
-- GNU parallel 20161222
-- cdo 1.9.10
+- Python (3.9.2)
+- Cython (0.29.2)
+- aria2 (1.35.0)
+- GNU parallel (20161222)
+- cdo (1.9.10)
 
-and Python packages:
-
-- tensorflow 2.8.0
-- scipy 1.7.3
-- numpy 1.22.3
-- matplotlib 3.5.3
-- pymc3 3.11.5
-- pst-format 1.2.1
-- aquarius-time 0.1.0
-- ds-format 3.3.1
-- pyproj 3.0.0
-- pandas 1.1.5
-- netCDF4 1.5.5.1
-- Cartopy 0.18.0
+as well as Python packages listed in `requirements.txt`.
 
 On Debian-based Linux distributions (Ubuntu, Debian, Devuan, ...), the required
 software can be installed with:
