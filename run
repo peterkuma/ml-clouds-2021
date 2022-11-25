@@ -115,14 +115,12 @@ plot_training_history)
 	;;
 
 plot_idd_stations)
-	mkdir -p "$DATA"/idd_sample/samples/2010
+	mkdir -p "$DATA"/idd_sample/samples/
 	mkdir -p "$DATA"/idd_sample/samples_pred/
 	mkdir -p "$DATA"/idd_sample/idd
 	bin/prepare_samples ceres "$INPUT"/ceres/2.5deg "$INPUT"/idd/synop \
 		"$INPUT"/idd/buoy 2010-01-01 2010-01-01 \
-		"$DATA"/idd_sample/samples/2010 keep_stations: true
-	ds merge sample "$DATA"/idd_sample/samples/2010/*.nc \
-		"$DATA"/idd_sample/samples/2010.nc
+		"$DATA"/idd_sample/samples/ keep_stations: true
 	cp "$INPUT"/idd/synop/Surface_Synoptic_20100101_0000.nc \
 		"$DATA"/idd_sample/idd
 	cp "$INPUT"/idd/buoy/Surface_Buoy_20100101_0000.nc \
@@ -130,10 +128,10 @@ plot_idd_stations)
 	bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/idd_sample/samples \
 		"$DATA"/idd_sample/samples_pred
 	bin/plot_idd_stations "$DATA"/idd_sample/idd \
-		"$DATA/idd_sample/samples/2010/2010-01-01T00:00:00.nc" \
+		"$DATA/idd_sample/samples/2010-01-01T00:00:00.nc" \
 		16 "$PLOT"/idd_stations.png '2010-01-01'
 	bin/plot_sample \
-		"$DATA"/idd_sample/samples{,_pred}/2010/2010-01-01T00:00:00.nc \
+		"$DATA"/idd_sample/samples{,_pred}/2010-01-01T00:00:00.nc \
 		16 "$PLOT"/sample.png
 	;;
 
