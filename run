@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+
+if [ "$ML_CONFIG" != 1 ]; then
+	echo "$0: Import config with \". config_<i>\" before running this script" >&2
+	exit 1
+fi
+
 set -e -x
 
 NCORES="$(getconf _NPROCESSORS_ONLN)"
@@ -404,5 +410,6 @@ plot_idd_n_obs)
 	;;
 
 *)
-	printf "%s: Unknown command\n" "$1" >&2
+	echo "$0: Unknown command \"$1\"" >&2
+	exit 1
 esac

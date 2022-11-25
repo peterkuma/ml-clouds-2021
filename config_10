@@ -1,3 +1,4 @@
+export ML_CONFIG=1
 export INPUT=input
 export DATA=data_10
 export DATA_COMMON=data
