@@ -179,6 +179,9 @@ def read_samples(filename, exclude=None, exclude_night=True, nclasses=4):
 	print('<- %s' % filename)
 	d = ds.read(filename, ['data', 'time', 'lat', 'lon', 'station_clouds', \
 		'station_clouds_n'])
+	d['station_clouds'] = d['station_clouds'].filled(0)
+	d['station_clouds_n'] = d['station_clouds_n'].filled(0)
+
 	if exclude is not None:
 		mask = \
 			(d['lat'] > exclude[0]) & \
@@ -199,37 +202,26 @@ def read_samples(filename, exclude=None, exclude_night=True, nclasses=4):
 		d['data'][np.isnan(d['data'])] = -1
 	n, m, l = d['data'].shape[2], d['data'].shape[3], d['data'].shape[0]
 	images = np.moveaxis(d['data'], 1, 3)
-	if 'station_clouds' in d:
-		calc_stats = {
-			4: calc_stats_4,
-			10: calc_stats_10,
-			27: lambda x, xn: (x, xn)
-		}[nclasses]
-		station_clouds, station_clouds_n = calc_stats(
-			d['station_clouds'],
-			d['station_clouds_n']
-		)
-		nclasses = station_clouds.shape[1]
-		labels = np.full((l, n, m, nclasses*2), np.nan, np.float64)
-		labels[:,:,:,:nclasses] = np.moveaxis(station_clouds, 1, 3)
-		labels[:,:,:,nclasses:] = np.moveaxis(station_clouds_n, 1, 3)
-		labels[np.isnan(labels)] = 0
-	else:
-		labels = None
-	#mask = np.array([
-	#	np.sum(np.isnan(d['data'][i,:,:])) == 0
-	#	for i in range(l)
-	#])
-	mask = np.array([
-		True
-		for i in range(l)
-	])
-	return \
-		images[mask,::], \
-		labels[mask,::] if labels is not None else None, \
-		d['time'][mask] if 'time' in d else None, \
-		d['lat'][mask,::] if 'lat' in d else None, \
-		d['lon'][mask,::] if 'lon' in d else None
+
+	calc_stats = {
+		4: calc_stats_4,
+		10: calc_stats_10,
+		27: lambda x, xn: (x, xn)
+	}[nclasses]
+	station_clouds, station_clouds_n = calc_stats(
+		d['station_clouds'],
+		d['station_clouds_n']
+	)
+	nclasses = station_clouds.shape[1]
+	labels = np.full((l, n, m, nclasses*2), np.nan, np.float64)
+	labels[:,:,:,:nclasses] = np.moveaxis(station_clouds, 1, 3)
+	labels[:,:,:,nclasses:] = np.moveaxis(station_clouds_n, 1, 3)
+	labels[np.isnan(labels)] = 0
+
+	return images, labels, \
+		d['time'] if 'time' in d else None, \
+		d['lat'] if 'lat' in d else None, \
+		d['lon'] if 'lon' in d else None
 
 def apply_(model_file, input_, output, nclasses=4, night=False,
 	exclude_night=True):
