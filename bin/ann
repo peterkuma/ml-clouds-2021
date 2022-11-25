@@ -218,10 +218,7 @@ def read_samples(filename, exclude=None, exclude_night=True, nclasses=4):
 	labels[:,:,:,nclasses:] = np.moveaxis(station_clouds_n, 1, 3)
 	labels[np.isnan(labels)] = 0
 
-	return images, labels, \
-		d['time'] if 'time' in d else None, \
-		d['lat'] if 'lat' in d else None, \
-		d['lon'] if 'lon' in d else None
+	return images, labels, d['time'], d['lat'], d['lon']
 
 def apply_(model_file, input_, output, nclasses=4, night=False,
 	exclude_night=True):
@@ -260,17 +257,17 @@ def read_dataset(input_, exclude=None, exclude_night=True, nclasses=4,
 		if not file_.endswith('.nc'):
 			continue
 		filename = os.path.join(input_, file_)
-		images0, labels0, _, _, _ = read_samples(
+		images0, labels0, time, _, _ = read_samples(
 			filename,
 			exclude=exclude,
 			exclude_night=exclude_night,
 			nclasses=nclasses,
 		)
-		if images0.shape[0] > nsamples:
-			images0 = images0[:nsamples]
-			labels0 = labels0[:nsamples]
-		images += [images0]
-		labels += [labels0]
+		for t in sorted(set(time)):
+			ii = np.where(time == t)[0]
+			ii = ii[:min(len(ii), nsamples)]
+			images += [images0[ii,::]]
+			labels += [labels0[ii,::]]
 	images = np.concatenate(images)
 	labels = np.concatenate(labels)
 	return images, labels
