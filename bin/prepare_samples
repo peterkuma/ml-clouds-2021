@@ -645,12 +645,18 @@ if __name__ == '__main__':
 			]:
 				if k in dx:
 					del dx[k]
-			for k in ['station_lon', 'station_lat', 'station_x', 'station_y', 'station_type']:
-				if k in dx:
-					dx[k] = np.hstack([
-						dx[k],
-						np.full(MAX_STATIONS-len(dx[k]), np.nan)
-					])
+			for k in ['station_lon', 'station_lat', 'station_x', 'station_y']:
+				if k not in dx: continue
+				dx[k] = np.hstack([
+					dx[k],
+					np.full(MAX_STATIONS-len(dx[k]), np.nan)
+				])
+			for k in ['station_type']:
+				if k not in dx: continue
+				dx[k] = np.hstack([
+					dx[k],
+					np.full(MAX_STATIONS-len(dx[k]), '', object)
+				])
 
 			dx['.'] = META
 			dd += [dx]
