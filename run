@@ -313,9 +313,9 @@ calc_geo_cto_ceres_dense)
 plot_geo_cto_historical)
 	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_geo_cto "$DATA/geo_cto/historical/part_1" "$INPUT/ecs/ecs.csv" \
-		"$PLOT/geo_cto_historical_1.png" "$opts"
+		"$PLOT/geo_cto_historical_1.png" $opts
 	bin/plot_geo_cto "$DATA/geo_cto/historical/part_2" "$INPUT/ecs/ecs.csv" \
-		"$PLOT/geo_cto_historical_2.png" with_ref: false "$opts"
+		"$PLOT/geo_cto_historical_2.png" with_ref: false $opts
 	;;
 
 plot_geo_cto_abrupt-4xCO2)
@@ -328,9 +328,9 @@ plot_geo_cto_abrupt-4xCO2)
 plot_geo_cto_xval)
 	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_geo_cto "$DATA/xval/geo_cto/all" "$INPUT/ecs/ecs.csv" \
-		"$PLOT/geo_cto_xval.png" relative: false "$opts"
+		"$PLOT/geo_cto_xval.png" relative: false $opts
 	bin/plot_geo_cto "$DATA/xval/geo_cto/all" "$INPUT/ecs/ecs.csv" \
-		"$PLOT/geo_cto_xval_rel.png" "$opts"
+		"$PLOT/geo_cto_xval_rel.png" $opts
 	;;
 
 plot_cto_rmse_ecs)
@@ -393,7 +393,7 @@ plot_validation)
 	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_validation "$DATA/idd_geo/"{validation,training}.nc \
 		"$DATA/geo_cto/historical/validation/CERES.nc" \
-		"$DATA/xval/geo_cto/regions.nc" "$PLOT/validation.png" "$opts"
+		"$DATA/xval/geo_cto/regions.nc" "$PLOT/validation.png" $opts
 	;;
 
 calc_roc)
