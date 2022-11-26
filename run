@@ -64,6 +64,23 @@ prepare_model () {
 		"$DATA"/samples/$exp/$model/{}.nc ::: $years
 }
 
+predict_models () {
+	exp="$1"
+	for model in $(cat "$INPUT/models_$exp"); do
+		indir="$DATA/samples/$exp/$model"
+		outdir="$DATA/samples_pred/$exp/$model"
+		[ ! -e "$indir" ] && continue
+		cont=0
+		for f in "$indir"/*.nc; do
+			[ ! -e "$outdir/$(basename "$f")" ] && cont=1
+		done
+		[ $cont = 0 ] && continue
+		mkdir -p "$DATA/samples_pred/$exp/$model"
+		bin/ann apply "$DATA/ann/ceres.h5" "$DATA/samples/$exp/$model" \
+			"$DATA/samples_pred/$exp/$model" nclasses: "$NCLASSES"
+	done
+}
+
 calc_geo_cto () {
 	in="$1"
 	tas="$2"
@@ -205,29 +222,11 @@ predict_ceres_xval)
 	;;
 
 predict_historical)
-	exp=historical
-	for model in $(cat "$INPUT"/models_$exp); do
-		if [ ! -e "$DATA"/samples/$exp/$model -o \
-			-e "$DATA"/samples_pred/$exp/$model ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples_pred/$exp/$model
-		bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
-			"$DATA"/samples_pred/$exp/$model nclasses: "$NCLASSES"
-	done
+	predict_models historical
 	;;
 
 predict_abrupt-4xCO2)
-	exp=abrupt-4xCO2
-	for model in $(cat "$INPUT"/models_$exp); do
-		if [ ! -e "$DATA"/samples/$exp/$model -o \
-			-e "$DATA"/samples_pred/$exp/$model ]; then
-			continue
-		fi
-		mkdir -p "$DATA"/samples_pred/$exp/$model
-		bin/ann apply "$DATA"/ann/ceres.h5 "$DATA"/samples/$exp/$model \
-			"$DATA"/samples_pred/$exp/$model nclasses: "$NCLASSES"
-	done
+	predict_models abrupt-4xCO2
 	;;
 
 calc_dtau_pct)
