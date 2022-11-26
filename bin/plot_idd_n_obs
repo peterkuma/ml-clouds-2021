@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Plot a map showing the number of observations in IDD.
 
-Usage: bin/plot_idd_n_obs INPUT OUTPUT
+Usage: plot_idd_n_obs INPUT OUTPUT
 
 Arguments:
 

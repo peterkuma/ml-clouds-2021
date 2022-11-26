@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''Calculate cross-validation statistics.
 
-Usage: bin/plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
+Usage: plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 

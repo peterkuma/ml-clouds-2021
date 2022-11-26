@@ -587,7 +587,7 @@ bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.
 ```
 Calculate receiver operating characteristic.
 
-Usage: bin/calc_roc INPUT IDD OUTPUT [OPTIONS]
+Usage: calc_roc INPUT IDD OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
@@ -614,7 +614,7 @@ bin/calc_roc data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc da
 
 Merge cross validation geographical distribution of cloud type occurrence.
 
-Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
+Usage: merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
 
 This program uses PST for command line argument parsing.
 
@@ -790,7 +790,7 @@ bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_h
 ```
 Plot a map showing the number of observations in IDD.
 
-Usage: bin/plot_idd_n_obs INPUT OUTPUT
+Usage: plot_idd_n_obs INPUT OUTPUT
 
 Arguments:
 
@@ -833,7 +833,7 @@ bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00
 ```
 Plot ROC validation curves.
 
-Usage: bin/plot_roc INPUT OUTPUT TITLE
+Usage: plot_roc INPUT OUTPUT TITLE
 
 Arguments:
 
@@ -876,7 +876,7 @@ bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot
 ```
 Plot spatial and temporal correlation of stations.
 
-Usage: bin/plot_station_corr TYPE INPUT1 INPUT2 OUTPUT
+Usage: plot_station_corr TYPE INPUT1 INPUT2 OUTPUT
 
 Arguments:
 
@@ -917,7 +917,7 @@ bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 ```
 Calculate cross-validation statistics.
 
-Usage: bin/plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
+Usage: plot_validation IDD_VAL IDD_TRAIN INPUT... OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
