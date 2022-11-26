@@ -269,7 +269,7 @@ calc_idd_geo)
 		"$DATA/idd_geo/training/"{}.nc nclasses: "$NCLASSES" ::: $TRAIN_YEARS
 	ds merge time "$DATA/idd_geo/validation/"*.nc "$DATA/idd_geo/validation.nc"
 	ds merge time "$DATA/idd_geo/training/"*.nc "$DATA/idd_geo/training.nc"
-	ln -sf "$DATA/idd_geo/validation/2007.nc" \
+	ln -sf "../../../idd_geo/validation/2007.nc" \
 		"$DATA/geo_cto/historical/part_1/IDD.nc"
 	;;
 
