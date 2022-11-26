@@ -410,7 +410,8 @@ plot_roc)
 	;;
 
 plot_station_corr)
-	bin/plot_station_corr space "$DATA/idd_geo/2007.nc" "$DATA/geo_cto/historical/all/CERES.nc" "$PLOT/station_corr_space.pdf"
+	bin/plot_station_corr space "$DATA/idd_geo/2007.nc" \
+		"$DATA/geo_cto/historical/all/CERES.nc" "$PLOT/station_corr_space.pdf"
 	bin/plot_station_corr time "$DATA/idd_geo/2007.nc" "$DATA/geo_cto/historical/all/CERES.nc" "$PLOT/station_corr_time.pdf"
 	;;
 
