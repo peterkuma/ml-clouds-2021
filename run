@@ -49,8 +49,13 @@ prepare_model () {
 	local y1="$5"
 	local y2="$6"
 	local years="$(seq -w $y1 $y2)"
-	[ ! -e "$inpath" -o -e "$DATA"/samples/$exp/$model ] && return
+	[ ! -e "$inpath" ] && return
 	for y in $years; do mkdir -p "$DATA"/samples/$exp/$model/$y; done
+	cont=0
+	for y in $years; do
+		[ ! -e "$DATA"/samples/$exp/$model/$y.nc ] && cont=1
+	done
+	[ $cont = 0 ] && return
 	parallel -j$JOBS \
 		bin/prepare_samples "$type_" "$inpath" none none {}-01-01 {}-12-31 \
 		"$DATA"/samples/$exp/$model/{} ::: $years
@@ -140,15 +145,21 @@ prepare_historical)
 	y1=$MODEL_YEARS_FIRST
 	y2=$MODEL_YEARS_LAST
 	for model in $(cat "$INPUT"/models_$exp); do
-		prepare_model $exp $model cmip \
-			"$INPUT"/cmip6/$exp/day/2.5deg/by-model/$model $y1 $y2
+		if [ "$model" = EC-Earth3P ]; then
+			prepare_model $exp EC-Earth3P cmip \
+				"$INPUT"/cmip6/hist-1950/day/2.5deg/by-model/EC-Earth3P $y1 $y2
+		elif [ "$model" = MERRA-2 ]; then
+			prepare_model $exp MERRA-2 merra2 "$INPUT"/merra2/2.5deg $y1 $y2
+		elif [ "$model" = ERA-5 ]; then
+			prepare_model $exp ERA5 era5 "$INPUT"/era5/2.5deg $y1 $y2
+		elif [ "$model" = NorESM2-LM ]; then
+			prepare_model $exp NorESM2-LM noresm2 \
+				"$INPUT"/noresm2/$exp/day/2.5deg $y1 $y2
+		else
+			prepare_model $exp $model cmip \
+				"$INPUT"/cmip6/$exp/day/2.5deg/by-model/$model $y1 $y2
+		fi
 	done
-	prepare_model $exp EC-Earth3P cmip \
-		"$INPUT"/cmip6/hist-1950/day/2.5deg/by-model/EC-Earth3P $y1 $y2
-	prepare_model $exp MERRA-2 merra2 "$INPUT"/merra2/2.5deg $y1 $y2
-	prepare_model $exp ERA5 era5 "$INPUT"/era5/2.5deg $y1 $y2
-	prepare_model $exp NorESM2-LM noresm2 "$INPUT"/noresm2/$exp/day/2.5deg \
-		$y1 $y2
 	;;
 
 prepare_abrupt-4xCO2)
@@ -158,20 +169,21 @@ prepare_abrupt-4xCO2)
 	y1x=$ABRUPT_YEARS_X_FIRST
 	y2x=$ABRUPT_YEARS_X_LAST
 	for model in $(cat "$INPUT"/models_$exp); do
-		if [ "$model" = "GFDL-CM4" -or "$model" = "NorESM2-LM" ]; then
+		if [ "$model" = GFDL-CM4 -or "$model" = NorESM2-LM ]; then
 			y1_=$y1x
 			y2_=$y2x
 		else
 			y1_=$y1
 			y2_=$y2
 		fi
-		prepare_model $exp $model cmip \
-			"$INPUT"/cmip6/$exp/day/2.5deg/by-model/$model $y1_ $y2_
-		prepare_model $exp $model cmip \
-			"$INPUT"/cmip5/$exp/day/2.5deg/by-model/$model $y1_ $y2_
+		if [ "$model" = NorESM2-LM ]; then
+			prepare_model $exp NorESM2-LM noresm2 \
+				"$INPUT"/noresm2/$exp/day/2.5deg 0001 0100
+		else
+			prepare_model $exp $model cmip \
+				"$INPUT"/cmip6/$exp/day/2.5deg/by-model/$model $y1_ $y2_
+		fi
 	done
-	prepare_model $exp NorESM2-LM noresm2 "$INPUT"/noresm2/$exp/day/2.5deg \
-		0001 0100
 	;;
 
 predict_ceres)
