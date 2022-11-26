@@ -414,63 +414,6 @@ line argument parsing, which allows passing of complex arguments such as
 arrays, but may also require escaping special characters, for example in file
 names.
 
-#### prepare\_samples
-
-
-```
-Prepare samples of clouds for CNN training.
-
-Usage: prepare_samples TYPE INPUT SYNOP BUOY START END OUTPUT [OPTIONS]
-
-This program uses PST for command line argument parsing.
-
-Arguments:
-
-  TYPE    Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6), "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
-  INPUT   Input directory with input files (NetCDF).
-  SYNOP   Input directory with IDD synoptic files or "none" (NetCDF).
-  BUOY    Input directory with IDD buoy files or "none" (NetCDF).
-  START   Start time (ISO).
-  END     End time (ISO).
-  OUTPUT  Output directory.
-
-Options:
-
-  seed: VALUE           Random seed.
-  keep_stations: VALUE  Keep station records in samples ("true" or "false"). Default: "false".
-  nsamples: VALUE       Number of samples per day to generate. Default: 100.
-
-Examples:
-
-prepare_samples ceres input/ceres input/idd/synop input/idd/buoy 2009-01-01 2009-12-31 data/samples/ceres/2009
-prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
-```
-
-
-#### plot\_idd\_stations [Figure 1a]
-
-
-```
-Plot IDD stations on a map.
-
-Usage: plot_idd_stations INPUT SAMPLE N OUTPUT TITLE
-
-This program uses PST for command line argument parsing.
-
-Arguments:
-
-  INPUT   IDD input directory (NetCDF).
-  SAMPLE  CERES sample. The output of tf apply (NetCDF).
-  N       Sample number.
-  OUTPUT  Output plot (PDF).
-  TITLE   Plot title.
-
-Examples:
-
-bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.png '2010-01-01'
-```
-
-
 #### ann
 
 
@@ -516,44 +459,46 @@ bin/ann apply data/ann/ceres.h5 data/samples/historical/AWI-ESM-1-1-LR data/samp
 ```
 
 
-#### plot\_sample [Figure 1b, c]
+#### calc\_cloud\_props
 
 
 ```
-Plot sample.
+Calculate statistics of cloud properties by cloud type.
 
-Usage: plot_samples INPUT N OUTPUT
+Usage: calc_cloud_props TYPE CTO INPUT OUTPUT
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  INPUT   Input sample (NetCDF). The output of tf.
-  N       Sample number.
-  OUTPUT  Output plot (PDF).
+  TYPE    Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).
+  CTO     Cloud type occurrence. The output of calc_geo_cto (NetCDF).
+  INPUT   CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
+  OUTPUT  Output file (NetCDF).
 
 Examples:
 
-bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.png
+bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6/historical/day/by-model/UKESM1-0-LL/ data/cloud_props/UKESM1-0-LL.nc
 ```
 
 
-#### plot\_training\_history [Figure S1]
+#### calc\_cto\_ecs
 
 
 ```
-Plot training history loss function.
+Calculate cloud type occurrence vs. ECS regression.
 
-Usage: plot_history INPUT OUTPUT
+Usage: calc_cto_ecs INPUT ECS OUTPUT
 
 Arguments:
 
-  INPUT   Input history file. The output of tf (NetCDF).
-  OUTPUT  Output plot (PDF).
+  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
+  ECS     ECS, TCR and CLD input (CSV).
+  OUTPUT  Output file (NetCDF).
 
 Examples:
 
-bin/plot_training_history data/ann/history.nc plot/training_history.pdf
+bin/calc_cto_ecs data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
 ```
 
 
@@ -576,25 +521,6 @@ Arguments:
 Examples:
 
 bin/calc_dtau_pct data/samples_pred/ceres input/ceres data/dtau_pct/dtau_pct.nc
-```
-
-
-#### plot\_dtau\_pct [Figure 8]
-
-
-```
-Plot cloud optical depth - cloud top pressure histogram.
-
-Usage: plot_dtau_pct INPUT OUTPUT
-
-Arguments:
-
-  INPUT   Input file. The output of calc_dtau_pct (NetCDF).
-  OUTPUT  Output plot (PDF).
-
-Examples:
-
-bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.png
 ```
 
 
@@ -626,49 +552,96 @@ bin/calc_geo_cto data/samples_pred/historical/AWI-ESM-1-1-LR input/tas/historica
 ```
 
 
-#### plot\_geo\_cto [Figure 3, 6, 7, S7, S8, S12]
+#### calc\_idd\_geo
 
 
 ```
-Plot geographical distribution of cloud type occurrence.
+Calculate geographical distribution of cloud types from IDD data.
 
-Usage: plot_geo_cto INPUT ECS OUTPUT [OPTIONS]
+Usage: calc_idd_geo SYNOP BUOY FROM TO OUTPUT
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
-  ECS     ECS file (CSV).
-  OUTPUT  Output plot (PDF).
+  SYNOP   Input synop directory (NetCDF).
+  BUOY    Input buoy directory (NetCDF).
+  FROM    From date (ISO).
+  TO      To date (ISO).
+  OUTPUT  Output file (NetCDF).
 
 Options:
 
-  degree: VALUE      Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
-  relative: VALUE    Plot relative to CERES. One of: true or false. Default: true.
-  normalized: VALUE  Plot normaized CERES. One of: true, false, only.  Default: false.
-  with_ref: VALUE    Plot reference row. One of: true, false. Default: true.
+  nclasses: VALUE    Number of cloud types. One of: 4, 10 or 27. Default: 4.
+  resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by VALUE.
 
 Examples:
 
-bin/plot_geo_cto data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.png
-bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.png
+bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc nclasses: 10
 ```
 
 
-#### plot\_cto\_rmse\_ecs [Figure 12, S9–11]
+#### calc\_roc
 
 
 ```
-Plot scatter plot of RMSE of the geographical distribution of cloud type occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
+Calculate receiver operating characteristic.
 
-Usage: plot_cto_rmse_ecs INPUT ECS OUTPUT [OPTIONS]
+Usage: bin/calc_roc INPUT IDD OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  INPUT   Input directory. The output of calc_geo_cto or calc_cto (NetCDF).
+  INPUT   Validation CERES/ANN dataset. The output of calc_geo_cto for validation years (NetCDF).
+  IDD     Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
+  OUTPUT  Output file (NetCDF).
+
+Options:
+
+  area: { LAT1 LAT2 LON1 LON2 }  Area to validate on.
+
+Examples:
+
+bin/calc_roc data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/roc/NE.nc area: { 0 90 -180 0 }
+```
+
+
+#### merge\_xval\_geo\_cto
+
+
+```
+
+Merge cross validation geographical distribution of cloud type occurrence.
+
+Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  INPUT   The output of calc_geo_cto (NetCDF).
+  AREA    Area of input to merge the format { LAT1 LAT2 LON1 LON2 }. The number of area arguments must be the same as the number of input arguments.
+  OUTPUT  Output file (NetCDF).
+
+Examples:
+
+bin/merge_xval_geo_cto data/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc { 15 45 -60 -30 } { 30 60 90 120 } { -45 -15 150 180 } { -30 0 -75 -45 } data/xval/geo_cto/regions.nc
+```
+
+
+#### plot\_cloud\_props [Figure 11]
+
+
+```
+Usage: plot_cloud_prop VAR INPUT ECS OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  VAR     Variable. One of: "clt", "cod", "pct".
+  INPUT   Input directory. The output of calc_cloud_props (NetCDF).
   ECS     ECS file (CSV).
   OUTPUT  Output plot (PDF).
 
@@ -678,7 +651,9 @@ Options:
 
 Examples:
 
-bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
+bin/plot_cloud_props clt data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_clt.pdf
+bin/plot_cloud_props cod data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_cod.pdf
+bin/plot_cloud_props pct data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_pct.pdf
 ```
 
 
@@ -712,26 +687,6 @@ bin/plot_cto ecs 1-tas absolute false data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.c
 ```
 
 
-#### calc\_cto\_ecs
-
-
-```
-Calculate cloud type occurrence vs. ECS regression.
-
-Usage: calc_cto_ecs INPUT ECS OUTPUT
-
-Arguments:
-
-  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
-  ECS     ECS, TCR and CLD input (CSV).
-  OUTPUT  Output file (NetCDF).
-
-Examples:
-
-bin/calc_cto_ecs data/geo_cto/abrupt-4xCO2/ input/ecs/ecs.csv data/cto_ecs/cto_ecs.nc
-```
-
-
 #### plot\_cto\_ecs [Figure 11]
 
 
@@ -754,41 +709,19 @@ bin/plot_cto_ecs ecs data/cto_ecs/cto_ecs.nc plot/cto_ecs.pdf
 ```
 
 
-#### calc\_cloud\_props
+#### plot\_cto\_rmse\_ecs [Figure 12, S9–11]
 
 
 ```
-Calculate statistics of cloud properties by cloud type.
+Plot scatter plot of RMSE of the geographical distribution of cloud type occurrence and sensitivity indicators (ECS, TCR and cloud feedback).
 
-Usage: calc_cloud_props TYPE CTO INPUT OUTPUT
+Usage: plot_cto_rmse_ecs INPUT ECS OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  TYPE    Type of input data. One of: "ceres" (CERES), "cmip" (CMIP), "era5" (ERA5), "noresm2" (NorESM2), "merra2" (MERRA-2).
-  CTO     Cloud type occurrence. The output of calc_geo_cto (NetCDF).
-  INPUT   CMIP cloud property (clt, cod or pctisccp) directory (NetCDF) or CERES SYN1deg (NetCDF).
-  OUTPUT  Output file (NetCDF).
-
-Examples:
-
-bin/calc_cloud_props cmip data/geo_cto/historical/all/UKESM1-0-LL.nc input/cmip6/historical/day/by-model/UKESM1-0-LL/ data/cloud_props/UKESM1-0-LL.nc
-```
-
-
-#### plot\_cloud\_props [Figure 11]
-
-
-```
-Usage: plot_cloud_prop VAR INPUT ECS OUTPUT [OPTIONS]
-
-This program uses PST for command line argument parsing.
-
-Arguments:
-
-  VAR     Variable. One of: "clt", "cod", "pct".
-  INPUT   Input directory. The output of calc_cloud_props (NetCDF).
+  INPUT   Input directory. The output of calc_geo_cto or calc_cto (NetCDF).
   ECS     ECS file (CSV).
   OUTPUT  Output plot (PDF).
 
@@ -798,9 +731,142 @@ Options:
 
 Examples:
 
-bin/plot_cloud_props clt data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_clt.pdf
-bin/plot_cloud_props cod data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_cod.pdf
-bin/plot_cloud_props pct data/cloud_props/ input/ecs/ecs.csv plot/cloud_props_pct.pdf
+bin/plot_cto_rmse_ecs data/geo_cto/historical/all input/ecs/ecs.csv plot/geo_cto_rmse_ecs.pdf
+```
+
+
+#### plot\_dtau\_pct [Figure 8]
+
+
+```
+Plot cloud optical depth - cloud top pressure histogram.
+
+Usage: plot_dtau_pct INPUT OUTPUT
+
+Arguments:
+
+  INPUT   Input file. The output of calc_dtau_pct (NetCDF).
+  OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_dtau_pct data/dtau_pct/dtau_pct.nc plot/dtau_pct.png
+```
+
+
+#### plot\_geo\_cto [Figure 3, 6, 7, S7, S8, S12]
+
+
+```
+Plot geographical distribution of cloud type occurrence.
+
+Usage: plot_geo_cto INPUT ECS OUTPUT [OPTIONS]
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  INPUT   Input directory. The output of calc_geo_cto (NetCDF).
+  ECS     ECS file (CSV).
+  OUTPUT  Output plot (PDF).
+
+Options:
+
+  degree: VALUE      Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+  relative: VALUE    Plot relative to CERES. One of: true or false. Default: true.
+  normalized: VALUE  Plot normaized CERES. One of: true, false, only.  Default: false.
+  with_ref: VALUE    Plot reference row. One of: true, false. Default: true.
+
+Examples:
+
+bin/plot_geo_cto data/geo_cto/historical/part_1 input/ecs/ecs.csv plot/geo_cto_historical_1.png
+bin/plot_geo_cto data/geo_cto/historical/part_2 input/ecs/ecs.csv plot/geo_cto_historical_2.png
+```
+
+
+#### plot\_idd\_n\_obs [Figure S2]
+
+
+```
+Plot a map showing the number of observations in IDD.
+
+Usage: bin/plot_idd_n_obs INPUT OUTPUT
+
+Arguments:
+
+  INPUT   Input dataset. The output of calc_idd_geo (NetCDF).
+  OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_idd_n_obs data/idd_geo/validation.nc plot/idd_n_obs.png
+```
+
+
+#### plot\_idd\_stations [Figure 1a]
+
+
+```
+Plot IDD stations on a map.
+
+Usage: plot_idd_stations INPUT SAMPLE N OUTPUT TITLE
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  INPUT   IDD input directory (NetCDF).
+  SAMPLE  CERES sample. The output of tf apply (NetCDF).
+  N       Sample number.
+  OUTPUT  Output plot (PDF).
+  TITLE   Plot title.
+
+Examples:
+
+bin/plot_idd_stations data/idd_sample/ data/samples/ceres/2010/2010-01-01T00\:00\:00.nc 0 plot/idd_stations.png '2010-01-01'
+```
+
+
+#### plot\_roc [Figure 5]
+
+
+```
+Plot ROC validation curves.
+
+Usage: bin/plot_roc INPUT OUTPUT TITLE
+
+Arguments:
+
+  INPUT   Input data. The output of calc_val_stats (NetCDF).
+  OUTPUT  Output plot (PDF)
+  TITLE   Plot title.
+
+Examples:
+
+bin/plot_roc data/roc/all.nc plot/roc_all.pdf all
+bin/plot_roc data/roc/regions.nc plot/roc_regions.pdf regions
+```
+
+
+#### plot\_sample [Figure 1b, c]
+
+
+```
+Plot sample.
+
+Usage: plot_samples INPUT N OUTPUT
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  INPUT   Input sample (NetCDF). The output of tf.
+  N       Sample number.
+  OUTPUT  Output plot (PDF).
+
+Examples:
+
+bin/plot_sample data/samples/ceres_training/2010/2010-01-01T00\:00\:00.nc 0 plot/sample.png
 ```
 
 
@@ -826,74 +892,22 @@ bin/plot_station_corr time data/idd_geo/2007.nc data/geo_cto/historical/all/CERE
 ```
 
 
-#### calc\_idd\_geo
+#### plot\_training\_history [Figure S1]
 
 
 ```
-Calculate geographical distribution of cloud types from IDD data.
+Plot training history loss function.
 
-Usage: calc_idd_geo SYNOP BUOY FROM TO OUTPUT
-
-This program uses PST for command line argument parsing.
+Usage: plot_history INPUT OUTPUT
 
 Arguments:
 
-  SYNOP   Input synop directory (NetCDF).
-  BUOY    Input buoy directory (NetCDF).
-  FROM    From date (ISO).
-  TO      To date (ISO).
-  OUTPUT  Output file (NetCDF).
-
-Options:
-
-  nclasses: VALUE    Number of cloud types. One of: 4, 10 or 27. Default: 4.
-  resolution: VALUE  Resolution (degrees). Default: 5. 180 must be divisible by VALUE.
-
-Examples:
-
-bin/calc_idd_geo input/idd/{synop,buoy} 2007-01-01 2007-12-31 data/idd_geo/2007.nc nclasses: 10
-```
-
-
-#### plot\_idd\_n\_obs [Figure S2]
-
-
-```
-Plot a map showing the number of observations in IDD.
-
-Usage: bin/plot_idd_n_obs INPUT OUTPUT
-
-Arguments:
-
-  INPUT   Input dataset. The output of calc_idd_geo (NetCDF).
+  INPUT   Input history file. The output of tf (NetCDF).
   OUTPUT  Output plot (PDF).
 
 Examples:
 
-bin/plot_idd_n_obs data/idd_geo/validation.nc plot/idd_n_obs.png
-```
-
-
-#### merge\_xval\_geo\_cto
-
-
-```
-
-Merge cross validation geographical distribution of cloud type occurrence.
-
-Usage: bin/merge_xval_geo_cto [INPUT...] [AREA...] OUTPUT
-
-This program uses PST for command line argument parsing.
-
-Arguments:
-
-  INPUT   The output of calc_geo_cto (NetCDF).
-  AREA    Area of input to merge the format { LAT1 LAT2 LON1 LON2 }. The number of area arguments must be the same as the number of input arguments.
-  OUTPUT  Output file (NetCDF).
-
-Examples:
-
-bin/merge_xval_geo_cto data/xval/{na,ea,oc,sa}/geo_cto/historical/all/CERES.nc { 15 45 -60 -30 } { 30 60 90 120 } { -45 -15 150 180 } { -30 0 -75 -45 } data/xval/geo_cto/regions.nc
+bin/plot_training_history data/ann/history.nc plot/training_history.pdf
 ```
 
 
@@ -924,50 +938,36 @@ bin/plot_validation data/idd_geo/{validation,training}.nc data/geo_cto/historica
 ```
 
 
-#### calc\_roc
+#### prepare\_samples
 
 
 ```
-Calculate receiver operating characteristic.
+Prepare samples of clouds for CNN training.
 
-Usage: bin/calc_roc INPUT IDD OUTPUT [OPTIONS]
+Usage: prepare_samples TYPE INPUT SYNOP BUOY START END OUTPUT [OPTIONS]
 
 This program uses PST for command line argument parsing.
 
 Arguments:
 
-  INPUT   Validation CERES/ANN dataset. The output of calc_geo_cto for validation years (NetCDF).
-  IDD     Validation IDD dataset. The output of calc_idd_geo for validation years (NetCDF).
-  OUTPUT  Output file (NetCDF).
+  TYPE    Input type. One of: "ceres" (CERES SYN 1deg), "cmip" (CMIP5/6), "cloud_cci" (Cloud_cci), "era5" (ERA5), "merra2" (MERRA-2), "noresm2" (NorESM).
+  INPUT   Input directory with input files (NetCDF).
+  SYNOP   Input directory with IDD synoptic files or "none" (NetCDF).
+  BUOY    Input directory with IDD buoy files or "none" (NetCDF).
+  START   Start time (ISO).
+  END     End time (ISO).
+  OUTPUT  Output directory.
 
 Options:
 
-  area: { LAT1 LAT2 LON1 LON2 }  Area to validate on.
+  seed: VALUE           Random seed.
+  keep_stations: VALUE  Keep station records in samples ("true" or "false"). Default: "false".
+  nsamples: VALUE       Number of samples per day to generate. Default: 100.
 
 Examples:
 
-bin/calc_roc data/xval/na/geo_cto/historical/all/CERES.nc data/idd_geo/IDD.nc data/roc/NE.nc area: { 0 90 -180 0 }
-```
-
-
-#### plot\_roc [Figure 5]
-
-
-```
-Plot ROC validation curves.
-
-Usage: bin/plot_roc INPUT OUTPUT TITLE
-
-Arguments:
-
-  INPUT   Input data. The output of calc_val_stats (NetCDF).
-  OUTPUT  Output plot (PDF)
-  TITLE   Plot title.
-
-Examples:
-
-bin/plot_roc data/roc/all.nc plot/roc_all.pdf all
-bin/plot_roc data/roc/regions.nc plot/roc_regions.pdf regions
+prepare_samples ceres input/ceres input/idd/synop input/idd/buoy 2009-01-01 2009-12-31 data/samples/ceres/2009
+prepare_samples cmip input/cmip6/historical/day/by-model/AWI-ESM-1-1-LR none none 2003-01-01 2003-12-31 data/samples/historical/AWI-ESM-1-1-LR/2003
 ```
 
 
@@ -990,29 +990,6 @@ Arguments:
 Examples:
 
 bin/build_readme README.md.in bin README.md
-```
-
-
-#### download\_cmip
-
-
-```
-Download CMIP data based on a JSON catalogue downloaded from the CMIP archive search page.
-
-Usage: download_cmip FILENAME VAR START END
-
-This program uses PST for command line argument parsing.
-
-Arguments:
-
-  FILENAME  Input file (JSON).
-  VAR       Variable name.
-  START     Start time (ISO).
-  END       End time (ISO).
-
-Examples:
-
-bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
 ```
 
 
@@ -1041,6 +1018,29 @@ Examples:
 cd data/cmip5/historical/day
 ./create_by_var
 ```
+
+#### download\_cmip
+
+
+```
+Download CMIP data based on a JSON catalogue downloaded from the CMIP archive search page.
+
+Usage: download_cmip FILENAME VAR START END
+
+This program uses PST for command line argument parsing.
+
+Arguments:
+
+  FILENAME  Input file (JSON).
+  VAR       Variable name.
+  START     Start time (ISO).
+  END       End time (ISO).
+
+Examples:
+
+bin/download_cmip catalog.json tas 1850-01-01 2014-01-01 > files
+```
+
 
 #### gistemp\_to\_nc
 

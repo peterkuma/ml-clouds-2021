@@ -414,103 +414,99 @@ line argument parsing, which allows passing of complex arguments such as
 arrays, but may also require escaping special characters, for example in file
 names.
 
-#### prepare\_samples
-
-{prepare_samples}
-
-#### plot\_idd\_stations [Figure 1a]
-
-{plot_idd_stations}
-
 #### ann
 
 {ann}
-
-#### plot\_sample [Figure 1b, c]
-
-{plot_sample}
-
-#### plot\_training\_history [Figure S1]
-
-{plot_training_history}
-
-#### calc\_dtau\_pct
-
-{calc_dtau_pct}
-
-#### plot\_dtau\_pct [Figure 8]
-
-{plot_dtau_pct}
-
-#### calc\_geo\_cto
-
-{calc_geo_cto}
-
-#### plot\_geo\_cto [Figure 3, 6, 7, S7, S8, S12]
-
-{plot_geo_cto}
-
-#### plot\_cto\_rmse\_ecs [Figure 12, S9–11]
-
-{plot_cto_rmse_ecs}
-
-#### plot\_cto [Figure 9, S4–6]
-
-{plot_cto}
-
-#### calc\_cto\_ecs
-
-{calc_cto_ecs}
-
-#### plot\_cto\_ecs [Figure 11]
-
-{plot_cto_ecs}
 
 #### calc\_cloud\_props
 
 {calc_cloud_props}
 
-#### plot\_cloud\_props [Figure 11]
+#### calc\_cto\_ecs
 
-{plot_cloud_props}
+{calc_cto_ecs}
 
-#### plot\_station\_corr [Figure S3]
+#### calc\_dtau\_pct
 
-{plot_station_corr}
+{calc_dtau_pct}
+
+#### calc\_geo\_cto
+
+{calc_geo_cto}
 
 #### calc\_idd\_geo
 
 {calc_idd_geo}
 
-#### plot\_idd\_n\_obs [Figure S2]
+#### calc\_roc
 
-{plot_idd_n_obs}
+{calc_roc}
 
 #### merge\_xval\_geo\_cto
 
 {merge_xval_geo_cto}
 
-#### plot\_validation [Figure 4]
+#### plot\_cloud\_props [Figure 11]
 
-{plot_validation}
+{plot_cloud_props}
 
-#### calc\_roc
+#### plot\_cto [Figure 9, S4–6]
 
-{calc_roc}
+{plot_cto}
+
+#### plot\_cto\_ecs [Figure 11]
+
+{plot_cto_ecs}
+
+#### plot\_cto\_rmse\_ecs [Figure 12, S9–11]
+
+{plot_cto_rmse_ecs}
+
+#### plot\_dtau\_pct [Figure 8]
+
+{plot_dtau_pct}
+
+#### plot\_geo\_cto [Figure 3, 6, 7, S7, S8, S12]
+
+{plot_geo_cto}
+
+#### plot\_idd\_n\_obs [Figure S2]
+
+{plot_idd_n_obs}
+
+#### plot\_idd\_stations [Figure 1a]
+
+{plot_idd_stations}
 
 #### plot\_roc [Figure 5]
 
 {plot_roc}
+
+#### plot\_sample [Figure 1b, c]
+
+{plot_sample}
+
+#### plot\_station\_corr [Figure S3]
+
+{plot_station_corr}
+
+#### plot\_training\_history [Figure S1]
+
+{plot_training_history}
+
+#### plot\_validation [Figure 4]
+
+{plot_validation}
+
+#### prepare\_samples
+
+{prepare_samples}
 
 ### Auxiliary commands
 
 #### build\_readme
 
 {build_readme}
-
-#### download\_cmip
-
-{download_cmip}
 
 #### create\_by\_model
 
@@ -537,6 +533,10 @@ Examples:
 cd data/cmip5/historical/day
 ./create_by_var
 ```
+
+#### download\_cmip
+
+{download_cmip}
 
 #### gistemp\_to\_nc
 
