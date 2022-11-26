@@ -346,6 +346,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run prepare_historical         # Prepare CMIP6 historical samples.
 ./run predict_historical         # Predict CMIP6 historical samples using the ANN.
 ./run calc_geo_cto_historical    # Calculate geographical distribution of cloud type occurrence from the CMIP6 historical samples.
+./run calc_idd_geo               # Calculate geographical distribution of IDD cloud type occurrence.
 ./run plot_geo_cto_historical    # Plot geographical distribution of cloud type occurrence for the CMIP6 historical experiment [Figure 6, 7].
 ./run plot_cto_historical        # Plot cloud type occurrence bar chart for the CMIP6 historical experiment [Figure 9a].
 ./run prepare_abrupt-4xCO2       # Prepare CMIP5 and CMIP6 abrupt-4xCO2 samples.
@@ -361,7 +362,6 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run train_ann_xval             # Train ANNs for cross-validation.
 ./run calc_geo_cto_xval          # Calculate geographical distribution of cloud type occurrence for cross-validation.
 ./run plot_geo_cto_xval          # Plot geographical distribution of cloud type occurrence for cross-validation [Figure 3, S12].
-./run calc_idd_geo               # Calculate geographical distribution of IDD cloud type occurrence.
 ./run plot_validation            # Plot validation results [Figure 4].
 ./run calc_roc                   # Calculate ROC.
 ./run plot_roc                   # Plot ROC [Figure 5].
@@ -385,20 +385,20 @@ prepare_samples
   ↳ calc_dtau_pct
     ↳ plot_dtau_pct [Figure 8]
   ↳ calc_geo_cto
-    ↳ plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
-    ↳ plot_cto_rmse_ecs [Figure 12, S9–11]
-    ↳ plot_cto [Figure 9, S4–6]
-    ↳ calc_cto_ecs
-      ↳ plot_cto_ecs [Figure 11]
-    ↳ calc_cloud_props
-      ↳ plot_cloud_props [Figure 10]
-    ↳ plot_station_corr [Figure S3]
     ↳ calc_idd_geo
-      ↳ plot_idd_n_obs [Figure S2]
-      ↳ merge_xval_geo_cto
-        ↳ plot_validation [Figure 4]
-        ↳ calc_roc
-          ↳ plot_roc [Figure 5]
+      ↳ plot_geo_cto [Figure 3, 6, 7, S7, S8, S12]
+      ↳ plot_cto_rmse_ecs [Figure 12, S9–11]
+      ↳ plot_cto [Figure 9, S4–6]
+      ↳ calc_cto_ecs
+        ↳ plot_cto_ecs [Figure 11]
+      ↳ calc_cloud_props
+        ↳ plot_cloud_props [Figure 10]
+      ↳ plot_station_corr [Figure S3]
+        ↳ plot_idd_n_obs [Figure S2]
+        ↳ merge_xval_geo_cto
+          ↳ plot_validation [Figure 4]
+          ↳ calc_roc
+            ↳ plot_roc [Figure 5]
 ```
 
 ### Main commands

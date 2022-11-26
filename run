@@ -261,6 +261,18 @@ calc_geo_cto_historical)
 	done
 	;;
 
+calc_idd_geo)
+	mkdir -p "$DATA/idd_geo/"{,validation,training}
+	parallel bin/calc_idd_geo "$INPUT/idd/"{synop,buoy} {}-01-01 {}-12-31 \
+		"$DATA/idd_geo/validation/"{}.nc nclasses: "$NCLASSES" ::: $VAL_YEARS
+	parallel bin/calc_idd_geo "$INPUT/idd/"{synop,buoy} {}-01-01 {}-12-31 \
+		"$DATA/idd_geo/training/"{}.nc nclasses: "$NCLASSES" ::: $TRAIN_YEARS
+	ds merge time "$DATA/idd_geo/validation/"*.nc "$DATA/idd_geo/validation.nc"
+	ds merge time "$DATA/idd_geo/training/"*.nc "$DATA/idd_geo/training.nc"
+	ln -sf "$DATA/idd_geo/validation/2007.nc" \
+		"$DATA/geo_cto/historical/part_1/IDD.nc"
+	;;
+
 calc_geo_cto_xval)
 	mkdir -p "$DATA/xval/geo_cto/all"
 	for region in $REGIONS; do
@@ -311,6 +323,7 @@ calc_geo_cto_ceres_dense)
 	;;
 
 plot_geo_cto_historical)
+	opts=""
 	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_geo_cto "$DATA/geo_cto/historical/part_1" "$INPUT/ecs/ecs.csv" \
 		"$PLOT/geo_cto_historical_1.png" $opts
@@ -326,6 +339,7 @@ plot_geo_cto_abrupt-4xCO2)
 	;;
 
 plot_geo_cto_xval)
+	opts=""
 	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_geo_cto "$DATA/xval/geo_cto/all" "$INPUT/ecs/ecs.csv" \
 		"$PLOT/geo_cto_xval.png" relative: false $opts
@@ -379,17 +393,8 @@ plot_cto_ecs)
 	bin/plot_cto_ecs ecs "$DATA/cto_ecs/cto_ecs.nc" "$PLOT/cto_ecs.pdf"
 	;;
 
-calc_idd_geo)
-	mkdir -p "$DATA/idd_geo/"{,validation,training}
-	parallel bin/calc_idd_geo "$INPUT/idd/"{synop,buoy} {}-01-01 {}-12-31 \
-		"$DATA/idd_geo/validation/"{}.nc nclasses: "$NCLASSES" ::: $VAL_YEARS
-	parallel bin/calc_idd_geo "$INPUT/idd/"{synop,buoy} {}-01-01 {}-12-31 \
-		"$DATA/idd_geo/training/"{}.nc nclasses: "$NCLASSES" ::: $TRAIN_YEARS
-	ds merge time "$DATA/idd_geo/validation/"*.nc "$DATA/idd_geo/validation.nc"
-	ds merge time "$DATA/idd_geo/training/"*.nc "$DATA/idd_geo/training.nc"
-	;;
-
 plot_validation)
+	opts=""
 	[ "$NCLASSES" = 10 -o "$NCLASSES" = 27 ] && opts="--normalized"
 	bin/plot_validation "$DATA/idd_geo/"{validation,training}.nc \
 		"$DATA/geo_cto/historical/validation/CERES.nc" \
