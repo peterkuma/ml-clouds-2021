@@ -58,7 +58,7 @@ prepare_model () {
 	[ $cont = 0 ] && return
 	parallel -j$JOBS \
 		bin/prepare_samples "$type_" "$inpath" none none {}-01-01 {}-12-31 \
-		"$DATA/samples/$exp/$model/"{} ::: $years
+		"$DATA/samples/$exp/$model/"{} nsamples: 20 ::: $years
 	parallel -j1 \
 		ds merge sample "$DATA/samples/$exp/$model/"{}/*.nc \
 		"$DATA/samples/$exp/$model/"{}.nc ::: $years
