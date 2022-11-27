@@ -186,7 +186,7 @@ prepare_abrupt-4xCO2)
 	y1x=$ABRUPT_YEARS_X_FIRST
 	y2x=$ABRUPT_YEARS_X_LAST
 	for model in $(cat "$INPUT/models_$exp"); do
-		if [ "$model" = GFDL-CM4 -or "$model" = NorESM2-LM ]; then
+		if [ "$model" = GFDL-CM4 -o "$model" = NorESM2-LM ]; then
 			y1_=$y1x
 			y2_=$y2x
 		else
