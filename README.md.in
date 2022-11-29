@@ -34,8 +34,9 @@ scale of 60 GB. Lower hardware requirements are possible if used with fewer
 models or shorter training data time periods.
 
 Please see the manuscript for more details about the ANN. If you have any
-questions about the code you can contact the manuscript authors or submit an
-[issue on GitHub](https://github.com/peterkuma/ml-clouds-2021/issues).
+questions about the code or would like to report a bug, you can contact the
+manuscript authors or submit an [issue on
+GitHub](https://github.com/peterkuma/ml-clouds-2021/issues).
 
 ## Requirements
 
