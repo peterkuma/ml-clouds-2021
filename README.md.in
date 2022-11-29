@@ -346,30 +346,30 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run plot_training_history      # Plot training history [Figure S1].
 ./run plot_idd_stations          # Plot IDD stations [Figure 1a].
 ./run predict_ceres              # Predict CERES samples using the ANN.
+./run calc_dtau_pct              # Calculate cloud optical depth - cloud top pressure histograms.
+./run plot_dtau_pct              # Plot cloud optical depth - cloud top pressure histograms [Figure 8].
 ./run prepare_historical         # Prepare CMIP6 historical samples.
 ./run predict_historical         # Predict CMIP6 historical samples using the ANN.
 ./run calc_geo_cto_historical    # Calculate geographical distribution of cloud type occurrence from the CMIP6 historical samples.
 ./run calc_idd_geo               # Calculate geographical distribution of IDD cloud type occurrence.
+./run plot_idd_n_obs             # Plot number of observations per grid cell in the IDD dataset [Figure S2].
+./run plot_station_corr          # Plot CERES/ANN-IDD station spatial and temporal error correlation [Figure S3].
 ./run plot_geo_cto_historical    # Plot geographical distribution of cloud type occurrence for the CMIP6 historical experiment [Figure 6, 7].
 ./run plot_cto_historical        # Plot cloud type occurrence bar chart for the CMIP6 historical experiment [Figure 9a].
+./run plot_cto_rmse_ecs          # Plot cloud type occurrence RMSE vs. ECS [Figure 12, S10, S11].
 ./run prepare_abrupt-4xCO2       # Prepare CMIP5 and CMIP6 abrupt-4xCO2 samples.
 ./run predict_abrupt-4xCO2       # Predict CMIP5 and CMIP6 abrupt-4xCO2 samples using the ANN.
 ./run calc_geo_cto_abrupt-4xCO2  # Calculate geographical distribution of cloud type occurrence from the CMIP5 and CMIP6 abrupt-4xCO2 samples.
 ./run plot_geo_cto_abrupt-4xCO2  # Plot geographical distribution of cloud type occurrence for the CMIP5 and CMIP6 abrupt-4xCO2 experiment [Figure S7, S8].
 ./run plot_cto_abrupt-4xCO2      # Plot cloud type occurrence bar chart for the CMIP5 and CMIP6 abrupt-4xCO2 experiment [Figure 9b].
-./run plot_cto_rmse_ecs          # Plot cloud type occurrence RMSE vs. ECS [Figure 12, S10, S11].
 ./run calc_cto_ecs               # Calculate cloud type occurrence vs. ECS regression in the CMIP5 and CMIP6 abrupt-4xCO2 experiment.
 ./run plot_cto_ecs               # Plot cloud type occurrence vs. ECS regression in the CMIP5 and CMIP6 abrupt-4xCO2 experiment [Figure 11].
-./run calc_dtau_pct              # Calculate cloud optical depth - cloud top pressure histograms.
-./run plot_dtau_pct              # Plot cloud optical depth - cloud top pressure histograms [Figure 8].
 ./run train_ann_xval             # Train ANNs for cross-validation.
 ./run calc_geo_cto_xval          # Calculate geographical distribution of cloud type occurrence for cross-validation.
 ./run plot_geo_cto_xval          # Plot geographical distribution of cloud type occurrence for cross-validation [Figure 3, S12].
 ./run plot_validation            # Plot validation results [Figure 4].
 ./run calc_roc                   # Calculate ROC.
 ./run plot_roc                   # Plot ROC [Figure 5].
-./run plot_station_corr          # Plot CERES/ANN-IDD station spatial and temporal error correlation [Figure S3].
-./run plot_idd_n_obs             # Plot number of observations per grid cell in the IDD dataset [Figure S2].
 ```
 
 ## Commands
