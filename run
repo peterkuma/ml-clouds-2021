@@ -198,6 +198,8 @@ prepare_abrupt-4xCO2)
 				"$INPUT/noresm2/$exp/day/2.5deg" 0001 0100
 		else
 			prepare_model "$exp" "$model" cmip \
+				"$INPUT/cmip5/$exp/day/2.5deg/by-model/$model" $y1_ $y2_
+			prepare_model "$exp" "$model" cmip \
 				"$INPUT/cmip6/$exp/day/2.5deg/by-model/$model" $y1_ $y2_
 		fi
 	done
