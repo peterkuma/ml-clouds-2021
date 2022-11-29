@@ -36,7 +36,9 @@ models or shorter training data time periods.
 Please see the manuscript for more details about the ANN. If you have any
 questions about the code or would like to report a bug, you can contact the
 manuscript authors or submit an [issue on
-GitHub](https://github.com/peterkuma/ml-clouds-2021/issues).
+GitHub](https://github.com/peterkuma/ml-clouds-2021/issues). Contributions
+are welcome through [pull requests on
+Github](https://github.com/peterkuma/ml-clouds-2021/pulls).
 
 ## Requirements
 
@@ -1061,6 +1063,12 @@ Examples:
 bin/gistemp_to_nc data/gistemp/totalCI_ERA.csv data/gistemp/gistemp.nc
 ```
 
+
+## Code style
+
+The code style is indentation with tabs, tab size equivalent to 4 spaces, and
+Unix line endings (LF). The style is applied automatically in editors which
+supports the `.editorconfig` standard.
 
 ## License
 
