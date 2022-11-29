@@ -186,9 +186,21 @@ prepare_abrupt-4xCO2)
 	y1x=$ABRUPT_YEARS_X_FIRST
 	y2x=$ABRUPT_YEARS_X_LAST
 	for model in $(cat "$INPUT/models_$exp"); do
+		dir5="$INPUT/cmip5/$exp/day/2.5deg/by-model/$model"
+		dir6="$INPUT/cmip6/$exp/day/2.5deg/by-model/$model"
 		if [ "$model" = GFDL-CM4 -o "$model" = NorESM2-LM ]; then
 			y1_=$y1x
 			y2_=$y2x
+		elif [ "$model" = MPI-ESM-LR ]; then
+			y11=1850
+			y12=1869
+			y21=1970
+			y22=1989
+		elif [ "$model" = MRI-CGCM3 ]; then
+			y11=1851
+			y12=1870
+			y21=1971
+			y22=1990
 		else
 			y1_=$y1
 			y2_=$y2
@@ -196,11 +208,12 @@ prepare_abrupt-4xCO2)
 		if [ "$model" = NorESM2-LM ]; then
 			prepare_model "$exp" NorESM2-LM noresm2 \
 				"$INPUT/noresm2/$exp/day/2.5deg" 0001 0100
+		elif [ "$model" = MPI-ESM-LR -o "$model" = MRI-CGCM3 ]; then
+			prepare_model "$exp" "$model" cmip "$dir5" $y11 $y12
+			prepare_model "$exp" "$model" cmip "$dir5" $y21 $y22
 		else
-			prepare_model "$exp" "$model" cmip \
-				"$INPUT/cmip5/$exp/day/2.5deg/by-model/$model" $y1_ $y2_
-			prepare_model "$exp" "$model" cmip \
-				"$INPUT/cmip6/$exp/day/2.5deg/by-model/$model" $y1_ $y2_
+			prepare_model "$exp" "$model" cmip "$dir5" $y1_ $y2_
+			prepare_model "$exp" "$model" cmip "$dir6" $y1_ $y2_
 		fi
 	done
 	;;
