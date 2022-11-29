@@ -12,7 +12,7 @@ Adrian J. McDonald<sup>2</sup>,
 
 This repository contains code for the paper
 [Machine learning of cloud types in satellite observations and climate
-models](https://doi.org/10.5281/zenodo.6184907) (in review).
+models](https://peterkuma.net/science/papers/kuma_et_al_2022b/) (in review).
 
 ## Introduction
 
