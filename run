@@ -245,6 +245,7 @@ predict_abrupt-4xCO2)
 	;;
 
 calc_dtau_pct)
+	mkdir -p "$DATA/dtau_pct/"
 	bin/calc_dtau_pct "$DATA/samples_pred/historical/CERES" "$INPUT/ceres" \
 		"$DATA/dtau_pct/dtau_pct.nc"
 	;;
