@@ -426,8 +426,8 @@ plot_validation)
 calc_roc)
 	mkdir -p "$DATA/roc"
 	bin/calc_roc "$DATA/geo_cto/historical/validation/CERES.nc" \
-		"$DATA/idd_geo/IDD.nc" "$DATA/roc/all.nc"
-	bin/calc_roc "$DATA/xval/geo_cto/regions.nc" "$DATA/idd_geo/IDD.nc" \
+		"$DATA/idd_geo/validation.nc" "$DATA/roc/all.nc"
+	bin/calc_roc "$DATA/xval/geo_cto/regions.nc" "$DATA/idd_geo/validation.nc" \
 		"$DATA/roc/regions.nc"
 	;;
 
