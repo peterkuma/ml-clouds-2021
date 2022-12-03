@@ -104,14 +104,19 @@ case "$1" in
 prepare_ceres)
 	dir="$DATA/samples/ceres/"
 	for y in $CERES_YEARS; do mkdir -p "$dir/$y"; done
-	parallel -j$JOBS \
-		bin/prepare_samples ceres "$INPUT/ceres/2.5deg" \
-		"$INPUT/idd/synop" "$INPUT/idd/buoy" {}-01-01 {}-12-31 "$dir"/{} \
-		::: $CERES_YEARS
-	parallel -j1 ds merge sample "$dir"/{}/*.nc "$dir"/{}.nc ::: $CERES_YEARS
-	mkdir -p "$dir"/{training,validation}
-	for y in $TRAIN_YEARS; do ln -sf "../$y.nc" "$dir/training/"; done
-	for y in $VAL_YEARS; do ln -sf "../$y.nc" "$dir/validation/"; done
+	cont=0
+	for y in $years; do [ ! -e "$dir/$y.nc" ] && cont=1; done
+	if [ $cont = 1 ]; then
+		parallel -j$JOBS \
+			bin/prepare_samples ceres "$INPUT/ceres/2.5deg" \
+			"$INPUT/idd/synop" "$INPUT/idd/buoy" {}-01-01 {}-12-31 "$dir"/{} \
+			::: $CERES_YEARS
+		parallel -j1 ds merge sample "$dir"/{}/*.nc "$dir"/{}.nc ::: \
+			$CERES_YEARS
+		mkdir -p "$dir"/{training,validation}
+		for y in $TRAIN_YEARS; do ln -sf "../$y.nc" "$dir/training/"; done
+		for y in $VAL_YEARS; do ln -sf "../$y.nc" "$dir/validation/"; done
+	fi
 	;;
 
 train_ann)
