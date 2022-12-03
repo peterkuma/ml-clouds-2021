@@ -294,8 +294,9 @@ calc_geo_cto_xval)
 	for region in $REGIONS; do
 		region_upper="${region^^}"
 		dir="$DATA/xval/$region/"
+		mkdir -p "$dir/geo_cto/historical/all/"
 		calc_geo_cto "$dir/samples_pred/historical/CERES" \
-			"$INPUT/tas/historical/CERES.nc"
+			"$INPUT/tas/historical/CERES.nc" \
 			"$dir/geo_cto/historical/all/CERES.nc"
 	done
 	bin/merge_xval_geo_cto \
