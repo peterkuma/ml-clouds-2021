@@ -365,6 +365,7 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run calc_cto_ecs               # Calculate cloud type occurrence vs. ECS regression in the CMIP5 and CMIP6 abrupt-4xCO2 experiment.
 ./run plot_cto_ecs               # Plot cloud type occurrence vs. ECS regression in the CMIP5 and CMIP6 abrupt-4xCO2 experiment [Figure 11].
 ./run train_ann_xval             # Train ANNs for cross-validation.
+./run predict_ceres_xval         # Predict CERES cross-validation samples using the ANN.
 ./run calc_geo_cto_xval          # Calculate geographical distribution of cloud type occurrence for cross-validation.
 ./run plot_geo_cto_xval          # Plot geographical distribution of cloud type occurrence for cross-validation [Figure 3, S12].
 ./run plot_validation            # Plot validation results [Figure 4].
