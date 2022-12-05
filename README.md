@@ -1071,6 +1071,17 @@ The code style is indentation with tabs, tab size equivalent to 4 spaces, and
 Unix line endings (LF). The style is applied automatically in editors which
 supports the `.editorconfig` standard.
 
+## Release notes
+
+### 2.0.0 (2022-12-05)
+
+- A release corresponding to the finalized manuscript at the end of the peer
+review process.
+
+### 1.0.0 (2022-03-07)
+
+- The first release corresponding to the submitted manuscript version.
+
 ## License
 
 The code in this repository is open source, and can be used and distributed
