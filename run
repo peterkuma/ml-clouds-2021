@@ -142,6 +142,10 @@ plot_training_history)
 	;;
 
 plot_idd_stations)
+	if [ "$NCLASSES" != 4 ]; then
+		echo "$0: This command only runs with a configuration for 4 cloud classes" >&2
+		exit 0
+	fi
 	mkdir -p "$DATA/idd_sample/samples/"
 	mkdir -p "$DATA/idd_sample/samples_pred/"
 	mkdir -p "$DATA/idd_sample/idd"
@@ -437,6 +441,10 @@ plot_roc)
 	;;
 
 plot_station_corr)
+	if [ "$NCLASSES" != 4 ]; then
+		echo "$0: This command only runs with a configuration for 4 cloud classes" >&2
+		exit 0
+	fi
 	bin/plot_station_corr space "$DATA/idd_geo/validation/2007.nc" \
 		"$DATA/geo_cto/historical/all/CERES.nc" "$PLOT/station_corr_space.pdf"
 	bin/plot_station_corr time "$DATA/idd_geo/validation/2007.nc" \
@@ -444,6 +452,10 @@ plot_station_corr)
 	;;
 
 plot_idd_n_obs)
+	if [ "$NCLASSES" != 4 ]; then
+		echo "$0: This command only runs with a configuration for 4 cloud classes" >&2
+		exit 0
+	fi
 	bin/plot_idd_n_obs "$DATA/idd_geo/validation.nc" "$PLOT/idd_n_obs.png"
 	;;
 
