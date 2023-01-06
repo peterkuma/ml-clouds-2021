@@ -13,10 +13,11 @@ Arguments:
 
 Options:
 
-  degree: VALUE      Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
-  relative: VALUE    Plot relative to CERES. One of: true or false. Default: true.
-  normalized: VALUE  Plot normaized CERES. One of: true, false, only.  Default: false.
-  with_ref: VALUE    Plot reference row. One of: true, false. Default: true.
+  degree: VALUE       Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+  relative: VALUE     Plot relative to CERES. One of: true or false. Default: true.
+  normalized: VALUE   Plot normaized CERES. One of: true, false, only.  Default: false.
+  with_ref: VALUE     Plot reference row. One of: true, false. Default: true.
+  label_start: VALUE  Start plot labels with letter VALUE. Default: a.
 
 Examples:
 
@@ -165,8 +166,10 @@ def get_ecs(d_ecs, var, model):
 	except IndexError:
 		return np.nan, False
 
-def plot_letter(i, j, color):
-	plt.text(0.01, 0.98, '(%s%d)' % (string.ascii_lowercase[i], j+1),
+def plot_letter(i, j, color, label_start='a'):
+	start = string.ascii_lowercase.index(label_start)
+	letter = string.ascii_lowercase[start+i]
+	plt.text(0.01, 0.98, '(%s%d)' % (letter, j+1),
 		transform=ax.transAxes,
 		va='top',
 		ha='left',
@@ -253,6 +256,7 @@ if __name__ == '__main__':
 	relative = opts.get('relative', True)
 	normalized = opts.get('normalized', False)
 	with_ref = opts.get('with_ref', True)
+	label_start = opts.get('label_start', 'a')
 
 	var = {
 		0: 'cloud_occurrence',
@@ -404,7 +408,7 @@ if __name__ == '__main__':
 				if d['name'].startswith(('CERES', 'all')) or \
 				d['type'] == 'other' and not relative and degree == 0 \
 				else 'k'
-			plot_letter(i, j, color=color)
+			plot_letter(i, j, color=color, label_start=label_start)
 			levels = levels_rel if relative and d['type'] == 'other' \
 				else levels_abs
 			cmap = 'bwr' if relative and d['type'] == 'other' or degree == 1 \

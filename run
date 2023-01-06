@@ -354,7 +354,7 @@ plot_geo_cto_historical)
 	bin/plot_geo_cto "$DATA/geo_cto/historical/part_1" "$INPUT/ecs/ecs.csv" \
 		"$PLOT/geo_cto_historical_1.png" $opts
 	bin/plot_geo_cto "$DATA/geo_cto/historical/part_2" "$INPUT/ecs/ecs.csv" \
-		"$PLOT/geo_cto_historical_2.png" with_ref: false $opts
+		"$PLOT/geo_cto_historical_2.png" with_ref: false $opts label_start: m
 	;;
 
 plot_geo_cto_abrupt-4xCO2)
