@@ -12,7 +12,7 @@ Adrian J. McDonald<sup>2</sup>,
 
 This repository contains code for the paper
 [Machine learning of cloud types in satellite observations and climate
-models](https://peterkuma.net/science/papers/kuma_et_al_2022b/) (in review).
+models](https://peterkuma.net/science/papers/kuma_et_al_2022a/).
 
 ## Introduction
 
@@ -776,10 +776,11 @@ Arguments:
 
 Options:
 
-  degree: VALUE      Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
-  relative: VALUE    Plot relative to CERES. One of: true or false. Default: true.
-  normalized: VALUE  Plot normaized CERES. One of: true, false, only.  Default: false.
-  with_ref: VALUE    Plot reference row. One of: true, false. Default: true.
+  degree: VALUE       Degree. One of: 0 (absolute value) or 1 (trend). Default: 0.
+  relative: VALUE     Plot relative to CERES. One of: true or false. Default: true.
+  normalized: VALUE   Plot normaized CERES. One of: true, false, only.  Default: false.
+  with_ref: VALUE     Plot reference row. One of: true, false. Default: true.
+  label_start: VALUE  Start plot labels with letter VALUE. Default: a.
 
 Examples:
 
