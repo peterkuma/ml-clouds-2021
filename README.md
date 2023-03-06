@@ -373,6 +373,19 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run plot_roc                   # Plot ROC [Figure 5].
 ```
 
+### Environment variables
+
+The run script supports the following environment variables:
+
+- `JOBS`: Number of concurrent jobs. Default: Number of CPU cores.
+- `INPUT`: Input directory. Default: `input`.
+- `DATA`: Data (output) directory. Default: `data`.
+- `DATA_COMMON`: Common data (output) directory. Default: `data`.
+- `PLOT`: Plot (output) directory. Default: `plot`.
+- `NCLASSES`: Number of cloud classes (4, 10 or 27). Default: 4.
+- `EXCLUDE_NIGHT`: Exclude samples containing nighttime. The same as the
+  equivalent [ann](#ann) option. Default: true.
+
 ## Commands
 
 ### Overview
@@ -445,14 +458,13 @@ Arguments (ann apply):
 Options (ann train):
 
   night: VALUE          Train for nighttime only. One of: true or false. Default: false.
-  exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
-  nclasses: VALUE       Number of cloud types. One of: 4, 10, 27. Default: 4.
   exclude: { LAT1 LAT2 LON1 LON2 }
       Exclude samples with pixels in a region bounded by given latitude and longitude. Default: none.
   nsamples: VALUE       Maximum number of samples to use for the training per day. Default: 20.
 
-Options (ann apply):
+Options:
 
+  exclude_night: VALUE  Exclude nighttime samples. One of: true or false. Default: true.
   nclasses: VALUE  Number of cloud types. One of: 4, 10, 27. Default: 4.
 
 Examples:

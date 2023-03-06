@@ -373,6 +373,19 @@ export JOBS=24 # Number of concurrent jobs. Defaults to the number of CPU cores 
 ./run plot_roc                   # Plot ROC [Figure 5].
 ```
 
+### Environment variables
+
+The run script supports the following environment variables:
+
+- `JOBS`: Number of concurrent jobs. Default: Number of CPU cores.
+- `INPUT`: Input directory. Default: `input`.
+- `DATA`: Data (output) directory. Default: `data`.
+- `DATA_COMMON`: Common data (output) directory. Default: `data`.
+- `PLOT`: Plot (output) directory. Default: `plot`.
+- `NCLASSES`: Number of cloud classes (4, 10 or 27). Default: 4.
+- `EXCLUDE_NIGHT`: Exclude samples containing nighttime. The same as the
+  equivalent [ann](#ann) option. Default: true.
+
 ## Commands
 
 ### Overview

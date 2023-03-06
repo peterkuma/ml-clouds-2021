@@ -14,6 +14,7 @@ DATA="${DATA:-data}"
 DATA_COMMON="${DATA_COMMON:-data}"
 PLOT="${PLOT:-plot}"
 NCLASSES="${NCLASSES:-4}"
+EXCLUDE_NIGHT="${EXCLUDE_NIGHT:-true}"
 
 TRAIN_YEARS="$(echo 2004 2005 {2009..2011} {2013..2016} {2018..2020})"
 VAL_YEARS="2007 2012 2017"
@@ -77,7 +78,8 @@ predict_models () {
 		[ $cont = 0 ] && continue
 		mkdir -p "$DATA/samples_pred/$exp/$model"
 		bin/ann apply "$DATA/ann/ceres.h5" "$DATA/samples/$exp/$model" \
-			"$DATA/samples_pred/$exp/$model" nclasses: "$NCLASSES"
+			"$DATA/samples_pred/$exp/$model" nclasses: "$NCLASSES" \
+			exclude_night: "$EXCLUDE_NIGHT"
 	done
 }
 
@@ -122,7 +124,8 @@ prepare_ceres)
 train_ann)
 	mkdir -p "$DATA/ann"
 	bin/ann train "$DATA/samples/ceres/"{training,validation} \
-		"$DATA/ann/ceres.h5" "$DATA/ann/history.nc" nclasses: "$NCLASSES"
+		"$DATA/ann/ceres.h5" "$DATA/ann/history.nc" nclasses: "$NCLASSES" \
+		exclude_night: "$EXCLUDE_NIGHT"
 	;;
 
 train_ann_xval)
@@ -132,7 +135,8 @@ train_ann_xval)
 		mkdir -p "$dir/ann"
 		bin/ann train "$DATA/samples/ceres/"{training,validation} \
 			"$dir/ann/ceres.h5" "$dir/ann/history.nc" \
-			nclasses: "$NCLASSES" exclude: $extent
+			nclasses: "$NCLASSES" exclude: $extent \
+			exclude_night: "$EXCLUDE_NIGHT"
 	done
 	;;
 
@@ -157,7 +161,7 @@ plot_idd_stations)
 	cp "$INPUT/idd/buoy/Surface_Buoy_20100101_0000.nc" \
 		"$DATA/idd_sample/idd"
 	bin/ann apply "$DATA/ann/ceres.h5" "$DATA/idd_sample/samples" \
-		"$DATA/idd_sample/samples_pred"
+		"$DATA/idd_sample/samples_pred" exclude_night: "$EXCLUDE_NIGHT"
 	bin/plot_idd_stations "$DATA/idd_sample/idd" \
 		"$DATA/idd_sample/samples/2010-01-01T00:00:00.nc" \
 		16 "$PLOT/idd_stations.png" 2010-01-01
@@ -230,7 +234,8 @@ prepare_abrupt-4xCO2)
 predict_ceres)
 	mkdir -p "$DATA/samples_pred/historical/CERES/validation"
 	bin/ann apply "$DATA/ann/ceres.h5" "$DATA/samples/ceres" \
-		"$DATA/samples_pred/historical/CERES" nclasses: "$NCLASSES"
+		"$DATA/samples_pred/historical/CERES" nclasses: "$NCLASSES" \
+		exclude_night: "$EXCLUDE_NIGHT"
 	for y in $VAL_YEARS; do
 		ln -sf ../$y.nc "$DATA/samples_pred/historical/CERES/validation/"
 	done
@@ -241,7 +246,8 @@ predict_ceres_xval)
 		dir="$DATA/xval/$region/"
 		mkdir -p "$dir/samples_pred/historical/CERES"
 		bin/ann apply "$dir/ann/ceres.h5" "$DATA/samples/ceres/validation/" \
-			"$dir/samples_pred/historical/CERES" nclasses: "$NCLASSES"
+			"$dir/samples_pred/historical/CERES" nclasses: "$NCLASSES" \
+			exclude_night: "$EXCLUDE_NIGHT"
 	done
 	;;
 

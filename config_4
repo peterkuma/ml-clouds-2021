@@ -4,3 +4,4 @@ export DATA=data_4
 export DATA_COMMON=data
 export PLOT=plot_4
 export NCLASSES=4
+export EXCLUDE_NIGHT=true
