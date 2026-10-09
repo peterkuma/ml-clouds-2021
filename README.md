@@ -1,10 +1,8 @@
 # Code for the paper "Machine learning of cloud types in satellite observations and climate models"
 
-Peter Kuma<sup>1</sup>,
-Frida A.-M. Bender<sup>1</sup>,
-Alex Schuddeboom<sup>2</sup>,
-Adrian J. McDonald<sup>2</sup>,
-Øyvind Seland<sup>3</sup>
+**Authors:** Peter Kuma<sup>1</sup>, Frida A.-M. Bender<sup>1</sup>, Alex
+Schuddeboom<sup>2</sup>, Adrian J. McDonald<sup>2</sup>, Øyvind
+Seland<sup>3</sup>
 
 <sup>1</sup>Department of Meteorology (MISU), Stockholm University, Stockholm, Sweden\
 <sup>2</sup>School of Physical and Chemical Sciences, Christchurch, Aotearoa New Zealand\
@@ -12,7 +10,7 @@ Adrian J. McDonald<sup>2</sup>,
 
 This repository contains code for the paper
 [Machine learning of cloud types in satellite observations and climate
-models](https://peterkuma.net/science/papers/kuma_et_al_2022a/).
+models](https://doi.org/10.5194/acp-23-523-2023).
 
 ## Introduction
 
